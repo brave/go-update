@@ -120,4 +120,11 @@ func TestUnmarshalXML(t *testing.T) {
 	extensiontest.AssertEqual(t, extensions[0].Version, onePasswordVersion)
 	extensiontest.AssertEqual(t, extensions[1].ID, pdfJSID)
 	extensiontest.AssertEqual(t, extensions[1].Version, pdfJSVersion)
+
+	// Check for unsupported protocol version
+	data = []byte(`<request protocol="2.0" version="chrome-53.0.2785.116" prodversion="53.0.2785.116" requestid="{b4f77b70-af29-462b-a637-8a3e4be5ecd9}" lang="" updaterchannel="stable" prodchannel="stable" os="mac" arch="x64" nacl_arch="x86-64"/>`)
+	_, err = UnmarshalXML(data)
+	if err == nil {
+		t.Fatalf("Unrecognized protocol should have an error")
+	}
 }

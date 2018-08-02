@@ -2,6 +2,7 @@ package extension
 
 import (
 	"encoding/xml"
+	"fmt"
 	"strings"
 )
 
@@ -104,6 +105,10 @@ func UnmarshalXML(data []byte) (Extensions, error) {
 			ID:      app.AppID,
 			Version: app.Version,
 		})
+	}
+
+	if request.Protocol != "3.0" && request.Protocol != "3.1" {
+		err = fmt.Errorf("request version: %v not supported", request.Protocol)
 	}
 
 	return extensions, err
