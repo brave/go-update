@@ -9,11 +9,12 @@ import (
 // Extension represents an extension which is both used in update checks
 // and responses.
 type Extension struct {
-	ID      string
-	Version string
-	SHA256  string
-	Title   string
-	URL     string
+	ID          string
+	Version     string
+	SHA256      string
+	Title       string
+	URL         string
+	Blacklisted bool
 }
 
 // Contains checks if the specified extension is contained in the extensions list
@@ -69,7 +70,7 @@ func FilterForUpdates(allExtensions Extensions, extensionsToCheck Extensions) Ex
 	for _, extensionBeingChecked := range extensionsToCheck {
 		foundExtension, err := Contains(allExtensions, extensionBeingChecked.ID)
 		if err == nil {
-			if CompareVersions(extensionBeingChecked.Version, foundExtension.Version) < 0 {
+			if !foundExtension.Blacklisted && CompareVersions(extensionBeingChecked.Version, foundExtension.Version) < 0 {
 				extensions = append(extensions, foundExtension)
 			}
 		}

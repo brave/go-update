@@ -85,4 +85,12 @@ func TestFilterForUpdates(t *testing.T) {
 	extensiontest.AssertEqual(t, len(check), 2)
 	extensiontest.AssertEqual(t, check[0].ID, olderExtensionCheck1.ID)
 	extensiontest.AssertEqual(t, check[1].ID, olderExtensionCheck2.ID)
+
+	// Outdated extension that's blacklisted doesn't get updates
+	allExtensionsBlacklisted := allExtensions
+	for i := range allExtensionsBlacklisted {
+		allExtensionsBlacklisted[i].Blacklisted = true
+	}
+	check = FilterForUpdates(allExtensionsBlacklisted, outdatedExtensionCheck)
+	extensiontest.AssertEqual(t, len(check), 0)
 }
