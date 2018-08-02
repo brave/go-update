@@ -41,6 +41,16 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Special case, if there's only 1 extension in the request and it is not something
+	// we know about, redirect the client to google component update server.
+	if len(extensions) == 1 {
+		_, err := extension.Contains(allExtensions, extensions[0].ID)
+		if err != nil {
+			http.Redirect(w, r, "https://update.googleapis.com/service/update2/extensions", http.StatusFound)
+			return
+		}
+	}
+
 	w.Header().Set("content-type", "application/xml")
 	w.WriteHeader(http.StatusOK)
 
