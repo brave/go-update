@@ -61,3 +61,18 @@ func CompareVersions(version1 string, version2 string) int {
 	}
 	return 0
 }
+
+// FilterForUpdates filters `allExtensions` down to only the extensions that are being checked,
+// and only the ones that we have updates for.
+func FilterForUpdates(allExtensions Extensions, extensionsToCheck Extensions) Extensions {
+	extensions := Extensions{}
+	for _, extensionBeingChecked := range extensionsToCheck {
+		foundExtension, err := Contains(allExtensions, extensionBeingChecked.ID)
+		if err == nil {
+			if CompareVersions(extensionBeingChecked.Version, foundExtension.Version) < 0 {
+				extensions = append(extensions, foundExtension)
+			}
+		}
+	}
+	return extensions
+}

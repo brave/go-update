@@ -8,7 +8,7 @@ import (
 func TestContains(t *testing.T) {
 	extension1 := OfferedExtensions[0]
 	extension2 := OfferedExtensions[1]
-	unknownExtension := extension1;
+	unknownExtension := extension1
 	unknownExtension.ID = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
 	allExtensions := []Extension{extension1, extension2}
@@ -22,7 +22,7 @@ func TestContains(t *testing.T) {
 
 	extension, err = Contains(allExtensions, unknownExtension.ID)
 	if err == nil {
-	  t.Fatalf("Not found extension should throw an error")
+		t.Fatalf("Not found extension should throw an error")
 	}
 }
 
@@ -43,4 +43,46 @@ func TestCompareVersions(t *testing.T) {
 	extensiontest.AssertEqual(t, CompareVersions("10.1.1", "1.1.1"), 1)
 	// Non integers components are treated as 0
 	extensiontest.AssertEqual(t, CompareVersions("zugzug.1.1", "1.1.daboo"), -1)
+}
+
+func TestFilterForUpdates(t *testing.T) {
+	lightThemeExtension, err := Contains(OfferedExtensions, "ldimlcelhnjgpjjemdjokpgeeikdinbm")
+	extensiontest.AssertEqual(t, err, nil)
+	darkThemeExtension, err := Contains(OfferedExtensions, "bfdgpgibhagkpdlnjonhkabjoijopoge")
+	extensiontest.AssertEqual(t, err, nil)
+
+	allExtensions := []Extension{lightThemeExtension, OfferedExtensions[1]}
+
+	// No updates when nothing to check
+	check := FilterForUpdates(allExtensions, Extensions{})
+	extensiontest.AssertEqual(t, len(check), 0)
+
+	olderExtensionCheck1 := lightThemeExtension
+	olderExtensionCheck1.Version = "0.1.0"
+	outdatedExtensionCheck := []Extension{olderExtensionCheck1}
+
+	check = FilterForUpdates(allExtensions, outdatedExtensionCheck)
+	extensiontest.AssertEqual(t, len(check), 1)
+	extensiontest.AssertEqual(t, check[0].ID, lightThemeExtension.ID)
+	// Check that the newer version,SHA, title are returned
+	extensiontest.AssertEqual(t, check[0].Version, lightThemeExtension.Version)
+	extensiontest.AssertEqual(t, check[0].SHA256, lightThemeExtension.SHA256)
+	extensiontest.AssertEqual(t, check[0].Title, lightThemeExtension.Title)
+	// Check that even if a URL is provided, we use the server's URL
+	extensiontest.AssertEqual(t, check[0].URL, lightThemeExtension.URL)
+
+	// Newer extensions have no items returned
+	newerExtensionCheck := lightThemeExtension
+	newerExtensionCheck.Version = "2.1.0"
+	check = FilterForUpdates(allExtensions, Extensions{newerExtensionCheck})
+	extensiontest.AssertEqual(t, len(check), 0)
+
+	// 2 outdated extensions both get returned from 1 check
+	olderExtensionCheck2 := darkThemeExtension
+	olderExtensionCheck2.Version = "0.1.0"
+	outdatedExtensionsCheck := []Extension{olderExtensionCheck1, olderExtensionCheck2}
+	check = FilterForUpdates(allExtensions, outdatedExtensionsCheck)
+	extensiontest.AssertEqual(t, len(check), 2)
+	extensiontest.AssertEqual(t, check[0].ID, olderExtensionCheck1.ID)
+	extensiontest.AssertEqual(t, check[1].ID, olderExtensionCheck2.ID)
 }
