@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/brave/go-update/extension/extensiontest"
 	"github.com/go-chi/chi"
+	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -23,17 +24,13 @@ func TestPing(t *testing.T) {
 	server := httptest.NewServer(handler)
 	defer server.Close()
 	resp, err := http.Get(server.URL)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.Nil(t, err)
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("Received non-200 response: %d\n", resp.StatusCode)
 	}
 	expected := "."
 	actual, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.Nil(t, err)
 	if expected != string(actual) {
 		t.Errorf("Expected the message '%s'\n", expected)
 	}
@@ -42,9 +39,7 @@ func TestPing(t *testing.T) {
 func testCall(t *testing.T, server *httptest.Server, requestBody string, expectedResponseCode int, expectedResponse string) {
 	extensionsURL := fmt.Sprintf("%s/extensions", server.URL)
 	req, err := http.NewRequest("POST", extensionsURL, bytes.NewBuffer([]byte(requestBody)))
-	if err != nil {
-		t.Fatalf("Error with POST: %v\n", err)
-	}
+	assert.Nil(t, err)
 	req.Header.Add("Content-Type", "application/xml")
 
 	client := &http.Client{
@@ -54,18 +49,14 @@ func testCall(t *testing.T, server *httptest.Server, requestBody string, expecte
 	}
 
 	resp, err := client.Do(req)
-	if err != nil {
-		t.Fatalf("Error with running request: %v\n", err)
-	}
+	assert.Nil(t, err)
 
-	extensiontest.AssertEqual(t, resp.StatusCode, expectedResponseCode)
+	assert.Equal(t, expectedResponseCode, resp.StatusCode)
 
 	actual, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		t.Fatalf("Error reading response: %v\n", err)
-	}
+	assert.Nil(t, err)
 
-	extensiontest.AssertEqual(t, strings.TrimSpace(string(actual)), expectedResponse)
+	assert.Equal(t, expectedResponse, strings.TrimSpace(string(actual)))
 }
 
 func TestUpdateExtensions(t *testing.T) {

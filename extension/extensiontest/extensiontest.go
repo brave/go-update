@@ -2,15 +2,7 @@ package extensiontest
 
 import (
 	"fmt"
-	"testing"
 )
-
-//AssertEqual compares 2 interfaces for equality and throws a test error if they do not match
-func AssertEqual(t *testing.T, a interface{}, b interface{}) {
-	if a != b {
-		t.Fatalf("'%s' != '%s'", a, b)
-	}
-}
 
 // ExtensionRequestFnFor creates a function for the specified appID which creates a function
 // which takes in a version and returns an XML request.

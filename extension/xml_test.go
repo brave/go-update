@@ -2,6 +2,7 @@ package extension
 
 import (
 	"github.com/brave/go-update/extension/extensiontest"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -9,17 +10,17 @@ func TestMarshalXML(t *testing.T) {
 	// Empty extension list returns a blank XML update
 	extensions := []Extension{}
 	xml, err := MarshalXML(extensions)
-	extensiontest.AssertEqual(t, err, nil)
+	assert.Nil(t, err)
 	expectedOutput := `<response protocol="3.1" server="prod"></response>`
-	extensiontest.AssertEqual(t, string(xml), expectedOutput)
+	assert.Equal(t, expectedOutput, string(xml))
 
 	darkThemeExtension, err := Contains(OfferedExtensions, "bfdgpgibhagkpdlnjonhkabjoijopoge")
-	extensiontest.AssertEqual(t, err, nil)
+	assert.Nil(t, err)
 
 	// Single extension list returns a single XML update
 	extensions = []Extension{darkThemeExtension}
 	xml, err = MarshalXML(extensions)
-	extensiontest.AssertEqual(t, err, nil)
+	assert.Nil(t, err)
 	expectedOutput = `<response protocol="3.1" server="prod">
     <app appid="bfdgpgibhagkpdlnjonhkabjoijopoge">
         <updatecheck status="ok">
@@ -34,16 +35,16 @@ func TestMarshalXML(t *testing.T) {
         </updatecheck>
     </app>
 </response>`
-	extensiontest.AssertEqual(t, string(xml), expectedOutput)
+	assert.Equal(t, expectedOutput, string(xml))
 
 	// Multiple extensions returns a multiple extension XML update
 	lightThemeExtension, err := Contains(OfferedExtensions, "ldimlcelhnjgpjjemdjokpgeeikdinbm")
-	extensiontest.AssertEqual(t, err, nil)
+	assert.Nil(t, err)
 	darkThemeExtension, err = Contains(OfferedExtensions, "bfdgpgibhagkpdlnjonhkabjoijopoge")
-	extensiontest.AssertEqual(t, err, nil)
+	assert.Nil(t, err)
 	extensions = []Extension{lightThemeExtension, darkThemeExtension}
 	xml, err = MarshalXML(extensions)
-	extensiontest.AssertEqual(t, err, nil)
+	assert.Nil(t, err)
 	expectedOutput = `<response protocol="3.1" server="prod">
     <app appid="ldimlcelhnjgpjjemdjokpgeeikdinbm">
         <updatecheck status="ok">
@@ -70,25 +71,22 @@ func TestMarshalXML(t *testing.T) {
         </updatecheck>
     </app>
 </response>`
-	extensiontest.AssertEqual(t, string(xml), expectedOutput)
+	assert.Equal(t, expectedOutput, string(xml))
 }
 
 func TestUnmarshalXML(t *testing.T) {
 	// Empty data returns an error
 	_, err := UnmarshalXML([]byte(""))
-	if err == nil {
-		t.Fatalf("UnmarshalXML should return an error for empty content")
-	}
+	assert.NotNil(t, err, "UnmarshalXML should return an error for empty content")
+
 	// Malformed XML returns an error
 	_, err = UnmarshalXML([]byte("<"))
-	if err == nil {
-		t.Fatalf("UnmarshalXML should return an error for malformed XML")
-	}
+	assert.NotNil(t, err, "UnmarshalXML should return an error for malformed XML")
+
 	// Wrong schema returns an error
 	_, err = UnmarshalXML([]byte("<text>For the king!</text>"))
-	if err == nil {
-		t.Fatalf("UnmarshalXML should return an error for wrong XML Schema")
-	}
+	assert.NotNil(t, err, "UnmarshalXML should return an error for wrong XML Schema")
+
 	// No extensions XML with proper schema, no error with 0 extensions returned
 	data := []byte(`<?xml version="1.0" encoding="UTF-8"?>
 		<request protocol="3.0" version="chrome-53.0.2785.116" prodversion="53.0.2785.116" requestid="{b4f77b70-af29-462b-a637-8a3e4be5ecd9}" lang="" updaterchannel="stable" prodchannel="stable" os="mac" arch="x64" nacl_arch="x86-64">
@@ -96,35 +94,33 @@ func TestUnmarshalXML(t *testing.T) {
 		  <os platform="Mac OS X" version="10.11.6" arch="x86_64"/>
 		</request>`)
 	extensions, err := UnmarshalXML(data)
-	extensiontest.AssertEqual(t, err, nil)
-	extensiontest.AssertEqual(t, len(extensions), 0)
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(extensions))
 
 	onePasswordID := "aomjjhallfgjeglblehebfpbcfeobpgk" // #nosec
 	onePasswordVersion := "4.7.0.90"
 	onePasswordRequest := extensiontest.ExtensionRequestFnFor(onePasswordID)
 	data = []byte(onePasswordRequest(onePasswordVersion))
 	extensions, err = UnmarshalXML(data)
-	extensiontest.AssertEqual(t, err, nil)
-	extensiontest.AssertEqual(t, len(extensions), 1)
-	extensiontest.AssertEqual(t, extensions[0].ID, onePasswordID)
-	extensiontest.AssertEqual(t, extensions[0].Version, onePasswordVersion)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(extensions))
+	assert.Equal(t, onePasswordID, extensions[0].ID)
+	assert.Equal(t, onePasswordVersion, extensions[0].Version)
 
 	pdfJSID := "jdbefljfgobbmcidnmpjamcbhnbphjnb"
 	pdfJSVersion := "1.0.0"
 	twoExtnesionRequest := extensiontest.ExtensionRequestFnForTwo(onePasswordID, pdfJSID)
 	data = []byte(twoExtnesionRequest(onePasswordVersion, pdfJSVersion))
 	extensions, err = UnmarshalXML(data)
-	extensiontest.AssertEqual(t, err, nil)
-	extensiontest.AssertEqual(t, len(extensions), 2)
-	extensiontest.AssertEqual(t, extensions[0].ID, onePasswordID)
-	extensiontest.AssertEqual(t, extensions[0].Version, onePasswordVersion)
-	extensiontest.AssertEqual(t, extensions[1].ID, pdfJSID)
-	extensiontest.AssertEqual(t, extensions[1].Version, pdfJSVersion)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(extensions))
+	assert.Equal(t, onePasswordID, extensions[0].ID)
+	assert.Equal(t, onePasswordVersion, extensions[0].Version)
+	assert.Equal(t, pdfJSID, extensions[1].ID)
+	assert.Equal(t, pdfJSVersion, extensions[1].Version)
 
 	// Check for unsupported protocol version
 	data = []byte(`<request protocol="2.0" version="chrome-53.0.2785.116" prodversion="53.0.2785.116" requestid="{b4f77b70-af29-462b-a637-8a3e4be5ecd9}" lang="" updaterchannel="stable" prodchannel="stable" os="mac" arch="x64" nacl_arch="x86-64"/>`)
 	_, err = UnmarshalXML(data)
-	if err == nil {
-		t.Fatalf("Unrecognized protocol should have an error")
-	}
+	assert.NotNil(t, err, "Unrecognized protocol should have an error")
 }
