@@ -46,7 +46,7 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 	// Special case, if there's only 1 extension in the request and it is not something
 	// we know about, redirect the client to google component update server.
 	if len(extensions) == 1 {
-		_, err := extension.Contains(allExtensions, extensions[0].ID)
+		_, err := allExtensions.Contains(extensions[0].ID)
 		if err != nil {
 			http.Redirect(w, r, "https://update.googleapis.com/service/update2/extensions", http.StatusFound)
 			return
@@ -56,7 +56,7 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "application/xml")
 	w.WriteHeader(http.StatusOK)
 
-	extensions = extension.FilterForUpdates(allExtensions, extensions)
+	extensions = allExtensions.FilterForUpdates(extensions)
 	data, err := xml.Marshal(&extensions)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error in marshal XML %v", err), http.StatusInternalServerError)

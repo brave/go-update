@@ -17,10 +17,13 @@ type Extension struct {
 	Blacklisted bool
 }
 
-// Contains checks if the specified extension is contained in the extensions list
-func Contains(extensions Extensions, extensionID string) (Extension, error) {
+// Extensions is type for a slice of Extension.
+type Extensions []Extension
+
+// Contains checks if the specified extension ID is contained in the extensions
+func (extensions *Extensions) Contains(extensionID string) (Extension, error) {
 	var foundExtension Extension
-	for _, extension := range extensions {
+	for _, extension := range *extensions {
 		if extension.ID == extensionID {
 			foundExtension = extension
 			return foundExtension, nil
@@ -28,9 +31,6 @@ func Contains(extensions Extensions, extensionID string) (Extension, error) {
 	}
 	return foundExtension, errors.New("no extensions found")
 }
-
-// Extensions is type for a slice of Extension.
-type Extensions []Extension
 
 // CompareVersions compares 2 versions:
 // returns 0 if both versions are the same.
@@ -63,17 +63,17 @@ func CompareVersions(version1 string, version2 string) int {
 	return 0
 }
 
-// FilterForUpdates filters `allExtensions` down to only the extensions that are being checked,
+// FilterForUpdates filters `extensions` down to only the extensions that are being checked,
 // and only the ones that we have updates for.
-func FilterForUpdates(allExtensions Extensions, extensionsToCheck Extensions) Extensions {
-	extensions := Extensions{}
+func (extensions *Extensions) FilterForUpdates(extensionsToCheck Extensions) Extensions {
+	filteredExtensions := Extensions{}
 	for _, extensionBeingChecked := range extensionsToCheck {
-		foundExtension, err := Contains(allExtensions, extensionBeingChecked.ID)
+		foundExtension, err := extensions.Contains(extensionBeingChecked.ID)
 		if err == nil {
 			if !foundExtension.Blacklisted && CompareVersions(extensionBeingChecked.Version, foundExtension.Version) < 0 {
-				extensions = append(extensions, foundExtension)
+				filteredExtensions = append(filteredExtensions, foundExtension)
 			}
 		}
 	}
-	return extensions
+	return filteredExtensions
 }

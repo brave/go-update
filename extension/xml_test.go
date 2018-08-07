@@ -15,7 +15,7 @@ func TestMarshalXML(t *testing.T) {
 	expectedOutput := `<response protocol="3.1" server="prod"></response>`
 	assert.Equal(t, expectedOutput, string(xmlData))
 
-	darkThemeExtension, err := Contains(OfferedExtensions, "bfdgpgibhagkpdlnjonhkabjoijopoge")
+	darkThemeExtension, err := OfferedExtensions.Contains("bfdgpgibhagkpdlnjonhkabjoijopoge")
 	assert.Nil(t, err)
 
 	// Single extension list returns a single XML update
@@ -39,9 +39,9 @@ func TestMarshalXML(t *testing.T) {
 	assert.Equal(t, expectedOutput, string(xmlData))
 
 	// Multiple extensions returns a multiple extension XML update
-	lightThemeExtension, err := Contains(OfferedExtensions, "ldimlcelhnjgpjjemdjokpgeeikdinbm")
+	lightThemeExtension, err := OfferedExtensions.Contains("ldimlcelhnjgpjjemdjokpgeeikdinbm")
 	assert.Nil(t, err)
-	darkThemeExtension, err = Contains(OfferedExtensions, "bfdgpgibhagkpdlnjonhkabjoijopoge")
+	darkThemeExtension, err = OfferedExtensions.Contains("bfdgpgibhagkpdlnjonhkabjoijopoge")
 	assert.Nil(t, err)
 	extensions = []Extension{lightThemeExtension, darkThemeExtension}
 	xmlData, err = xml.Marshal(&extensions)
