@@ -48,7 +48,7 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 	if len(extensions) == 1 {
 		_, err := allExtensions.Contains(extensions[0].ID)
 		if err != nil {
-			http.Redirect(w, r, "https://update.googleapis.com/service/update2/extensions", http.StatusFound)
+			http.Redirect(w, r, "https://update.googleapis.com/service/update2?braveRedirect=true", http.StatusTemporaryRedirect)
 			return
 		}
 	}

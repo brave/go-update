@@ -210,5 +210,5 @@ func TestUpdateExtensions(t *testing.T) {
 	// Unkonwn extension ID goes to Google server
 	requestBody = extensiontest.ExtensionRequestFnFor("aaaaaaaaaaaaaaaaaaaa")("0.0.0")
 	expectedResponse = ""
-	testCall(t, server, requestBody, http.StatusFound, expectedResponse)
+	testCall(t, server, requestBody, http.StatusTemporaryRedirect, expectedResponse)
 }
