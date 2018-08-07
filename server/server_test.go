@@ -53,6 +53,12 @@ func testCall(t *testing.T, server *httptest.Server, requestBody string, expecte
 
 	assert.Equal(t, expectedResponseCode, resp.StatusCode)
 
+	// If this is a redirect, ensure the protocol is HTTPS.
+	if resp.StatusCode >= 300 && resp.StatusCode < 400 {
+		location := resp.Header.Get("Location")
+		assert.True(t, strings.HasPrefix(location, "https://"))
+	}
+
 	actual, err := ioutil.ReadAll(resp.Body)
 	assert.Nil(t, err)
 
