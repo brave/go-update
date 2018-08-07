@@ -1,6 +1,7 @@
 package extension
 
 import (
+	"encoding/xml"
 	"github.com/brave/go-update/extension/extensiontest"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -8,18 +9,18 @@ import (
 
 func TestMarshalXML(t *testing.T) {
 	// Empty extension list returns a blank XML update
-	extensions := []Extension{}
-	xml, err := MarshalXML(extensions)
+	extensions := Extensions{}
+	xmlData, err := xml.Marshal(&extensions)
 	assert.Nil(t, err)
 	expectedOutput := `<response protocol="3.1" server="prod"></response>`
-	assert.Equal(t, expectedOutput, string(xml))
+	assert.Equal(t, expectedOutput, string(xmlData))
 
 	darkThemeExtension, err := Contains(OfferedExtensions, "bfdgpgibhagkpdlnjonhkabjoijopoge")
 	assert.Nil(t, err)
 
 	// Single extension list returns a single XML update
 	extensions = []Extension{darkThemeExtension}
-	xml, err = MarshalXML(extensions)
+	xmlData, err = xml.Marshal(&extensions)
 	assert.Nil(t, err)
 	expectedOutput = `<response protocol="3.1" server="prod">
     <app appid="bfdgpgibhagkpdlnjonhkabjoijopoge">
@@ -35,7 +36,7 @@ func TestMarshalXML(t *testing.T) {
         </updatecheck>
     </app>
 </response>`
-	assert.Equal(t, expectedOutput, string(xml))
+	assert.Equal(t, expectedOutput, string(xmlData))
 
 	// Multiple extensions returns a multiple extension XML update
 	lightThemeExtension, err := Contains(OfferedExtensions, "ldimlcelhnjgpjjemdjokpgeeikdinbm")
@@ -43,7 +44,7 @@ func TestMarshalXML(t *testing.T) {
 	darkThemeExtension, err = Contains(OfferedExtensions, "bfdgpgibhagkpdlnjonhkabjoijopoge")
 	assert.Nil(t, err)
 	extensions = []Extension{lightThemeExtension, darkThemeExtension}
-	xml, err = MarshalXML(extensions)
+	xmlData, err = xml.Marshal(&extensions)
 	assert.Nil(t, err)
 	expectedOutput = `<response protocol="3.1" server="prod">
     <app appid="ldimlcelhnjgpjjemdjokpgeeikdinbm">
@@ -71,20 +72,21 @@ func TestMarshalXML(t *testing.T) {
         </updatecheck>
     </app>
 </response>`
-	assert.Equal(t, expectedOutput, string(xml))
+	assert.Equal(t, expectedOutput, string(xmlData))
 }
 
 func TestUnmarshalXML(t *testing.T) {
 	// Empty data returns an error
-	_, err := UnmarshalXML([]byte(""))
+	extensions := Extensions{}
+	err := xml.Unmarshal([]byte(""), &extensions)
 	assert.NotNil(t, err, "UnmarshalXML should return an error for empty content")
 
 	// Malformed XML returns an error
-	_, err = UnmarshalXML([]byte("<"))
+	err = xml.Unmarshal([]byte("<"), &extensions)
 	assert.NotNil(t, err, "UnmarshalXML should return an error for malformed XML")
 
 	// Wrong schema returns an error
-	_, err = UnmarshalXML([]byte("<text>For the king!</text>"))
+	err = xml.Unmarshal([]byte("<text>For the king!</text>"), &extensions)
 	assert.NotNil(t, err, "UnmarshalXML should return an error for wrong XML Schema")
 
 	// No extensions XML with proper schema, no error with 0 extensions returned
@@ -93,7 +95,7 @@ func TestUnmarshalXML(t *testing.T) {
 		  <hw physmemory="16"/>
 		  <os platform="Mac OS X" version="10.11.6" arch="x86_64"/>
 		</request>`)
-	extensions, err := UnmarshalXML(data)
+	err = xml.Unmarshal(data, &extensions)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(extensions))
 
@@ -101,7 +103,7 @@ func TestUnmarshalXML(t *testing.T) {
 	onePasswordVersion := "4.7.0.90"
 	onePasswordRequest := extensiontest.ExtensionRequestFnFor(onePasswordID)
 	data = []byte(onePasswordRequest(onePasswordVersion))
-	extensions, err = UnmarshalXML(data)
+	err = xml.Unmarshal(data, &extensions)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(extensions))
 	assert.Equal(t, onePasswordID, extensions[0].ID)
@@ -111,7 +113,7 @@ func TestUnmarshalXML(t *testing.T) {
 	pdfJSVersion := "1.0.0"
 	twoExtnesionRequest := extensiontest.ExtensionRequestFnForTwo(onePasswordID, pdfJSID)
 	data = []byte(twoExtnesionRequest(onePasswordVersion, pdfJSVersion))
-	extensions, err = UnmarshalXML(data)
+	err = xml.Unmarshal(data, &extensions)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(extensions))
 	assert.Equal(t, onePasswordID, extensions[0].ID)
@@ -121,6 +123,6 @@ func TestUnmarshalXML(t *testing.T) {
 
 	// Check for unsupported protocol version
 	data = []byte(`<request protocol="2.0" version="chrome-53.0.2785.116" prodversion="53.0.2785.116" requestid="{b4f77b70-af29-462b-a637-8a3e4be5ecd9}" lang="" updaterchannel="stable" prodchannel="stable" os="mac" arch="x64" nacl_arch="x86-64"/>`)
-	_, err = UnmarshalXML(data)
+	err = xml.Unmarshal(data, &extensions)
 	assert.NotNil(t, err, "Unrecognized protocol should have an error")
 }

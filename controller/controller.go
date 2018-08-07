@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"encoding/xml"
 	"fmt"
 	"github.com/brave/go-update/extension"
 	"github.com/go-chi/chi"
@@ -35,7 +36,8 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	extensions, err := extension.UnmarshalXML(body)
+	extensions := extension.Extensions{}
+	err = xml.Unmarshal(body, &extensions)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error reading body %v", err), http.StatusBadRequest)
 		return
@@ -55,7 +57,7 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	extensions = extension.FilterForUpdates(allExtensions, extensions)
-	data, err := extension.MarshalXML(extensions)
+	data, err := xml.Marshal(&extensions)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error in marshal XML %v", err), http.StatusInternalServerError)
 		return

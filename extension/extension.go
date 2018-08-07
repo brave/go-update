@@ -29,7 +29,7 @@ func Contains(extensions Extensions, extensionID string) (Extension, error) {
 	return foundExtension, errors.New("no extensions found")
 }
 
-// Extensions is an array of Extension.
+// Extensions is type for a slice of Extension.
 type Extensions []Extension
 
 // CompareVersions compares 2 versions:

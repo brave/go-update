@@ -11,7 +11,7 @@ func TestContains(t *testing.T) {
 	unknownExtension := extension1
 	unknownExtension.ID = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
-	allExtensions := []Extension{extension1, extension2}
+	allExtensions := Extensions{extension1, extension2}
 	extension, err := Contains(allExtensions, extension1.ID)
 	assert.Nil(t, err)
 	assert.Equal(t, extension1.ID, extension.ID)
@@ -49,7 +49,7 @@ func TestFilterForUpdates(t *testing.T) {
 	darkThemeExtension, err := Contains(OfferedExtensions, "bfdgpgibhagkpdlnjonhkabjoijopoge")
 	assert.Nil(t, err)
 
-	allExtensions := []Extension{lightThemeExtension, OfferedExtensions[1]}
+	allExtensions := Extensions{lightThemeExtension, OfferedExtensions[1]}
 
 	// No updates when nothing to check
 	check := FilterForUpdates(allExtensions, Extensions{})
@@ -57,7 +57,7 @@ func TestFilterForUpdates(t *testing.T) {
 
 	olderExtensionCheck1 := lightThemeExtension
 	olderExtensionCheck1.Version = "0.1.0"
-	outdatedExtensionCheck := []Extension{olderExtensionCheck1}
+	outdatedExtensionCheck := Extensions{olderExtensionCheck1}
 
 	check = FilterForUpdates(allExtensions, outdatedExtensionCheck)
 	assert.Equal(t, 1, len(check))
@@ -78,7 +78,7 @@ func TestFilterForUpdates(t *testing.T) {
 	// 2 outdated extensions both get returned from 1 check
 	olderExtensionCheck2 := darkThemeExtension
 	olderExtensionCheck2.Version = "0.1.0"
-	outdatedExtensionsCheck := []Extension{olderExtensionCheck1, olderExtensionCheck2}
+	outdatedExtensionsCheck := Extensions{olderExtensionCheck1, olderExtensionCheck2}
 	check = FilterForUpdates(allExtensions, outdatedExtensionsCheck)
 	assert.Equal(t, 2, len(check))
 	assert.Equal(t, olderExtensionCheck1.ID, check[0].ID)
