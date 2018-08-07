@@ -4,8 +4,10 @@ package server
 import (
 	"context"
 	"fmt"
+	"github.com/brave-intl/bat-go/middleware"
 	"github.com/brave/go-update/controller"
 	"github.com/brave/go-update/extension"
+	"github.com/getsentry/raven-go"
 	"github.com/go-chi/chi"
 	chiware "github.com/go-chi/chi/middleware"
 	"github.com/pressly/lg"
@@ -30,8 +32,14 @@ func setupRouter(ctx context.Context, logger *logrus.Logger) (context.Context, *
 	r.Use(chiware.RealIP)
 	r.Use(chiware.Heartbeat("/"))
 	r.Use(chiware.Timeout(60 * time.Second))
+	r.Use(middleware.BearerToken)
+	if logger != nil {
+		// Also handles panic recovery
+		r.Use(middleware.RequestLogger(logger))
+	}
 	extensions := extension.OfferedExtensions
 	r.Mount("/extensions", controller.ExtensionsRouter(extensions))
+	r.Get("/metrics", middleware.Metrics())
 	return ctx, r
 }
 
@@ -45,6 +53,7 @@ func StartServer() {
 	srv := http.Server{Addr: port, Handler: chi.ServerBaseContext(serverCtx, r)}
 	err := srv.ListenAndServe()
 	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
 		log.Panic(err)
 	}
 }
