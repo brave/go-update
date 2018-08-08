@@ -7,7 +7,7 @@ import (
 )
 
 // MarshalXML encodes the extension list into response XML
-func (extensions *Extensions) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+func (updateResponse *UpdateResponse) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	type URL struct {
 		XMLName  xml.Name `xml:"url"`
 		Codebase string   `xml:"codebase,attr"`
@@ -51,11 +51,11 @@ func (extensions *Extensions) MarshalXML(e *xml.Encoder, start xml.StartElement)
 	response := Response{}
 	response.Protocol = "3.1"
 	response.Server = "prod"
-	for _, extension := range *extensions {
+	for _, extension := range *updateResponse {
 		app := App{AppID: extension.ID}
 		app.UpdateCheck = UpdateCheck{Status: "ok"}
-		url := "https://s3.amazonaws.com/brave-extensions/release/" + extension.ID + "/" + extension.Title
 		extensionName := "extension_" + strings.Replace(extension.Version, ".", "_", -1) + ".crx"
+		url := "https://s3.amazonaws.com/brave-extensions/release/" + extension.ID + "/" + extensionName
 		app.UpdateCheck.URLs.URLs = append(app.UpdateCheck.URLs.URLs, URL{
 			Codebase: url,
 		})
@@ -75,8 +75,52 @@ func (extensions *Extensions) MarshalXML(e *xml.Encoder, start xml.StartElement)
 	return err
 }
 
+// MarshalXML encodes the extension list into response XML
+func (updateResponse *WebStoreUpdateResponse) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	type UpdateCheck struct {
+		XMLName  xml.Name `xml:"updatecheck"`
+		Status   string   `xml:"status,attr"`
+		Codebase string   `xml:"codebase,attr"`
+		Version  string   `xml:"version,attr"`
+		SHA256   string   `xml:"hash_sha256,attr"`
+	}
+	type App struct {
+		XMLName     xml.Name `xml:"app"`
+		AppID       string   `xml:"appid,attr"`
+		Status      string   `xml:"status,attr"`
+		UpdateCheck UpdateCheck
+	}
+	type GUpdate struct {
+		XMLName  xml.Name `xml:"gupdate"`
+		Protocol string   `xml:"protocol,attr"`
+		Server   string   `xml:"server,attr"`
+		Apps     []App
+	}
+	response := GUpdate{}
+	response.Protocol = "3.1"
+	response.Server = "prod"
+
+	for _, extension := range *updateResponse {
+		extensionName := "extension_" + strings.Replace(extension.Version, ".", "_", -1) + ".crx"
+		app := App{
+			AppID:  extension.ID,
+			Status: "ok",
+			UpdateCheck: UpdateCheck{
+				Status:   "ok",
+				SHA256:   extension.SHA256,
+				Version:  extension.Version,
+				Codebase: "https://s3.amazonaws.com/brave-extensions/release/" + extension.ID + "/" + extensionName,
+			},
+		}
+		response.Apps = append(response.Apps, app)
+	}
+	e.Indent("", "    ")
+	err := e.EncodeElement(response, xml.StartElement{Name: xml.Name{Local: "gupdate"}})
+	return err
+}
+
 // UnmarshalXML decodes the update server request XML data for a list of extensions
-func (extensions *Extensions) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+func (updateRequest *UpdateRequest) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	type UpdateCheck struct {
 		XMLName xml.Name `xml:"updatecheck"`
 	}
@@ -98,9 +142,9 @@ func (extensions *Extensions) UnmarshalXML(d *xml.Decoder, start xml.StartElemen
 		return err
 	}
 
-	*extensions = Extensions{}
+	*updateRequest = UpdateRequest{}
 	for _, app := range request.App {
-		*extensions = append(*extensions, Extension{
+		*updateRequest = append(*updateRequest, Extension{
 			ID:      app.AppID,
 			Version: app.Version,
 		})

@@ -20,6 +20,16 @@ type Extension struct {
 // Extensions is type for a slice of Extension.
 type Extensions []Extension
 
+// UpdateRequest represents an extension XML request.
+type UpdateRequest Extensions
+
+// UpdateResponse represents an extension XML response.
+type UpdateResponse Extensions
+
+// WebStoreUpdateResponse represents a webstore XML response.
+// There is no symmetric WebStoreUpdateRequest becuase the request is URL query parameters.
+type WebStoreUpdateResponse Extensions
+
 // Contains checks if the specified extension ID is contained in the extensions
 func (extensions *Extensions) Contains(extensionID string) (Extension, error) {
 	var foundExtension Extension
@@ -65,9 +75,9 @@ func CompareVersions(version1 string, version2 string) int {
 
 // FilterForUpdates filters `extensions` down to only the extensions that are being checked,
 // and only the ones that we have updates for.
-func (extensions *Extensions) FilterForUpdates(extensionsToCheck Extensions) Extensions {
-	filteredExtensions := Extensions{}
-	for _, extensionBeingChecked := range extensionsToCheck {
+func (extensions *Extensions) FilterForUpdates(updateRequest UpdateRequest) UpdateResponse {
+	filteredExtensions := UpdateResponse{}
+	for _, extensionBeingChecked := range updateRequest {
 		foundExtension, err := extensions.Contains(extensionBeingChecked.ID)
 		if err == nil {
 			if !foundExtension.Blacklisted && CompareVersions(extensionBeingChecked.Version, foundExtension.Version) < 0 {
