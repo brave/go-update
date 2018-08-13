@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"fmt"
 	"github.com/brave/go-update/extension"
 	"github.com/brave/go-update/extension/extensiontest"
@@ -219,6 +220,14 @@ func TestUpdateExtensions(t *testing.T) {
 	requestBody = extensiontest.ExtensionRequestFnFor("aaaaaaaaaaaaaaaaaaaa")("0.0.0")
 	expectedResponse = ""
 	testCall(t, server, http.MethodPost, "", requestBody, http.StatusTemporaryRedirect, expectedResponse)
+
+	// Make sure a huge request body does not crash the server
+	data := make([]byte, 1024*1024*11) // 11 MiB
+	_, err := rand.Read(data)
+	assert.Nil(t, err)
+	requestBody = string(data)
+	expectedResponse = "Request too large"
+	testCall(t, server, http.MethodPost, "", requestBody, http.StatusBadRequest, expectedResponse)
 }
 
 func getQueryParams(extension *extension.Extension) string {

@@ -6,6 +6,7 @@ import (
 	"github.com/brave/go-update/extension"
 	"github.com/go-chi/chi"
 	"github.com/pressly/lg"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -94,9 +95,14 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	body, err := ioutil.ReadAll(r.Body)
+	limit := int64(1024 * 1024 * 10) // 10MiB
+	body, err := ioutil.ReadAll(io.LimitReader(r.Body, limit))
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error reading body: %v", err), http.StatusBadRequest)
+		return
+	}
+	if len(body) == int(limit) {
+		http.Error(w, "Request too large", http.StatusBadRequest)
 		return
 	}
 
