@@ -13,11 +13,11 @@ import (
 	"strings"
 )
 
-var allExtensions extension.Extensions
+var allExtensionsMap = map[string]extension.Extension{}
 
 // ExtensionsRouter is the router for /extensions endpoints
 func ExtensionsRouter(extensions extension.Extensions) chi.Router {
-	allExtensions = extensions
+	allExtensionsMap = extension.LoadExtensionsIntoMap(&extensions)
 	r := chi.NewRouter()
 	r.Post("/", UpdateExtensions)
 	r.Get("/", WebStoreUpdateExtension)
@@ -58,8 +58,8 @@ func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		foundExtension, err := allExtensions.Contains(id)
-		if err != nil && len(xValues) == 1 {
+		foundExtension, ok := allExtensionsMap[id]
+		if !ok && len(xValues) == 1 {
 			http.Redirect(w, r, "https://clients2.google.com/service/update2/crx?"+r.URL.RawQuery+"&braveRedirect=true", http.StatusTemporaryRedirect)
 			return
 		}
@@ -115,15 +115,15 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 	// Special case, if there's only 1 extension in the request and it is not something
 	// we know about, redirect the client to google component update server.
 	if len(updateRequest) == 1 {
-		_, err := allExtensions.Contains(updateRequest[0].ID)
-		if err != nil {
+		_, ok := allExtensionsMap[updateRequest[0].ID]
+		if !ok {
 			http.Redirect(w, r, "https://update.googleapis.com/service/update2?braveRedirect=true", http.StatusTemporaryRedirect)
 			return
 		}
 	}
 	w.Header().Set("content-type", "application/xml")
 	w.WriteHeader(http.StatusOK)
-	updateResponse := allExtensions.FilterForUpdates(updateRequest)
+	updateResponse := updateRequest.FilterForUpdates(&allExtensionsMap)
 	data, err := xml.Marshal(&updateResponse)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error in marshal XML %v", err), http.StatusInternalServerError)

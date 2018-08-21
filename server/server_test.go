@@ -238,6 +238,8 @@ func TestWebStoreUpdateExtension(t *testing.T) {
 	server := httptest.NewServer(handler)
 	defer server.Close()
 
+	allExtensionsMap := extension.LoadExtensionsIntoMap(&extension.OfferedExtensions)
+
 	// Empty query param request, no extensions.
 	requestBody := ""
 	query := ""
@@ -245,9 +247,9 @@ func TestWebStoreUpdateExtension(t *testing.T) {
 	testCall(t, server, http.MethodGet, query, requestBody, http.StatusOK, expectedResponse)
 
 	// Extension that we handle which is outdated should produce a response
-	outdatedLightThemeExtension, err := extension.OfferedExtensions.Contains("ldimlcelhnjgpjjemdjokpgeeikdinbm")
+	outdatedLightThemeExtension, ok := allExtensionsMap["ldimlcelhnjgpjjemdjokpgeeikdinbm"]
 	outdatedLightThemeExtension.Version = "0.0.0"
-	assert.Nil(t, err)
+	assert.True(t, ok)
 	query = "?" + getQueryParams(&outdatedLightThemeExtension)
 	expectedResponse = `<gupdate protocol="3.1" server="prod">
     <app appid="ldimlcelhnjgpjjemdjokpgeeikdinbm" status="ok">
@@ -257,9 +259,9 @@ func TestWebStoreUpdateExtension(t *testing.T) {
 	testCall(t, server, http.MethodGet, query, requestBody, http.StatusOK, expectedResponse)
 
 	// Multiple extensions that we handle which are outdated should produce a response
-	outdatedDarkThemeExtension, err := extension.OfferedExtensions.Contains("bfdgpgibhagkpdlnjonhkabjoijopoge")
+	outdatedDarkThemeExtension, ok := allExtensionsMap["bfdgpgibhagkpdlnjonhkabjoijopoge"]
+	assert.True(t, ok)
 	outdatedDarkThemeExtension.Version = "0.0.0"
-	assert.Nil(t, err)
 	query = "?" + getQueryParams(&outdatedLightThemeExtension) + "&" + getQueryParams(&outdatedDarkThemeExtension)
 	expectedResponse = `<gupdate protocol="3.1" server="prod">
     <app appid="ldimlcelhnjgpjjemdjokpgeeikdinbm" status="ok">
@@ -272,8 +274,8 @@ func TestWebStoreUpdateExtension(t *testing.T) {
 	testCall(t, server, http.MethodGet, query, requestBody, http.StatusOK, expectedResponse)
 
 	// Extension that we handle which is up to date should NOT produce an update but still be successful
-	lightThemeExtension, err := extension.OfferedExtensions.Contains("ldimlcelhnjgpjjemdjokpgeeikdinbm")
-	assert.Nil(t, err)
+	lightThemeExtension, ok := allExtensionsMap["ldimlcelhnjgpjjemdjokpgeeikdinbm"]
+	assert.True(t, ok)
 	query = "?" + getQueryParams(&lightThemeExtension)
 	expectedResponse = `<gupdate protocol="3.1" server="prod"></gupdate>`
 	testCall(t, server, http.MethodGet, query, requestBody, http.StatusOK, expectedResponse)
