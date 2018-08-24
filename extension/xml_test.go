@@ -8,6 +8,7 @@ import (
 )
 
 func TestUpdateResponseMarshalXML(t *testing.T) {
+	allExtensionsMap := LoadExtensionsIntoMap(&OfferedExtensions)
 	// Empty extension list returns a blank XML update
 	updateResponse := UpdateResponse{}
 	xmlData, err := xml.Marshal(&updateResponse)
@@ -15,8 +16,8 @@ func TestUpdateResponseMarshalXML(t *testing.T) {
 	expectedOutput := `<response protocol="3.1" server="prod"></response>`
 	assert.Equal(t, expectedOutput, string(xmlData))
 
-	darkThemeExtension, err := OfferedExtensions.Contains("bfdgpgibhagkpdlnjonhkabjoijopoge")
-	assert.Nil(t, err)
+	darkThemeExtension, ok := allExtensionsMap["bfdgpgibhagkpdlnjonhkabjoijopoge"]
+	assert.True(t, ok)
 
 	// Single extension list returns a single XML update
 	updateResponse = []Extension{darkThemeExtension}
@@ -39,10 +40,10 @@ func TestUpdateResponseMarshalXML(t *testing.T) {
 	assert.Equal(t, expectedOutput, string(xmlData))
 
 	// Multiple extensions returns a multiple extension XML update
-	lightThemeExtension, err := OfferedExtensions.Contains("ldimlcelhnjgpjjemdjokpgeeikdinbm")
-	assert.Nil(t, err)
-	darkThemeExtension, err = OfferedExtensions.Contains("bfdgpgibhagkpdlnjonhkabjoijopoge")
-	assert.Nil(t, err)
+	lightThemeExtension, ok := allExtensionsMap["ldimlcelhnjgpjjemdjokpgeeikdinbm"]
+	assert.True(t, ok)
+	darkThemeExtension, ok = allExtensionsMap["bfdgpgibhagkpdlnjonhkabjoijopoge"]
+	assert.True(t, ok)
 	updateResponse = []Extension{lightThemeExtension, darkThemeExtension}
 	xmlData, err = xml.Marshal(&updateResponse)
 	assert.Nil(t, err)
@@ -130,13 +131,14 @@ func TestUpdateRequestUnmarshalXML(t *testing.T) {
 func TestWebStoreUpdateResponseMarshalXML(t *testing.T) {
 	// No extensions returns blank update response
 	updateResponse := WebStoreUpdateResponse{}
+	allExtensionsMap := LoadExtensionsIntoMap(&OfferedExtensions)
 	xmlData, err := xml.Marshal(&updateResponse)
 	assert.Nil(t, err)
 	expectedOutput := `<gupdate protocol="3.1" server="prod"></gupdate>`
 	assert.Equal(t, expectedOutput, string(xmlData))
 
-	darkThemeExtension, err := OfferedExtensions.Contains("bfdgpgibhagkpdlnjonhkabjoijopoge")
-	assert.Nil(t, err)
+	darkThemeExtension, ok := allExtensionsMap["bfdgpgibhagkpdlnjonhkabjoijopoge"]
+	assert.True(t, ok)
 
 	// Single extension list returns a single XML update
 	updateResponse = WebStoreUpdateResponse{darkThemeExtension}
@@ -150,10 +152,10 @@ func TestWebStoreUpdateResponseMarshalXML(t *testing.T) {
 	assert.Equal(t, expectedOutput, string(xmlData))
 
 	// Multiple extensions returns a multiple extension XML webstore update
-	lightThemeExtension, err := OfferedExtensions.Contains("ldimlcelhnjgpjjemdjokpgeeikdinbm")
-	assert.Nil(t, err)
-	darkThemeExtension, err = OfferedExtensions.Contains("bfdgpgibhagkpdlnjonhkabjoijopoge")
-	assert.Nil(t, err)
+	lightThemeExtension, ok := allExtensionsMap["ldimlcelhnjgpjjemdjokpgeeikdinbm"]
+	assert.True(t, ok)
+	darkThemeExtension, ok = allExtensionsMap["bfdgpgibhagkpdlnjonhkabjoijopoge"]
+	assert.True(t, ok)
 	updateResponse = WebStoreUpdateResponse{lightThemeExtension, darkThemeExtension}
 	xmlData, err = xml.Marshal(&updateResponse)
 	assert.Nil(t, err)
