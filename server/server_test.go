@@ -373,3 +373,32 @@ func TestWebStoreUpdateExtension(t *testing.T) {
 	expectedResponse = `<gupdate protocol="3.1" server="prod"></gupdate>`
 	testCall(t, server, http.MethodGet, query, requestBody, http.StatusOK, expectedResponse)
 }
+
+func TestPrintExtensions(t *testing.T) {
+	server := httptest.NewServer(handler)
+	defer server.Close()
+
+	testURL := fmt.Sprintf("%s/extensions/test", server.URL)
+	req, err := http.NewRequest(http.MethodGet, testURL, bytes.NewBuffer([]byte("")))
+	assert.Nil(t, err)
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	resp, err := client.Do(req)
+	assert.Nil(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	actual, err := ioutil.ReadAll(resp.Body)
+	assert.Nil(t, err)
+	assert.True(t, strings.Contains(string(actual), "ldimlcelhnjgpjjemdjokpgeeikdinbm"))
+
+	// Clear out the extensions map.
+	controller.AllExtensionsMap = map[string]extension.Extension{}
+	resp, err = client.Do(req)
+	assert.Nil(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	actual, err = ioutil.ReadAll(resp.Body)
+	assert.Nil(t, err)
+	assert.Equal(t, string(actual), "No extensions found, do you have the AWS config correct for DynamoDB?")
+}

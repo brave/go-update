@@ -86,7 +86,32 @@ func ExtensionsRouter(extensions extension.Extensions) chi.Router {
 	r := chi.NewRouter()
 	r.Post("/", UpdateExtensions)
 	r.Get("/", WebStoreUpdateExtension)
+	r.Get("/test", PrintExtensions)
 	return r
+}
+
+// PrintExtensions is just used for troubleshooting to see what the internal list of extensions DB holds
+// It simply prints out text for all extensions when visiting /extensions/test.
+// Since our internally maintained list is always small by design, this is not a big deal for performance.
+func PrintExtensions(w http.ResponseWriter, r *http.Request) {
+	log := lg.Log(r.Context())
+	w.Header().Set("content-type", "text/plain")
+	w.WriteHeader(http.StatusOK)
+	if len(AllExtensionsMap) == 0 {
+		_, err := w.Write([]byte("No extensions found, do you have the AWS config correct for DynamoDB?"))
+		if err != nil {
+			log.Errorf("Error writing response for printing extensions: %v", err)
+		}
+		return
+	}
+	for key, val := range AllExtensionsMap {
+		s := fmt.Sprintf("%s=%+v\n\n", key, val)
+		_, err := w.Write([]byte(s))
+		if err != nil {
+			log.Errorf("Error writing response for printing extensions: %v", err)
+			break
+		}
+	}
 }
 
 // WebStoreUpdateExtension is the handler for updating extensions made via the GET HTTP methhod.
