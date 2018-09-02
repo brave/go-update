@@ -25,3 +25,7 @@
 [[constraint]]
   branch = "master"
   name = "github.com/getsentry/raven-go"
+
+[[constraint]]
+  name = "github.com/aws/aws-sdk-go"
+  version = "1.15.26"

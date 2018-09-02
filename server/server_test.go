@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	"github.com/brave/go-update/controller"
 	"github.com/brave/go-update/extension"
 	"github.com/brave/go-update/extension/extensiontest"
 	"github.com/go-chi/chi"
@@ -14,12 +15,46 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
+var newExtension1 = extension.Extension{}
+var newExtension2 = extension.Extension{}
 var handler http.Handler
 
 func init() {
+	newExtensionID1 := "newext1eplbcioakkpcpgfkobkghlhen"
+	newExtension1 = extension.Extension{
+		ID:          newExtensionID1,
+		Blacklisted: false,
+		SHA256:      "4c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618",
+		Title:       "test",
+		Version:     "1.0.0",
+	}
+	newExtensionID2 := "newext2eplbcioakkpcpgfkobkghlhen"
+	newExtension2 = extension.Extension{
+		ID:          newExtensionID2,
+		Blacklisted: false,
+		SHA256:      "3c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618",
+		Title:       "test",
+		Version:     "1.0.0",
+	}
+
+	// Setup refreshing extensions with a new extension that we'll check for later
+	// We maintain a count to make sure the refresh function is called more than just
+	// the first time.
+	count := 0
+	controller.AllExtensionsMap = extension.LoadExtensionsIntoMap(&extension.OfferedExtensions)
+	controller.ExtensionUpdaterTimeout = time.Millisecond * 1
 	handler = chi.ServerBaseContext(setupRouter(setupLogger(context.Background())))
+	controller.RefreshExtensionsTicker(func() {
+		count++
+		if count == 1 {
+			controller.AllExtensionsMap[newExtensionID1] = newExtension1
+		} else if count == 2 {
+			controller.AllExtensionsMap[newExtensionID2] = newExtension2
+		}
+	})
 }
 
 func TestPing(t *testing.T) {
@@ -228,6 +263,42 @@ func TestUpdateExtensions(t *testing.T) {
 	requestBody = string(data)
 	expectedResponse = "Request too large"
 	testCall(t, server, http.MethodPost, "", requestBody, http.StatusBadRequest, expectedResponse)
+
+	// Single new extension out of date that was added in by the refresh timer
+	requestBody = extensiontest.ExtensionRequestFnFor("newext1eplbcioakkpcpgfkobkghlhen")("0.0.0")
+	expectedResponse = `<response protocol="3.1" server="prod">
+    <app appid="newext1eplbcioakkpcpgfkobkghlhen">
+        <updatecheck status="ok">
+            <urls>
+                <url codebase="https://s3.amazonaws.com/brave-extensions/release/newext1eplbcioakkpcpgfkobkghlhen/extension_1_0_0.crx"></url>
+            </urls>
+            <manifest version="1.0.0">
+                <packages>
+                    <package name="extension_1_0_0.crx" hash_sha256="4c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618" required="true"></package>
+                </packages>
+            </manifest>
+        </updatecheck>
+    </app>
+</response>`
+	testCall(t, server, http.MethodPost, "", requestBody, http.StatusOK, expectedResponse)
+
+	// Single second new extension out of date that was added in by the refresh timer
+	requestBody = extensiontest.ExtensionRequestFnFor("newext2eplbcioakkpcpgfkobkghlhen")("0.0.0")
+	expectedResponse = `<response protocol="3.1" server="prod">
+    <app appid="newext2eplbcioakkpcpgfkobkghlhen">
+        <updatecheck status="ok">
+            <urls>
+                <url codebase="https://s3.amazonaws.com/brave-extensions/release/newext2eplbcioakkpcpgfkobkghlhen/extension_1_0_0.crx"></url>
+            </urls>
+            <manifest version="1.0.0">
+                <packages>
+                    <package name="extension_1_0_0.crx" hash_sha256="3c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618" required="true"></package>
+                </packages>
+            </manifest>
+        </updatecheck>
+    </app>
+</response>`
+	testCall(t, server, http.MethodPost, "", requestBody, http.StatusOK, expectedResponse)
 }
 
 func getQueryParams(extension *extension.Extension) string {
