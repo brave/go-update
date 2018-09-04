@@ -55,7 +55,7 @@ func (updateResponse *UpdateResponse) MarshalXML(e *xml.Encoder, start xml.Start
 		app := App{AppID: extension.ID}
 		app.UpdateCheck = UpdateCheck{Status: "ok"}
 		extensionName := "extension_" + strings.Replace(extension.Version, ".", "_", -1) + ".crx"
-		url := "https://s3.amazonaws.com/brave-extensions/release/" + extension.ID + "/" + extensionName
+		url := "https://brave-core-ext.s3.brave.com/release/" + extension.ID + "/" + extensionName
 		app.UpdateCheck.URLs.URLs = append(app.UpdateCheck.URLs.URLs, URL{
 			Codebase: url,
 		})
@@ -109,7 +109,7 @@ func (updateResponse *WebStoreUpdateResponse) MarshalXML(e *xml.Encoder, start x
 				Status:   "ok",
 				SHA256:   extension.SHA256,
 				Version:  extension.Version,
-				Codebase: "https://s3.amazonaws.com/brave-extensions/release/" + extension.ID + "/" + extensionName,
+				Codebase: "https://brave-core-ext.s3.brave.com/release/" + extension.ID + "/" + extensionName,
 			},
 		}
 		response.Apps = append(response.Apps, app)
