@@ -3,25 +3,115 @@ package controller
 import (
 	"encoding/xml"
 	"fmt"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/brave/go-update/extension"
+	"github.com/getsentry/raven-go"
 	"github.com/go-chi/chi"
 	"github.com/pressly/lg"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
-var allExtensions extension.Extensions
+// AllExtensionsMap holds a mapping of extension ID to extension object.
+// This list for tests is populated by extensions.OfferedExtensions.
+// For normal operaitons of this server it is obtained from the AWS config
+// of the host machine for DynamoDB.
+var AllExtensionsMap = map[string]extension.Extension{}
+
+// ExtensionUpdaterTimeout is the amount of time to wait between getting new updates from DynamoDB for the list of extensions
+var ExtensionUpdaterTimeout = time.Minute * 10
+
+func initExtensionUpdatesFromDynamoDB() {
+	sess, err := session.NewSession(&aws.Config{
+		Region: aws.String("us-east-2")},
+	)
+
+	if err != nil {
+		log.Printf("failed to connect to new session %v\n", err)
+		raven.CaptureError(err, nil)
+		return
+	}
+
+	// Create DynamoDB client
+	svc := dynamodb.New(sess)
+	params := &dynamodb.ScanInput{
+		TableName: aws.String("Extensions"),
+	}
+
+	// For most use cases, you probably wouldn't want to scan all entries; however,
+	// for our use case we have a read only small number of items, that are infrequently
+	// updated, usually less than daily by an external tool, and very often queried.
+	result, err := svc.Scan(params)
+	if err != nil {
+		log.Printf("failed to make Scan API call %v\n", err)
+		raven.CaptureError(err, nil)
+		return
+	}
+
+	// Update the extensions map
+	for _, item := range result.Items {
+		id := *item["ID"].S
+		AllExtensionsMap[id] = extension.Extension{
+			ID:          id,
+			Blacklisted: *item["Disabled"].BOOL,
+			SHA256:      *item["SHA256"].S,
+			Title:       *item["Title"].S,
+			Version:     *item["Version"].S,
+		}
+	}
+}
+
+// RefreshExtensionsTicker updates the list of extensions by
+// calling the specified extensionMapUpdater function
+func RefreshExtensionsTicker(extensionMapUpdater func()) {
+	extensionMapUpdater()
+	ticker := time.NewTicker(ExtensionUpdaterTimeout)
+	go func() {
+		for range ticker.C {
+			extensionMapUpdater()
+		}
+	}()
+}
 
 // ExtensionsRouter is the router for /extensions endpoints
 func ExtensionsRouter(extensions extension.Extensions) chi.Router {
-	allExtensions = extensions
+	RefreshExtensionsTicker(initExtensionUpdatesFromDynamoDB)
 	r := chi.NewRouter()
 	r.Post("/", UpdateExtensions)
 	r.Get("/", WebStoreUpdateExtension)
+	r.Get("/test", PrintExtensions)
 	return r
+}
+
+// PrintExtensions is just used for troubleshooting to see what the internal list of extensions DB holds
+// It simply prints out text for all extensions when visiting /extensions/test.
+// Since our internally maintained list is always small by design, this is not a big deal for performance.
+func PrintExtensions(w http.ResponseWriter, r *http.Request) {
+	log := lg.Log(r.Context())
+	w.Header().Set("content-type", "text/plain")
+	w.WriteHeader(http.StatusOK)
+	if len(AllExtensionsMap) == 0 {
+		_, err := w.Write([]byte("No extensions found, do you have the AWS config correct for DynamoDB?"))
+		if err != nil {
+			log.Errorf("Error writing response for printing extensions: %v", err)
+		}
+		return
+	}
+	for key, val := range AllExtensionsMap {
+		s := fmt.Sprintf("%s=%+v\n\n", key, val)
+		_, err := w.Write([]byte(s))
+		if err != nil {
+			log.Errorf("Error writing response for printing extensions: %v", err)
+			break
+		}
+	}
 }
 
 // WebStoreUpdateExtension is the handler for updating extensions made via the GET HTTP methhod.
@@ -58,8 +148,8 @@ func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		foundExtension, err := allExtensions.Contains(id)
-		if err != nil && len(xValues) == 1 {
+		foundExtension, ok := AllExtensionsMap[id]
+		if !ok && len(xValues) == 1 {
 			http.Redirect(w, r, "https://clients2.google.com/service/update2/crx?"+r.URL.RawQuery+"&braveRedirect=true", http.StatusTemporaryRedirect)
 			return
 		}
@@ -115,15 +205,15 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 	// Special case, if there's only 1 extension in the request and it is not something
 	// we know about, redirect the client to google component update server.
 	if len(updateRequest) == 1 {
-		_, err := allExtensions.Contains(updateRequest[0].ID)
-		if err != nil {
+		_, ok := AllExtensionsMap[updateRequest[0].ID]
+		if !ok {
 			http.Redirect(w, r, "https://update.googleapis.com/service/update2?braveRedirect=true", http.StatusTemporaryRedirect)
 			return
 		}
 	}
 	w.Header().Set("content-type", "application/xml")
 	w.WriteHeader(http.StatusOK)
-	updateResponse := allExtensions.FilterForUpdates(updateRequest)
+	updateResponse := updateRequest.FilterForUpdates(&AllExtensionsMap)
 	data, err := xml.Marshal(&updateResponse)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error in marshal XML %v", err), http.StatusInternalServerError)

@@ -1,7 +1,6 @@
 package extension
 
 import (
-	"errors"
 	"strconv"
 	"strings"
 )
@@ -29,18 +28,6 @@ type UpdateResponse Extensions
 // WebStoreUpdateResponse represents a webstore XML response.
 // There is no symmetric WebStoreUpdateRequest becuase the request is URL query parameters.
 type WebStoreUpdateResponse Extensions
-
-// Contains checks if the specified extension ID is contained in the extensions
-func (extensions *Extensions) Contains(extensionID string) (Extension, error) {
-	var foundExtension Extension
-	for _, extension := range *extensions {
-		if extension.ID == extensionID {
-			foundExtension = extension
-			return foundExtension, nil
-		}
-	}
-	return foundExtension, errors.New("no extensions found")
-}
 
 // CompareVersions compares 2 versions:
 // returns 0 if both versions are the same.
@@ -73,13 +60,22 @@ func CompareVersions(version1 string, version2 string) int {
 	return 0
 }
 
+// LoadExtensionsIntoMap converts a slice of extensions into a map from ID to extension.Extension
+func LoadExtensionsIntoMap(extensions *Extensions) map[string]Extension {
+	m := make(map[string]Extension)
+	for _, extension := range *extensions {
+		m[extension.ID] = extension
+	}
+	return m
+}
+
 // FilterForUpdates filters `extensions` down to only the extensions that are being checked,
 // and only the ones that we have updates for.
-func (extensions *Extensions) FilterForUpdates(updateRequest UpdateRequest) UpdateResponse {
+func (updateRequest *UpdateRequest) FilterForUpdates(allExtensionsMap *map[string]Extension) UpdateResponse {
 	filteredExtensions := UpdateResponse{}
-	for _, extensionBeingChecked := range updateRequest {
-		foundExtension, err := extensions.Contains(extensionBeingChecked.ID)
-		if err == nil {
+	for _, extensionBeingChecked := range *updateRequest {
+		foundExtension, ok := (*allExtensionsMap)[extensionBeingChecked.ID]
+		if ok {
 			if !foundExtension.Blacklisted && CompareVersions(extensionBeingChecked.Version, foundExtension.Version) < 0 {
 				filteredExtensions = append(filteredExtensions, foundExtension)
 			}

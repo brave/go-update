@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	"github.com/brave/go-update/controller"
 	"github.com/brave/go-update/extension"
 	"github.com/brave/go-update/extension/extensiontest"
 	"github.com/go-chi/chi"
@@ -14,12 +15,46 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
+var newExtension1 = extension.Extension{}
+var newExtension2 = extension.Extension{}
 var handler http.Handler
 
 func init() {
+	newExtensionID1 := "newext1eplbcioakkpcpgfkobkghlhen"
+	newExtension1 = extension.Extension{
+		ID:          newExtensionID1,
+		Blacklisted: false,
+		SHA256:      "4c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618",
+		Title:       "test",
+		Version:     "1.0.0",
+	}
+	newExtensionID2 := "newext2eplbcioakkpcpgfkobkghlhen"
+	newExtension2 = extension.Extension{
+		ID:          newExtensionID2,
+		Blacklisted: false,
+		SHA256:      "3c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618",
+		Title:       "test",
+		Version:     "1.0.0",
+	}
+
+	// Setup refreshing extensions with a new extension that we'll check for later
+	// We maintain a count to make sure the refresh function is called more than just
+	// the first time.
+	count := 0
+	controller.AllExtensionsMap = extension.LoadExtensionsIntoMap(&extension.OfferedExtensions)
+	controller.ExtensionUpdaterTimeout = time.Millisecond * 1
 	handler = chi.ServerBaseContext(setupRouter(setupLogger(context.Background())))
+	controller.RefreshExtensionsTicker(func() {
+		count++
+		if count == 1 {
+			controller.AllExtensionsMap[newExtensionID1] = newExtension1
+		} else if count == 2 {
+			controller.AllExtensionsMap[newExtensionID2] = newExtension2
+		}
+	})
 }
 
 func TestPing(t *testing.T) {
@@ -87,7 +122,7 @@ func TestUpdateExtensions(t *testing.T) {
 		`<?xml version="1.0" encoding="UTF-8"?>
 		<request protocol="2.0" version="chrome-53.0.2785.116" prodversion="53.0.2785.116" requestid="{b4f77b70-af29-462b-a637-8a3e4be5ecd9}" lang="" updaterchannel="stable" prodchannel="stable" os="mac" arch="x64" nacl_arch="x86-64">
 			<app appid="aomjjhallfgjeglblehebfpbcfeobpgk">
-				<updatecheck codebase="https://s3.amazonaws.com/brave-extensions/release/aomjjhallfgjeglblehebfpbcfeobpgk/extension_4_5_9_90.crx" version="4.5.9.90"/>
+				<updatecheck codebase="https://brave-core-ext.s3.brave.com/release/aomjjhallfgjeglblehebfpbcfeobpgk/extension_4_5_9_90.crx" version="4.5.9.90"/>
 			</app>
 		</request>`
 	expectedResponse = "Error reading body request version: 2.0 not supported"
@@ -121,7 +156,7 @@ func TestUpdateExtensions(t *testing.T) {
     <app appid="ldimlcelhnjgpjjemdjokpgeeikdinbm">
         <updatecheck status="ok">
             <urls>
-                <url codebase="https://s3.amazonaws.com/brave-extensions/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"></url>
+                <url codebase="https://brave-core-ext.s3.brave.com/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"></url>
             </urls>
             <manifest version="1.0.0">
                 <packages>
@@ -156,7 +191,7 @@ func TestUpdateExtensions(t *testing.T) {
     <app appid="ldimlcelhnjgpjjemdjokpgeeikdinbm">
         <updatecheck status="ok">
             <urls>
-                <url codebase="https://s3.amazonaws.com/brave-extensions/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"></url>
+                <url codebase="https://brave-core-ext.s3.brave.com/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"></url>
             </urls>
             <manifest version="1.0.0">
                 <packages>
@@ -174,7 +209,7 @@ func TestUpdateExtensions(t *testing.T) {
     <app appid="bfdgpgibhagkpdlnjonhkabjoijopoge">
         <updatecheck status="ok">
             <urls>
-                <url codebase="https://s3.amazonaws.com/brave-extensions/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx"></url>
+                <url codebase="https://brave-core-ext.s3.brave.com/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx"></url>
             </urls>
             <manifest version="1.0.0">
                 <packages>
@@ -192,7 +227,7 @@ func TestUpdateExtensions(t *testing.T) {
     <app appid="ldimlcelhnjgpjjemdjokpgeeikdinbm">
         <updatecheck status="ok">
             <urls>
-                <url codebase="https://s3.amazonaws.com/brave-extensions/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"></url>
+                <url codebase="https://brave-core-ext.s3.brave.com/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"></url>
             </urls>
             <manifest version="1.0.0">
                 <packages>
@@ -204,7 +239,7 @@ func TestUpdateExtensions(t *testing.T) {
     <app appid="bfdgpgibhagkpdlnjonhkabjoijopoge">
         <updatecheck status="ok">
             <urls>
-                <url codebase="https://s3.amazonaws.com/brave-extensions/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx"></url>
+                <url codebase="https://brave-core-ext.s3.brave.com/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx"></url>
             </urls>
             <manifest version="1.0.0">
                 <packages>
@@ -228,6 +263,42 @@ func TestUpdateExtensions(t *testing.T) {
 	requestBody = string(data)
 	expectedResponse = "Request too large"
 	testCall(t, server, http.MethodPost, "", requestBody, http.StatusBadRequest, expectedResponse)
+
+	// Single new extension out of date that was added in by the refresh timer
+	requestBody = extensiontest.ExtensionRequestFnFor("newext1eplbcioakkpcpgfkobkghlhen")("0.0.0")
+	expectedResponse = `<response protocol="3.1" server="prod">
+    <app appid="newext1eplbcioakkpcpgfkobkghlhen">
+        <updatecheck status="ok">
+            <urls>
+                <url codebase="https://brave-core-ext.s3.brave.com/release/newext1eplbcioakkpcpgfkobkghlhen/extension_1_0_0.crx"></url>
+            </urls>
+            <manifest version="1.0.0">
+                <packages>
+                    <package name="extension_1_0_0.crx" hash_sha256="4c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618" required="true"></package>
+                </packages>
+            </manifest>
+        </updatecheck>
+    </app>
+</response>`
+	testCall(t, server, http.MethodPost, "", requestBody, http.StatusOK, expectedResponse)
+
+	// Single second new extension out of date that was added in by the refresh timer
+	requestBody = extensiontest.ExtensionRequestFnFor("newext2eplbcioakkpcpgfkobkghlhen")("0.0.0")
+	expectedResponse = `<response protocol="3.1" server="prod">
+    <app appid="newext2eplbcioakkpcpgfkobkghlhen">
+        <updatecheck status="ok">
+            <urls>
+                <url codebase="https://brave-core-ext.s3.brave.com/release/newext2eplbcioakkpcpgfkobkghlhen/extension_1_0_0.crx"></url>
+            </urls>
+            <manifest version="1.0.0">
+                <packages>
+                    <package name="extension_1_0_0.crx" hash_sha256="3c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618" required="true"></package>
+                </packages>
+            </manifest>
+        </updatecheck>
+    </app>
+</response>`
+	testCall(t, server, http.MethodPost, "", requestBody, http.StatusOK, expectedResponse)
 }
 
 func getQueryParams(extension *extension.Extension) string {
@@ -238,6 +309,8 @@ func TestWebStoreUpdateExtension(t *testing.T) {
 	server := httptest.NewServer(handler)
 	defer server.Close()
 
+	allExtensionsMap := extension.LoadExtensionsIntoMap(&extension.OfferedExtensions)
+
 	// Empty query param request, no extensions.
 	requestBody := ""
 	query := ""
@@ -245,35 +318,35 @@ func TestWebStoreUpdateExtension(t *testing.T) {
 	testCall(t, server, http.MethodGet, query, requestBody, http.StatusOK, expectedResponse)
 
 	// Extension that we handle which is outdated should produce a response
-	outdatedLightThemeExtension, err := extension.OfferedExtensions.Contains("ldimlcelhnjgpjjemdjokpgeeikdinbm")
+	outdatedLightThemeExtension, ok := allExtensionsMap["ldimlcelhnjgpjjemdjokpgeeikdinbm"]
 	outdatedLightThemeExtension.Version = "0.0.0"
-	assert.Nil(t, err)
+	assert.True(t, ok)
 	query = "?" + getQueryParams(&outdatedLightThemeExtension)
 	expectedResponse = `<gupdate protocol="3.1" server="prod">
     <app appid="ldimlcelhnjgpjjemdjokpgeeikdinbm" status="ok">
-        <updatecheck status="ok" codebase="https://s3.amazonaws.com/brave-extensions/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx" version="1.0.0" hash_sha256="1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618"></updatecheck>
+        <updatecheck status="ok" codebase="https://brave-core-ext.s3.brave.com/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx" version="1.0.0" hash_sha256="1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618"></updatecheck>
     </app>
 </gupdate>`
 	testCall(t, server, http.MethodGet, query, requestBody, http.StatusOK, expectedResponse)
 
 	// Multiple extensions that we handle which are outdated should produce a response
-	outdatedDarkThemeExtension, err := extension.OfferedExtensions.Contains("bfdgpgibhagkpdlnjonhkabjoijopoge")
+	outdatedDarkThemeExtension, ok := allExtensionsMap["bfdgpgibhagkpdlnjonhkabjoijopoge"]
+	assert.True(t, ok)
 	outdatedDarkThemeExtension.Version = "0.0.0"
-	assert.Nil(t, err)
 	query = "?" + getQueryParams(&outdatedLightThemeExtension) + "&" + getQueryParams(&outdatedDarkThemeExtension)
 	expectedResponse = `<gupdate protocol="3.1" server="prod">
     <app appid="ldimlcelhnjgpjjemdjokpgeeikdinbm" status="ok">
-        <updatecheck status="ok" codebase="https://s3.amazonaws.com/brave-extensions/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx" version="1.0.0" hash_sha256="1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618"></updatecheck>
+        <updatecheck status="ok" codebase="https://brave-core-ext.s3.brave.com/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx" version="1.0.0" hash_sha256="1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618"></updatecheck>
     </app>
     <app appid="bfdgpgibhagkpdlnjonhkabjoijopoge" status="ok">
-        <updatecheck status="ok" codebase="https://s3.amazonaws.com/brave-extensions/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx" version="1.0.0" hash_sha256="ae517d6273a4fc126961cb026e02946db4f9dbb58e3d9bc29f5e1270e3ce9834"></updatecheck>
+        <updatecheck status="ok" codebase="https://brave-core-ext.s3.brave.com/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx" version="1.0.0" hash_sha256="ae517d6273a4fc126961cb026e02946db4f9dbb58e3d9bc29f5e1270e3ce9834"></updatecheck>
     </app>
 </gupdate>`
 	testCall(t, server, http.MethodGet, query, requestBody, http.StatusOK, expectedResponse)
 
 	// Extension that we handle which is up to date should NOT produce an update but still be successful
-	lightThemeExtension, err := extension.OfferedExtensions.Contains("ldimlcelhnjgpjjemdjokpgeeikdinbm")
-	assert.Nil(t, err)
+	lightThemeExtension, ok := allExtensionsMap["ldimlcelhnjgpjjemdjokpgeeikdinbm"]
+	assert.True(t, ok)
 	query = "?" + getQueryParams(&lightThemeExtension)
 	expectedResponse = `<gupdate protocol="3.1" server="prod"></gupdate>`
 	testCall(t, server, http.MethodGet, query, requestBody, http.StatusOK, expectedResponse)
@@ -299,4 +372,33 @@ func TestWebStoreUpdateExtension(t *testing.T) {
 	query = "?" + getQueryParams(&unknownExtension) + "&" + getQueryParams(&unknownExtension2)
 	expectedResponse = `<gupdate protocol="3.1" server="prod"></gupdate>`
 	testCall(t, server, http.MethodGet, query, requestBody, http.StatusOK, expectedResponse)
+}
+
+func TestPrintExtensions(t *testing.T) {
+	server := httptest.NewServer(handler)
+	defer server.Close()
+
+	testURL := fmt.Sprintf("%s/extensions/test", server.URL)
+	req, err := http.NewRequest(http.MethodGet, testURL, bytes.NewBuffer([]byte("")))
+	assert.Nil(t, err)
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	resp, err := client.Do(req)
+	assert.Nil(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	actual, err := ioutil.ReadAll(resp.Body)
+	assert.Nil(t, err)
+	assert.True(t, strings.Contains(string(actual), "ldimlcelhnjgpjjemdjokpgeeikdinbm"))
+
+	// Clear out the extensions map.
+	controller.AllExtensionsMap = map[string]extension.Extension{}
+	resp, err = client.Do(req)
+	assert.Nil(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	actual, err = ioutil.ReadAll(resp.Body)
+	assert.Nil(t, err)
+	assert.Equal(t, string(actual), "No extensions found, do you have the AWS config correct for DynamoDB?")
 }

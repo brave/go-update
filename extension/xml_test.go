@@ -8,6 +8,7 @@ import (
 )
 
 func TestUpdateResponseMarshalXML(t *testing.T) {
+	allExtensionsMap := LoadExtensionsIntoMap(&OfferedExtensions)
 	// Empty extension list returns a blank XML update
 	updateResponse := UpdateResponse{}
 	xmlData, err := xml.Marshal(&updateResponse)
@@ -15,8 +16,8 @@ func TestUpdateResponseMarshalXML(t *testing.T) {
 	expectedOutput := `<response protocol="3.1" server="prod"></response>`
 	assert.Equal(t, expectedOutput, string(xmlData))
 
-	darkThemeExtension, err := OfferedExtensions.Contains("bfdgpgibhagkpdlnjonhkabjoijopoge")
-	assert.Nil(t, err)
+	darkThemeExtension, ok := allExtensionsMap["bfdgpgibhagkpdlnjonhkabjoijopoge"]
+	assert.True(t, ok)
 
 	// Single extension list returns a single XML update
 	updateResponse = []Extension{darkThemeExtension}
@@ -26,7 +27,7 @@ func TestUpdateResponseMarshalXML(t *testing.T) {
     <app appid="bfdgpgibhagkpdlnjonhkabjoijopoge">
         <updatecheck status="ok">
             <urls>
-                <url codebase="https://s3.amazonaws.com/brave-extensions/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx"></url>
+                <url codebase="https://brave-core-ext.s3.brave.com/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx"></url>
             </urls>
             <manifest version="1.0.0">
                 <packages>
@@ -39,10 +40,10 @@ func TestUpdateResponseMarshalXML(t *testing.T) {
 	assert.Equal(t, expectedOutput, string(xmlData))
 
 	// Multiple extensions returns a multiple extension XML update
-	lightThemeExtension, err := OfferedExtensions.Contains("ldimlcelhnjgpjjemdjokpgeeikdinbm")
-	assert.Nil(t, err)
-	darkThemeExtension, err = OfferedExtensions.Contains("bfdgpgibhagkpdlnjonhkabjoijopoge")
-	assert.Nil(t, err)
+	lightThemeExtension, ok := allExtensionsMap["ldimlcelhnjgpjjemdjokpgeeikdinbm"]
+	assert.True(t, ok)
+	darkThemeExtension, ok = allExtensionsMap["bfdgpgibhagkpdlnjonhkabjoijopoge"]
+	assert.True(t, ok)
 	updateResponse = []Extension{lightThemeExtension, darkThemeExtension}
 	xmlData, err = xml.Marshal(&updateResponse)
 	assert.Nil(t, err)
@@ -50,7 +51,7 @@ func TestUpdateResponseMarshalXML(t *testing.T) {
     <app appid="ldimlcelhnjgpjjemdjokpgeeikdinbm">
         <updatecheck status="ok">
             <urls>
-                <url codebase="https://s3.amazonaws.com/brave-extensions/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"></url>
+                <url codebase="https://brave-core-ext.s3.brave.com/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"></url>
             </urls>
             <manifest version="1.0.0">
                 <packages>
@@ -62,7 +63,7 @@ func TestUpdateResponseMarshalXML(t *testing.T) {
     <app appid="bfdgpgibhagkpdlnjonhkabjoijopoge">
         <updatecheck status="ok">
             <urls>
-                <url codebase="https://s3.amazonaws.com/brave-extensions/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx"></url>
+                <url codebase="https://brave-core-ext.s3.brave.com/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx"></url>
             </urls>
             <manifest version="1.0.0">
                 <packages>
@@ -130,13 +131,14 @@ func TestUpdateRequestUnmarshalXML(t *testing.T) {
 func TestWebStoreUpdateResponseMarshalXML(t *testing.T) {
 	// No extensions returns blank update response
 	updateResponse := WebStoreUpdateResponse{}
+	allExtensionsMap := LoadExtensionsIntoMap(&OfferedExtensions)
 	xmlData, err := xml.Marshal(&updateResponse)
 	assert.Nil(t, err)
 	expectedOutput := `<gupdate protocol="3.1" server="prod"></gupdate>`
 	assert.Equal(t, expectedOutput, string(xmlData))
 
-	darkThemeExtension, err := OfferedExtensions.Contains("bfdgpgibhagkpdlnjonhkabjoijopoge")
-	assert.Nil(t, err)
+	darkThemeExtension, ok := allExtensionsMap["bfdgpgibhagkpdlnjonhkabjoijopoge"]
+	assert.True(t, ok)
 
 	// Single extension list returns a single XML update
 	updateResponse = WebStoreUpdateResponse{darkThemeExtension}
@@ -144,25 +146,25 @@ func TestWebStoreUpdateResponseMarshalXML(t *testing.T) {
 	assert.Nil(t, err)
 	expectedOutput = `<gupdate protocol="3.1" server="prod">
     <app appid="bfdgpgibhagkpdlnjonhkabjoijopoge" status="ok">
-        <updatecheck status="ok" codebase="https://s3.amazonaws.com/brave-extensions/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx" version="1.0.0" hash_sha256="ae517d6273a4fc126961cb026e02946db4f9dbb58e3d9bc29f5e1270e3ce9834"></updatecheck>
+        <updatecheck status="ok" codebase="https://brave-core-ext.s3.brave.com/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx" version="1.0.0" hash_sha256="ae517d6273a4fc126961cb026e02946db4f9dbb58e3d9bc29f5e1270e3ce9834"></updatecheck>
     </app>
 </gupdate>`
 	assert.Equal(t, expectedOutput, string(xmlData))
 
 	// Multiple extensions returns a multiple extension XML webstore update
-	lightThemeExtension, err := OfferedExtensions.Contains("ldimlcelhnjgpjjemdjokpgeeikdinbm")
-	assert.Nil(t, err)
-	darkThemeExtension, err = OfferedExtensions.Contains("bfdgpgibhagkpdlnjonhkabjoijopoge")
-	assert.Nil(t, err)
+	lightThemeExtension, ok := allExtensionsMap["ldimlcelhnjgpjjemdjokpgeeikdinbm"]
+	assert.True(t, ok)
+	darkThemeExtension, ok = allExtensionsMap["bfdgpgibhagkpdlnjonhkabjoijopoge"]
+	assert.True(t, ok)
 	updateResponse = WebStoreUpdateResponse{lightThemeExtension, darkThemeExtension}
 	xmlData, err = xml.Marshal(&updateResponse)
 	assert.Nil(t, err)
 	expectedOutput = `<gupdate protocol="3.1" server="prod">
     <app appid="ldimlcelhnjgpjjemdjokpgeeikdinbm" status="ok">
-        <updatecheck status="ok" codebase="https://s3.amazonaws.com/brave-extensions/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx" version="1.0.0" hash_sha256="1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618"></updatecheck>
+        <updatecheck status="ok" codebase="https://brave-core-ext.s3.brave.com/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx" version="1.0.0" hash_sha256="1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618"></updatecheck>
     </app>
     <app appid="bfdgpgibhagkpdlnjonhkabjoijopoge" status="ok">
-        <updatecheck status="ok" codebase="https://s3.amazonaws.com/brave-extensions/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx" version="1.0.0" hash_sha256="ae517d6273a4fc126961cb026e02946db4f9dbb58e3d9bc29f5e1270e3ce9834"></updatecheck>
+        <updatecheck status="ok" codebase="https://brave-core-ext.s3.brave.com/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx" version="1.0.0" hash_sha256="ae517d6273a4fc126961cb026e02946db4f9dbb58e3d9bc29f5e1270e3ce9834"></updatecheck>
     </app>
 </gupdate>`
 	assert.Equal(t, expectedOutput, string(xmlData))
