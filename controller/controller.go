@@ -207,7 +207,7 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 	if len(updateRequest) == 1 {
 		_, ok := AllExtensionsMap[updateRequest[0].ID]
 		if !ok {
-			http.Redirect(w, r, "https://update.googleapis.com/service/update2?braveRedirect=true", http.StatusTemporaryRedirect)
+			http.Redirect(w, r, "https://update.googleapis.com/service/update2?"+r.URL.RawQuery+"&braveRedirect=true", http.StatusTemporaryRedirect)
 			return
 		}
 	}
