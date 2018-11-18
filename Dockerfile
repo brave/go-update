@@ -16,7 +16,7 @@ COPY --from=dep /usr/local/bin/dep /usr/local/bin/dep
 COPY --from=dep /go/bin/golangci-lint /bin/golangci-lint
 COPY . .
 RUN dep ensure
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
+RUN /usr/bin/make build
 
 FROM alpine:latest as app
 RUN apk add --update ca-certificates # Certificates for SSL

@@ -40,6 +40,10 @@ dep ensure
 
 `make test`
 
+## Build go-update:
+
+`make build`
+
 ## Run go-update:
 
-`make`
+`./main`
