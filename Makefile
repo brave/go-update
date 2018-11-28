@@ -3,7 +3,7 @@
 all: lint test build
 
 build:
-	go run main.go
+	env CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
 
 test:
 	go test -v ./...
