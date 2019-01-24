@@ -6,6 +6,14 @@ import (
 	"strings"
 )
 
+// UpdateStatus returns the status of an update response for an extension
+func UpdateStatus(extension Extension) string {
+	if extension.Status == "" {
+		return "ok"
+	}
+	return extension.Status
+}
+
 // MarshalXML encodes the extension list into response XML
 func (updateResponse *UpdateResponse) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	type URL struct {
@@ -53,7 +61,7 @@ func (updateResponse *UpdateResponse) MarshalXML(e *xml.Encoder, start xml.Start
 	response.Server = "prod"
 	for _, extension := range *updateResponse {
 		app := App{AppID: extension.ID}
-		app.UpdateCheck = UpdateCheck{Status: "ok"}
+		app.UpdateCheck = UpdateCheck{Status: UpdateStatus(extension)}
 		extensionName := "extension_" + strings.Replace(extension.Version, ".", "_", -1) + ".crx"
 		url := "https://brave-core-ext.s3.brave.com/release/" + extension.ID + "/" + extensionName
 		app.UpdateCheck.URLs.URLs = append(app.UpdateCheck.URLs.URLs, URL{

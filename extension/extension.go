@@ -14,6 +14,7 @@ type Extension struct {
 	Title       string
 	URL         string
 	Blacklisted bool
+	Status      string
 }
 
 // Extensions is type for a slice of Extension.
@@ -76,7 +77,11 @@ func (updateRequest *UpdateRequest) FilterForUpdates(allExtensionsMap *map[strin
 	for _, extensionBeingChecked := range *updateRequest {
 		foundExtension, ok := (*allExtensionsMap)[extensionBeingChecked.ID]
 		if ok {
-			if !foundExtension.Blacklisted && CompareVersions(extensionBeingChecked.Version, foundExtension.Version) < 0 {
+			status := CompareVersions(extensionBeingChecked.Version, foundExtension.Version)
+			if !foundExtension.Blacklisted && status <= 0 {
+				if status == 0 {
+					foundExtension.Status = "noupdate"
+				}
 				filteredExtensions = append(filteredExtensions, foundExtension)
 			}
 		}
