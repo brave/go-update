@@ -171,7 +171,20 @@ func TestUpdateExtensions(t *testing.T) {
 
 	// Single extension same version
 	requestBody = lightThemeExtension("1.0.0")
-	expectedResponse = "<response protocol=\"3.1\" server=\"prod\"></response>"
+	expectedResponse = `<response protocol="3.1" server="prod">
+    <app appid="ldimlcelhnjgpjjemdjokpgeeikdinbm">
+        <updatecheck status="noupdate">
+            <urls>
+                <url codebase="https://brave-core-ext.s3.brave.com/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"></url>
+            </urls>
+            <manifest version="1.0.0">
+                <packages>
+                    <package name="extension_1_0_0.crx" hash_sha256="1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618" required="true"></package>
+                </packages>
+            </manifest>
+        </updatecheck>
+    </app>
+</response>`
 	testCall(t, server, http.MethodPost, "", requestBody, http.StatusOK, expectedResponse, "")
 
 	// Single extension greater version
