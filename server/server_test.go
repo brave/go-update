@@ -46,7 +46,8 @@ func init() {
 	count := 0
 	controller.AllExtensionsMap = extension.LoadExtensionsIntoMap(&extension.OfferedExtensions)
 	controller.ExtensionUpdaterTimeout = time.Millisecond * 1
-	handler = chi.ServerBaseContext(setupRouter(setupLogger(context.Background())))
+	testCtx, logger := setupLogger(context.Background())
+	handler = chi.ServerBaseContext(setupRouter(testCtx, logger, true))
 	controller.RefreshExtensionsTicker(func() {
 		count++
 		if count == 1 {

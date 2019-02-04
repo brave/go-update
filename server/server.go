@@ -26,7 +26,7 @@ func setupLogger(ctx context.Context) (context.Context, *logrus.Logger) {
 	return ctx, logger
 }
 
-func setupRouter(ctx context.Context, logger *logrus.Logger) (context.Context, *chi.Mux) {
+func setupRouter(ctx context.Context, logger *logrus.Logger, testRouter bool) (context.Context, *chi.Mux) {
 	r := chi.NewRouter()
 	r.Use(chiware.RequestID)
 	r.Use(chiware.RealIP)
@@ -38,7 +38,7 @@ func setupRouter(ctx context.Context, logger *logrus.Logger) (context.Context, *
 		r.Use(middleware.RequestLogger(logger))
 	}
 	extensions := extension.OfferedExtensions
-	r.Mount("/extensions", controller.ExtensionsRouter(extensions))
+	r.Mount("/extensions", controller.ExtensionsRouter(extensions, testRouter))
 	r.Get("/metrics", middleware.Metrics())
 	return ctx, r
 }
@@ -47,7 +47,7 @@ func setupRouter(ctx context.Context, logger *logrus.Logger) (context.Context, *
 func StartServer() {
 	serverCtx, logger := setupLogger(context.Background())
 	logger.WithFields(logrus.Fields{"prefix": "main"}).Info("Starting server")
-	serverCtx, r := setupRouter(serverCtx, logger)
+	serverCtx, r := setupRouter(serverCtx, logger, false)
 	port := ":8192"
 	fmt.Printf("Starting server: http://localhost%s", port)
 	srv := http.Server{Addr: port, Handler: chi.ServerBaseContext(serverCtx, r)}
