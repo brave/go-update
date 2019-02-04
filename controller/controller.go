@@ -81,8 +81,11 @@ func RefreshExtensionsTicker(extensionMapUpdater func()) {
 }
 
 // ExtensionsRouter is the router for /extensions endpoints
-func ExtensionsRouter(extensions extension.Extensions) chi.Router {
-	RefreshExtensionsTicker(initExtensionUpdatesFromDynamoDB)
+func ExtensionsRouter(extensions extension.Extensions, testRouter bool) chi.Router {
+	if !testRouter {
+		RefreshExtensionsTicker(initExtensionUpdatesFromDynamoDB)
+	}
+
 	r := chi.NewRouter()
 	r.Post("/", UpdateExtensions)
 	r.Get("/", WebStoreUpdateExtension)
