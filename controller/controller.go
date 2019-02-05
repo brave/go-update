@@ -214,7 +214,7 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 			if len(r.URL.RawQuery) != 0 {
 				queryString = r.URL.RawQuery + "&" + queryString
 			}
-			http.Redirect(w, r, "https://update.googleapis.com/service/update2?"+queryString, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, "https://componentupdater.brave.com/service/update2?"+queryString, http.StatusTemporaryRedirect)
 			return
 		}
 	}
