@@ -265,15 +265,16 @@ func TestUpdateExtensions(t *testing.T) {
 </response>`
 	testCall(t, server, http.MethodPost, "", requestBody, http.StatusOK, expectedResponse, "")
 
-	// Unkonwn extension ID goes to Google server
+	// Unkonwn extension ID goes to Google server via componentupdater proxy
 	requestBody = extensiontest.ExtensionRequestFnFor("aaaaaaaaaaaaaaaaaaaa")("0.0.0")
 	expectedResponse = ""
-	testCall(t, server, http.MethodPost, "", requestBody, http.StatusTemporaryRedirect, expectedResponse, "https://update.googleapis.com/service/update2?braveRedirect=true")
+	testCall(t, server, http.MethodPost, "", requestBody, http.StatusTemporaryRedirect, expectedResponse, "https://componentupdater.brave.com/service/update2?braveRedirect=true")
 
-	// Unkonwn extension ID goes to Google server and preserves queyr params
+	// Unkonwn extension ID goes to Google server via componentupdater proxy
+	// and preserves query params
 	requestBody = extensiontest.ExtensionRequestFnFor("aaaaaaaaaaaaaaaaaaaa")("0.0.0")
 	expectedResponse = ""
-	testCall(t, server, http.MethodPost, "?test=hi", requestBody, http.StatusTemporaryRedirect, expectedResponse, "https://update.googleapis.com/service/update2?test=hi&braveRedirect=true")
+	testCall(t, server, http.MethodPost, "?test=hi", requestBody, http.StatusTemporaryRedirect, expectedResponse, "https://componentupdater.brave.com/service/update2?test=hi&braveRedirect=true")
 
 	// Make sure a huge request body does not crash the server
 	data := make([]byte, 1024*1024*11) // 11 MiB
