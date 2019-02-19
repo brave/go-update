@@ -123,7 +123,7 @@ func TestUpdateExtensions(t *testing.T) {
 		`<?xml version="1.0" encoding="UTF-8"?>
 		<request protocol="2.0" version="chrome-53.0.2785.116" prodversion="53.0.2785.116" requestid="{b4f77b70-af29-462b-a637-8a3e4be5ecd9}" lang="" updaterchannel="stable" prodchannel="stable" os="mac" arch="x64" nacl_arch="x86-64">
 			<app appid="aomjjhallfgjeglblehebfpbcfeobpgk">
-				<updatecheck codebase="https://brave-core-ext.s3.brave.com/release/aomjjhallfgjeglblehebfpbcfeobpgk/extension_4_5_9_90.crx" version="4.5.9.90"/>
+				<updatecheck codebase="https://` + extension.GetS3ExtensionBucketHost() + `/release/aomjjhallfgjeglblehebfpbcfeobpgk/extension_4_5_9_90.crx" version="4.5.9.90"/>
 			</app>
 		</request>`
 	expectedResponse = "Error reading body request version: 2.0 not supported"
@@ -157,7 +157,7 @@ func TestUpdateExtensions(t *testing.T) {
     <app appid="ldimlcelhnjgpjjemdjokpgeeikdinbm">
         <updatecheck status="ok">
             <urls>
-                <url codebase="https://brave-core-ext.s3.brave.com/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"></url>
+                <url codebase="https://` + extension.GetS3ExtensionBucketHost() + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"></url>
             </urls>
             <manifest version="1.0.0">
                 <packages>
@@ -175,7 +175,7 @@ func TestUpdateExtensions(t *testing.T) {
     <app appid="ldimlcelhnjgpjjemdjokpgeeikdinbm">
         <updatecheck status="noupdate">
             <urls>
-                <url codebase="https://brave-core-ext.s3.brave.com/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"></url>
+                <url codebase="https://` + extension.GetS3ExtensionBucketHost() + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"></url>
             </urls>
             <manifest version="1.0.0">
                 <packages>
@@ -205,7 +205,7 @@ func TestUpdateExtensions(t *testing.T) {
     <app appid="ldimlcelhnjgpjjemdjokpgeeikdinbm">
         <updatecheck status="ok">
             <urls>
-                <url codebase="https://brave-core-ext.s3.brave.com/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"></url>
+                <url codebase="https://` + extension.GetS3ExtensionBucketHost() + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"></url>
             </urls>
             <manifest version="1.0.0">
                 <packages>
@@ -223,7 +223,7 @@ func TestUpdateExtensions(t *testing.T) {
     <app appid="bfdgpgibhagkpdlnjonhkabjoijopoge">
         <updatecheck status="ok">
             <urls>
-                <url codebase="https://brave-core-ext.s3.brave.com/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx"></url>
+                <url codebase="https://` + extension.GetS3ExtensionBucketHost() + `/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx"></url>
             </urls>
             <manifest version="1.0.0">
                 <packages>
@@ -241,7 +241,7 @@ func TestUpdateExtensions(t *testing.T) {
     <app appid="ldimlcelhnjgpjjemdjokpgeeikdinbm">
         <updatecheck status="ok">
             <urls>
-                <url codebase="https://brave-core-ext.s3.brave.com/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"></url>
+                <url codebase="https://` + extension.GetS3ExtensionBucketHost() + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"></url>
             </urls>
             <manifest version="1.0.0">
                 <packages>
@@ -253,7 +253,7 @@ func TestUpdateExtensions(t *testing.T) {
     <app appid="bfdgpgibhagkpdlnjonhkabjoijopoge">
         <updatecheck status="ok">
             <urls>
-                <url codebase="https://brave-core-ext.s3.brave.com/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx"></url>
+                <url codebase="https://` + extension.GetS3ExtensionBucketHost() + `/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx"></url>
             </urls>
             <manifest version="1.0.0">
                 <packages>
@@ -290,7 +290,7 @@ func TestUpdateExtensions(t *testing.T) {
     <app appid="newext1eplbcioakkpcpgfkobkghlhen">
         <updatecheck status="ok">
             <urls>
-                <url codebase="https://brave-core-ext.s3.brave.com/release/newext1eplbcioakkpcpgfkobkghlhen/extension_1_0_0.crx"></url>
+                <url codebase="https://` + extension.GetS3ExtensionBucketHost() + `/release/newext1eplbcioakkpcpgfkobkghlhen/extension_1_0_0.crx"></url>
             </urls>
             <manifest version="1.0.0">
                 <packages>
@@ -308,7 +308,7 @@ func TestUpdateExtensions(t *testing.T) {
     <app appid="newext2eplbcioakkpcpgfkobkghlhen">
         <updatecheck status="ok">
             <urls>
-                <url codebase="https://brave-core-ext.s3.brave.com/release/newext2eplbcioakkpcpgfkobkghlhen/extension_1_0_0.crx"></url>
+                <url codebase="https://` + extension.GetS3ExtensionBucketHost() + `/release/newext2eplbcioakkpcpgfkobkghlhen/extension_1_0_0.crx"></url>
             </urls>
             <manifest version="1.0.0">
                 <packages>
@@ -344,7 +344,7 @@ func TestWebStoreUpdateExtension(t *testing.T) {
 	query = "?" + getQueryParams(&outdatedLightThemeExtension)
 	expectedResponse = `<gupdate protocol="3.1" server="prod">
     <app appid="ldimlcelhnjgpjjemdjokpgeeikdinbm" status="ok">
-        <updatecheck status="ok" codebase="https://brave-core-ext.s3.brave.com/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx" version="1.0.0" hash_sha256="1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618"></updatecheck>
+        <updatecheck status="ok" codebase="https://` + extension.GetS3ExtensionBucketHost() + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx" version="1.0.0" hash_sha256="1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618"></updatecheck>
     </app>
 </gupdate>`
 	testCall(t, server, http.MethodGet, query, requestBody, http.StatusOK, expectedResponse, "")
@@ -356,10 +356,10 @@ func TestWebStoreUpdateExtension(t *testing.T) {
 	query = "?" + getQueryParams(&outdatedLightThemeExtension) + "&" + getQueryParams(&outdatedDarkThemeExtension)
 	expectedResponse = `<gupdate protocol="3.1" server="prod">
     <app appid="ldimlcelhnjgpjjemdjokpgeeikdinbm" status="ok">
-        <updatecheck status="ok" codebase="https://brave-core-ext.s3.brave.com/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx" version="1.0.0" hash_sha256="1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618"></updatecheck>
+        <updatecheck status="ok" codebase="https://` + extension.GetS3ExtensionBucketHost() + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx" version="1.0.0" hash_sha256="1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618"></updatecheck>
     </app>
     <app appid="bfdgpgibhagkpdlnjonhkabjoijopoge" status="ok">
-        <updatecheck status="ok" codebase="https://brave-core-ext.s3.brave.com/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx" version="1.0.0" hash_sha256="ae517d6273a4fc126961cb026e02946db4f9dbb58e3d9bc29f5e1270e3ce9834"></updatecheck>
+        <updatecheck status="ok" codebase="https://` + extension.GetS3ExtensionBucketHost() + `/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx" version="1.0.0" hash_sha256="ae517d6273a4fc126961cb026e02946db4f9dbb58e3d9bc29f5e1270e3ce9834"></updatecheck>
     </app>
 </gupdate>`
 	testCall(t, server, http.MethodGet, query, requestBody, http.StatusOK, expectedResponse, "")
