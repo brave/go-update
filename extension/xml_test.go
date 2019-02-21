@@ -27,7 +27,7 @@ func TestUpdateResponseMarshalXML(t *testing.T) {
     <app appid="bfdgpgibhagkpdlnjonhkabjoijopoge">
         <updatecheck status="ok">
             <urls>
-                <url codebase="https://brave-core-ext.s3.brave.com/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx"></url>
+                <url codebase="https://` + GetS3ExtensionBucketHost() + `/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx"></url>
             </urls>
             <manifest version="1.0.0">
                 <packages>
@@ -51,7 +51,7 @@ func TestUpdateResponseMarshalXML(t *testing.T) {
     <app appid="ldimlcelhnjgpjjemdjokpgeeikdinbm">
         <updatecheck status="ok">
             <urls>
-                <url codebase="https://brave-core-ext.s3.brave.com/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"></url>
+                <url codebase="https://` + GetS3ExtensionBucketHost() + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"></url>
             </urls>
             <manifest version="1.0.0">
                 <packages>
@@ -63,7 +63,7 @@ func TestUpdateResponseMarshalXML(t *testing.T) {
     <app appid="bfdgpgibhagkpdlnjonhkabjoijopoge">
         <updatecheck status="ok">
             <urls>
-                <url codebase="https://brave-core-ext.s3.brave.com/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx"></url>
+                <url codebase="https://` + GetS3ExtensionBucketHost() + `/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx"></url>
             </urls>
             <manifest version="1.0.0">
                 <packages>
@@ -146,7 +146,7 @@ func TestWebStoreUpdateResponseMarshalXML(t *testing.T) {
 	assert.Nil(t, err)
 	expectedOutput = `<gupdate protocol="3.1" server="prod">
     <app appid="bfdgpgibhagkpdlnjonhkabjoijopoge" status="ok">
-        <updatecheck status="ok" codebase="https://brave-core-ext.s3.brave.com/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx" version="1.0.0" hash_sha256="ae517d6273a4fc126961cb026e02946db4f9dbb58e3d9bc29f5e1270e3ce9834"></updatecheck>
+        <updatecheck status="ok" codebase="https://` + GetS3ExtensionBucketHost() + `/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx" version="1.0.0" hash_sha256="ae517d6273a4fc126961cb026e02946db4f9dbb58e3d9bc29f5e1270e3ce9834"></updatecheck>
     </app>
 </gupdate>`
 	assert.Equal(t, expectedOutput, string(xmlData))
@@ -161,10 +161,10 @@ func TestWebStoreUpdateResponseMarshalXML(t *testing.T) {
 	assert.Nil(t, err)
 	expectedOutput = `<gupdate protocol="3.1" server="prod">
     <app appid="ldimlcelhnjgpjjemdjokpgeeikdinbm" status="ok">
-        <updatecheck status="ok" codebase="https://brave-core-ext.s3.brave.com/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx" version="1.0.0" hash_sha256="1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618"></updatecheck>
+        <updatecheck status="ok" codebase="https://` + GetS3ExtensionBucketHost() + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx" version="1.0.0" hash_sha256="1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618"></updatecheck>
     </app>
     <app appid="bfdgpgibhagkpdlnjonhkabjoijopoge" status="ok">
-        <updatecheck status="ok" codebase="https://brave-core-ext.s3.brave.com/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx" version="1.0.0" hash_sha256="ae517d6273a4fc126961cb026e02946db4f9dbb58e3d9bc29f5e1270e3ce9834"></updatecheck>
+        <updatecheck status="ok" codebase="https://` + GetS3ExtensionBucketHost() + `/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx" version="1.0.0" hash_sha256="ae517d6273a4fc126961cb026e02946db4f9dbb58e3d9bc29f5e1270e3ce9834"></updatecheck>
     </app>
 </gupdate>`
 	assert.Equal(t, expectedOutput, string(xmlData))
