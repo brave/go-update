@@ -268,13 +268,13 @@ func TestUpdateExtensions(t *testing.T) {
 	// Unkonwn extension ID goes to Google server via componentupdater proxy
 	requestBody = extensiontest.ExtensionRequestFnFor("aaaaaaaaaaaaaaaaaaaa")("0.0.0")
 	expectedResponse = ""
-	testCall(t, server, http.MethodPost, "", requestBody, http.StatusTemporaryRedirect, expectedResponse, "https://componentupdater.brave.com/service/update2?braveRedirect=true")
+	testCall(t, server, http.MethodPost, "", requestBody, http.StatusTemporaryRedirect, expectedResponse, "https://componentupdater.brave.com/service/update2")
 
 	// Unkonwn extension ID goes to Google server via componentupdater proxy
 	// and preserves query params
 	requestBody = extensiontest.ExtensionRequestFnFor("aaaaaaaaaaaaaaaaaaaa")("0.0.0")
 	expectedResponse = ""
-	testCall(t, server, http.MethodPost, "?test=hi", requestBody, http.StatusTemporaryRedirect, expectedResponse, "https://componentupdater.brave.com/service/update2?test=hi&braveRedirect=true")
+	testCall(t, server, http.MethodPost, "?test=hi", requestBody, http.StatusTemporaryRedirect, expectedResponse, "https://componentupdater.brave.com/service/update2?test=hi")
 
 	// Make sure a huge request body does not crash the server
 	data := make([]byte, 1024*1024*11) // 11 MiB
@@ -377,8 +377,8 @@ func TestWebStoreUpdateExtension(t *testing.T) {
 		Version: "0.0.0",
 	}
 	query = "?" + getQueryParams(&unknownExtension)
-	expectedResponse = `<a href="https://clients2.google.com/service/update2/crx?x=id%3Daaaaaaaaaaaaaaaaaaaa%26v%3D0.0.0&amp;braveRedirect=true">Temporary Redirect</a>.`
-	testCall(t, server, http.MethodGet, query, requestBody, http.StatusTemporaryRedirect, expectedResponse, "https://clients2.google.com/service/update2/crx?x=id%3Daaaaaaaaaaaaaaaaaaaa%26v%3D0.0.0&braveRedirect=true")
+	expectedResponse = `<a href="https://extensionupdater.brave.com/service/update2/crx?x=id%3Daaaaaaaaaaaaaaaaaaaa%26v%3D0.0.0">Temporary Redirect</a>.`
+	testCall(t, server, http.MethodGet, query, requestBody, http.StatusTemporaryRedirect, expectedResponse, "https://extensionupdater.brave.com/service/update2/crx?x=id%3Daaaaaaaaaaaaaaaaaaaa%26v%3D0.0.0")
 
 	// Unkonwn extension ID with multiple extensions, we try to handle ourselves.
 	unknownExtension = extension.Extension{
