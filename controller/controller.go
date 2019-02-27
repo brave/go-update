@@ -153,7 +153,7 @@ func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
 
 		foundExtension, ok := AllExtensionsMap[id]
 		if !ok && len(xValues) == 1 {
-			http.Redirect(w, r, "https://clients2.google.com/service/update2/crx?"+r.URL.RawQuery+"&braveRedirect=true", http.StatusTemporaryRedirect)
+			http.Redirect(w, r, "https://extensionupdater.brave.com/service/update2/crx?"+r.URL.RawQuery, http.StatusTemporaryRedirect)
 			return
 		}
 		if extension.CompareVersions(v, foundExtension.Version) < 0 {
@@ -210,11 +210,11 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 	if len(updateRequest) == 1 {
 		_, ok := AllExtensionsMap[updateRequest[0].ID]
 		if !ok {
-			queryString := "braveRedirect=true"
+			queryString := ""
 			if len(r.URL.RawQuery) != 0 {
-				queryString = r.URL.RawQuery + "&" + queryString
+				queryString = "?" + r.URL.RawQuery
 			}
-			http.Redirect(w, r, "https://componentupdater.brave.com/service/update2?"+queryString, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, "https://componentupdater.brave.com/service/update2"+queryString, http.StatusTemporaryRedirect)
 			return
 		}
 	}
