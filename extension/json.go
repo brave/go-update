@@ -50,7 +50,7 @@ func (updateResponse *UpdateResponse) MarshalJSON() ([]byte, error) {
 	response.Server = "prod"
 	for _, extension := range *updateResponse {
 		app := App{AppID: extension.ID, Status: "ok"}
-		app.UpdateCheck = UpdateCheck{Status: UpdateStatus(extension)}
+		app.UpdateCheck = UpdateCheck{Status: GetUpdateStatus(extension)}
 		extensionName := "extension_" + strings.Replace(extension.Version, ".", "_", -1) + ".crx"
 		url := "https://" + GetS3ExtensionBucketHost() + "/release/" + extension.ID + "/" + extensionName
 		app.UpdateCheck.URLs.URLs = append(app.UpdateCheck.URLs.URLs, URL{

@@ -13,8 +13,8 @@ func GetS3ExtensionBucketHost() string {
 	return s3BucketHost
 }
 
-// UpdateStatus returns the status of an update response for an extension
-func UpdateStatus(extension Extension) string {
+// GetUpdateStatus returns the status of an update response for an extension
+func GetUpdateStatus(extension Extension) string {
 	if extension.Status == "" {
 		return "ok"
 	}
