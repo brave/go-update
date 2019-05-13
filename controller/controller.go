@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
@@ -27,6 +28,11 @@ var AllExtensionsMap = map[string]extension.Extension{}
 
 // ExtensionUpdaterTimeout is the amount of time to wait between getting new updates from DynamoDB for the list of extensions
 var ExtensionUpdaterTimeout = time.Minute * 10
+
+// IsJSONRequest is used to check if JSON parser should be used
+func IsJSONRequest(contentType string) bool {
+	return contentType == "application/json"
+}
 
 func initExtensionUpdatesFromDynamoDB() {
 	sess, err := session.NewSession(&aws.Config{
@@ -122,6 +128,9 @@ func PrintExtensions(w http.ResponseWriter, r *http.Request) {
 // /extensions?os=mac&arch=x64&os_arch=x86_64&nacl_arch=x86-64&prod=chromiumcrx&prodchannel=&prodversion=69.0.54.0&lang=en-US&acceptformat=crx2,crx3&x=id%3Doemmndcbldboiebfnladdacbdfmadadm%26v%3D0.0.0.0%26installedby%3Dpolicy%26uc%26ping%3Dr%253D-1%2526e%253D1"
 // The query parameter x contains the encoded extension information, there can be more than one x parameter.
 func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
+	var data []byte
+	var err error
+
 	log := lg.Log(r.Context())
 	defer func() {
 		err := r.Body.Close()
@@ -156,6 +165,8 @@ func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "https://extensionupdater.brave.com/service/update2/crx?"+r.URL.RawQuery, http.StatusTemporaryRedirect)
 			return
 		}
+
+		// We dont have any Brave Extensions yet, so this part of the code is not tested
 		if extension.CompareVersions(v, foundExtension.Version) < 0 {
 			webStoreResponse = append(webStoreResponse, extension.Extension{
 				ID:      foundExtension.ID,
@@ -165,11 +176,18 @@ func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	w.Header().Set("content-type", "application/xml")
 	w.WriteHeader(http.StatusOK)
-	data, err := xml.Marshal(&webStoreResponse)
+
+	if IsJSONRequest(r.Header.Get("Content-Type")) {
+		w.Header().Set("content-type", "application/json")
+		data, err = json.Marshal(&webStoreResponse)
+	} else {
+		w.Header().Set("content-type", "application/xml")
+		data, err = xml.Marshal(&webStoreResponse)
+	}
+
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error in marshal XML %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Error in marshal %v", err), http.StatusInternalServerError)
 		return
 	}
 	_, err = w.Write(data)
@@ -180,6 +198,11 @@ func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
 
 // UpdateExtensions is the handler for updating extensions
 func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
+	var data []byte
+	var err error
+
+	jsonPrefix := []byte(")]}'\n")
+
 	log := lg.Log(r.Context())
 	defer func() {
 		err := r.Body.Close()
@@ -199,8 +222,15 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	jsonRequest := IsJSONRequest(r.Header.Get("content-type"))
+
 	updateRequest := extension.UpdateRequest{}
-	err = xml.Unmarshal(body, &updateRequest)
+	if jsonRequest {
+		err = json.Unmarshal(body, &updateRequest)
+	} else {
+		err = xml.Unmarshal(body, &updateRequest)
+	}
+
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error reading body %v", err), http.StatusBadRequest)
 		return
@@ -214,18 +244,39 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 			if len(r.URL.RawQuery) != 0 {
 				queryString = "?" + r.URL.RawQuery
 			}
-			http.Redirect(w, r, "https://componentupdater.brave.com/service/update2"+queryString, http.StatusTemporaryRedirect)
+			if jsonRequest {
+				http.Redirect(w, r, "https://componentupdater.brave.com/service/update2/json"+queryString, http.StatusTemporaryRedirect)
+			} else {
+				http.Redirect(w, r, "https://componentupdater.brave.com/service/update2"+queryString, http.StatusTemporaryRedirect)
+			}
 			return
 		}
 	}
-	w.Header().Set("content-type", "application/xml")
+
+	if jsonRequest {
+		w.Header().Set("content-type", "application/json")
+	} else {
+		w.Header().Set("content-type", "application/xml")
+	}
+
 	w.WriteHeader(http.StatusOK)
 	updateResponse := updateRequest.FilterForUpdates(&AllExtensionsMap)
-	data, err := xml.Marshal(&updateResponse)
+
+	if jsonRequest {
+		data, err = json.Marshal(&updateResponse)
+	} else {
+		data, err = xml.Marshal(&updateResponse)
+	}
+
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error in marshal XML %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Error in marshal %v", err), http.StatusInternalServerError)
 		return
 	}
+
+	if jsonRequest {
+		data = append(jsonPrefix, data...)
+	}
+
 	_, err = w.Write(data)
 	if err != nil {
 		log.Errorf("Error writing response: %v", err)

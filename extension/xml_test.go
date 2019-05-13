@@ -102,7 +102,7 @@ func TestUpdateRequestUnmarshalXML(t *testing.T) {
 
 	onePasswordID := "aomjjhallfgjeglblehebfpbcfeobpgk" // #nosec
 	onePasswordVersion := "4.7.0.90"
-	onePasswordRequest := extensiontest.ExtensionRequestFnFor(onePasswordID)
+	onePasswordRequest := extensiontest.ExtensionRequestFnForXML(onePasswordID)
 	data = []byte(onePasswordRequest(onePasswordVersion))
 	err = xml.Unmarshal(data, &updateRequest)
 	assert.Nil(t, err)
@@ -112,7 +112,7 @@ func TestUpdateRequestUnmarshalXML(t *testing.T) {
 
 	pdfJSID := "jdbefljfgobbmcidnmpjamcbhnbphjnb"
 	pdfJSVersion := "1.0.0"
-	twoExtensionRequest := extensiontest.ExtensionRequestFnForTwo(onePasswordID, pdfJSID)
+	twoExtensionRequest := extensiontest.ExtensionRequestFnForTwoXML(onePasswordID, pdfJSID)
 	data = []byte(twoExtensionRequest(onePasswordVersion, pdfJSVersion))
 	err = xml.Unmarshal(data, &updateRequest)
 	assert.Nil(t, err)

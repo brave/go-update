@@ -3,26 +3,8 @@ package extension
 import (
 	"encoding/xml"
 	"fmt"
-	"os"
 	"strings"
 )
-
-// GetS3ExtensionBucketHost returns the bucket to use for accessing the crx files
-func GetS3ExtensionBucketHost() string {
-	s3BucketHost, ok := os.LookupEnv("S3_EXTENSIONS_BUCKET_HOST")
-	if !ok {
-		s3BucketHost = "brave-core-ext.s3.brave.com"
-	}
-	return s3BucketHost
-}
-
-// UpdateStatus returns the status of an update response for an extension
-func UpdateStatus(extension Extension) string {
-	if extension.Status == "" {
-		return "ok"
-	}
-	return extension.Status
-}
 
 // MarshalXML encodes the extension list into response XML
 func (updateResponse *UpdateResponse) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
@@ -71,7 +53,7 @@ func (updateResponse *UpdateResponse) MarshalXML(e *xml.Encoder, start xml.Start
 	response.Server = "prod"
 	for _, extension := range *updateResponse {
 		app := App{AppID: extension.ID}
-		app.UpdateCheck = UpdateCheck{Status: UpdateStatus(extension)}
+		app.UpdateCheck = UpdateCheck{Status: GetUpdateStatus(extension)}
 		extensionName := "extension_" + strings.Replace(extension.Version, ".", "_", -1) + ".crx"
 		url := "https://" + GetS3ExtensionBucketHost() + "/release/" + extension.ID + "/" + extensionName
 		app.UpdateCheck.URLs.URLs = append(app.UpdateCheck.URLs.URLs, URL{
