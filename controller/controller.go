@@ -20,9 +20,9 @@ import (
 	"time"
 )
 
-// PDFjsExtensionID will be used to add an exception to pass the request for
+// PDFJSExtensionID will be used to add an exception to pass the request for
 // PDF viewer extension install from chrome web store to the extension updater proxy
-var PDFjsExtensionID = "oemmndcbldboiebfnladdacbdfmadadm"
+var PDFJSExtensionID = "oemmndcbldboiebfnladdacbdfmadadm"
 
 // AllExtensionsMap holds a mapping of extension ID to extension object.
 // This list for tests is populated by extensions.OfferedExtensions.
@@ -165,7 +165,7 @@ func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
 		}
 
 		foundExtension, ok := AllExtensionsMap[id]
-		if (!ok || id == PDFjsExtensionID) && len(xValues) == 1 {
+		if (!ok || id == PDFJSExtensionID) && len(xValues) == 1 {
 			http.Redirect(w, r, "https://extensionupdater.brave.com/service/update2/crx?"+r.URL.RawQuery, http.StatusTemporaryRedirect)
 			return
 		}
