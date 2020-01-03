@@ -7,7 +7,7 @@ import (
 	"github.com/brave-intl/bat-go/middleware"
 	"github.com/brave/go-update/controller"
 	"github.com/brave/go-update/extension"
-	"github.com/getsentry/raven-go"
+	"github.com/getsentry/sentry-go"
 	"github.com/go-chi/chi"
 	chiware "github.com/go-chi/chi/middleware"
 	"github.com/pressly/lg"
@@ -53,7 +53,7 @@ func StartServer() {
 	srv := http.Server{Addr: port, Handler: chi.ServerBaseContext(serverCtx, r)}
 	err := srv.ListenAndServe()
 	if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
+		sentry.CaptureException(err)
 		log.Panic(err)
 	}
 }

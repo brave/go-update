@@ -8,7 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/brave/go-update/extension"
-	"github.com/getsentry/raven-go"
+	"github.com/getsentry/sentry-go"
 	"github.com/go-chi/chi"
 	"github.com/pressly/lg"
 	"io"
@@ -45,7 +45,7 @@ func initExtensionUpdatesFromDynamoDB() {
 
 	if err != nil {
 		log.Printf("failed to connect to new session %v\n", err)
-		raven.CaptureError(err, nil)
+		sentry.CaptureException(err)
 		return
 	}
 
@@ -61,7 +61,7 @@ func initExtensionUpdatesFromDynamoDB() {
 	result, err := svc.Scan(params)
 	if err != nil {
 		log.Printf("failed to make Scan API call %v\n", err)
-		raven.CaptureError(err, nil)
+		sentry.CaptureException(err)
 		return
 	}
 
