@@ -25,8 +25,13 @@ var handler http.Handler
 var contentTypeXML = "application/xml"
 var contentTypeJSON = "application/json"
 
+var lightThemeExtensionID = "ldimlcelhnjgpjjemdjokpgeeikdinbm"
+var darkThemeExtensionID = "bfdgpgibhagkpdlnjonhkabjoijopoge"
+
+var newExtensionID1 = "newext1eplbcioakkpcpgfkobkghlhen"
+var newExtensionID2 = "newext2eplbcioakkpcpgfkobkghlhen"
+
 func init() {
-	newExtensionID1 := "newext1eplbcioakkpcpgfkobkghlhen"
 	newExtension1 = extension.Extension{
 		ID:          newExtensionID1,
 		Blacklisted: false,
@@ -34,7 +39,7 @@ func init() {
 		Title:       "test",
 		Version:     "1.0.0",
 	}
-	newExtensionID2 := "newext2eplbcioakkpcpgfkobkghlhen"
+
 	newExtension2 = extension.Extension{
 		ID:          newExtensionID2,
 		Blacklisted: false,
@@ -126,7 +131,7 @@ func TestUpdateExtensionsXML(t *testing.T) {
 		`<?xml version="1.0" encoding="UTF-8"?>
 		<request protocol="2.0" version="chrome-53.0.2785.116" prodversion="53.0.2785.116" requestid="{b4f77b70-af29-462b-a637-8a3e4be5ecd9}" lang="" updaterchannel="stable" prodchannel="stable" os="mac" arch="x64" nacl_arch="x86-64">
 			<app appid="aomjjhallfgjeglblehebfpbcfeobpgk">
-				<updatecheck codebase="https://` + extension.GetS3ExtensionBucketHost() + `/release/aomjjhallfgjeglblehebfpbcfeobpgk/extension_4_5_9_90.crx" version="4.5.9.90"/>
+				<updatecheck codebase="https://` + extension.GetS3ExtensionBucketHost("aomjjhallfgjeglblehebfpbcfeobpgk") + `/release/aomjjhallfgjeglblehebfpbcfeobpgk/extension_4_5_9_90.crx" version="4.5.9.90"/>
 			</app>
 		</request>`
 	expectedResponse = "Error reading body request version: 2.0 not supported"
@@ -160,7 +165,7 @@ func TestUpdateExtensionsXML(t *testing.T) {
     <app appid="ldimlcelhnjgpjjemdjokpgeeikdinbm">
         <updatecheck status="ok">
             <urls>
-                <url codebase="https://` + extension.GetS3ExtensionBucketHost() + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"></url>
+                <url codebase="https://` + extension.GetS3ExtensionBucketHost(lightThemeExtensionID) + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"></url>
             </urls>
             <manifest version="1.0.0">
                 <packages>
@@ -178,7 +183,7 @@ func TestUpdateExtensionsXML(t *testing.T) {
     <app appid="ldimlcelhnjgpjjemdjokpgeeikdinbm">
         <updatecheck status="noupdate">
             <urls>
-                <url codebase="https://` + extension.GetS3ExtensionBucketHost() + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"></url>
+                <url codebase="https://` + extension.GetS3ExtensionBucketHost(lightThemeExtensionID) + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"></url>
             </urls>
             <manifest version="1.0.0">
                 <packages>
@@ -208,7 +213,7 @@ func TestUpdateExtensionsXML(t *testing.T) {
     <app appid="ldimlcelhnjgpjjemdjokpgeeikdinbm">
         <updatecheck status="ok">
             <urls>
-                <url codebase="https://` + extension.GetS3ExtensionBucketHost() + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"></url>
+                <url codebase="https://` + extension.GetS3ExtensionBucketHost(lightThemeExtensionID) + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"></url>
             </urls>
             <manifest version="1.0.0">
                 <packages>
@@ -226,7 +231,7 @@ func TestUpdateExtensionsXML(t *testing.T) {
     <app appid="bfdgpgibhagkpdlnjonhkabjoijopoge">
         <updatecheck status="ok">
             <urls>
-                <url codebase="https://` + extension.GetS3ExtensionBucketHost() + `/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx"></url>
+                <url codebase="https://` + extension.GetS3ExtensionBucketHost(darkThemeExtensionID) + `/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx"></url>
             </urls>
             <manifest version="1.0.0">
                 <packages>
@@ -244,7 +249,7 @@ func TestUpdateExtensionsXML(t *testing.T) {
     <app appid="ldimlcelhnjgpjjemdjokpgeeikdinbm">
         <updatecheck status="ok">
             <urls>
-                <url codebase="https://` + extension.GetS3ExtensionBucketHost() + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"></url>
+                <url codebase="https://` + extension.GetS3ExtensionBucketHost(lightThemeExtensionID) + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"></url>
             </urls>
             <manifest version="1.0.0">
                 <packages>
@@ -256,7 +261,7 @@ func TestUpdateExtensionsXML(t *testing.T) {
     <app appid="bfdgpgibhagkpdlnjonhkabjoijopoge">
         <updatecheck status="ok">
             <urls>
-                <url codebase="https://` + extension.GetS3ExtensionBucketHost() + `/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx"></url>
+                <url codebase="https://` + extension.GetS3ExtensionBucketHost(darkThemeExtensionID) + `/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx"></url>
             </urls>
             <manifest version="1.0.0">
                 <packages>
@@ -293,7 +298,7 @@ func TestUpdateExtensionsXML(t *testing.T) {
     <app appid="newext1eplbcioakkpcpgfkobkghlhen">
         <updatecheck status="ok">
             <urls>
-                <url codebase="https://` + extension.GetS3ExtensionBucketHost() + `/release/newext1eplbcioakkpcpgfkobkghlhen/extension_1_0_0.crx"></url>
+                <url codebase="https://` + extension.GetS3ExtensionBucketHost(newExtensionID1) + `/release/newext1eplbcioakkpcpgfkobkghlhen/extension_1_0_0.crx"></url>
             </urls>
             <manifest version="1.0.0">
                 <packages>
@@ -311,7 +316,7 @@ func TestUpdateExtensionsXML(t *testing.T) {
     <app appid="newext2eplbcioakkpcpgfkobkghlhen">
         <updatecheck status="ok">
             <urls>
-                <url codebase="https://` + extension.GetS3ExtensionBucketHost() + `/release/newext2eplbcioakkpcpgfkobkghlhen/extension_1_0_0.crx"></url>
+                <url codebase="https://` + extension.GetS3ExtensionBucketHost(newExtensionID2) + `/release/newext2eplbcioakkpcpgfkobkghlhen/extension_1_0_0.crx"></url>
             </urls>
             <manifest version="1.0.0">
                 <packages>
@@ -347,7 +352,7 @@ func TestWebStoreUpdateExtensionXML(t *testing.T) {
 	query = "?" + getQueryParams(&outdatedLightThemeExtension)
 	expectedResponse = `<gupdate protocol="3.1" server="prod">
     <app appid="ldimlcelhnjgpjjemdjokpgeeikdinbm" status="ok">
-        <updatecheck status="ok" codebase="https://` + extension.GetS3ExtensionBucketHost() + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx" version="1.0.0" hash_sha256="1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618"></updatecheck>
+        <updatecheck status="ok" codebase="https://` + extension.GetS3ExtensionBucketHost(lightThemeExtensionID) + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx" version="1.0.0" hash_sha256="1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618"></updatecheck>
     </app>
 </gupdate>`
 	testCall(t, server, http.MethodGet, contentTypeXML, query, requestBody, http.StatusOK, expectedResponse, "")
@@ -359,10 +364,10 @@ func TestWebStoreUpdateExtensionXML(t *testing.T) {
 	query = "?" + getQueryParams(&outdatedLightThemeExtension) + "&" + getQueryParams(&outdatedDarkThemeExtension)
 	expectedResponse = `<gupdate protocol="3.1" server="prod">
     <app appid="ldimlcelhnjgpjjemdjokpgeeikdinbm" status="ok">
-        <updatecheck status="ok" codebase="https://` + extension.GetS3ExtensionBucketHost() + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx" version="1.0.0" hash_sha256="1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618"></updatecheck>
+        <updatecheck status="ok" codebase="https://` + extension.GetS3ExtensionBucketHost(lightThemeExtensionID) + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx" version="1.0.0" hash_sha256="1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618"></updatecheck>
     </app>
     <app appid="bfdgpgibhagkpdlnjonhkabjoijopoge" status="ok">
-        <updatecheck status="ok" codebase="https://` + extension.GetS3ExtensionBucketHost() + `/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx" version="1.0.0" hash_sha256="ae517d6273a4fc126961cb026e02946db4f9dbb58e3d9bc29f5e1270e3ce9834"></updatecheck>
+        <updatecheck status="ok" codebase="https://` + extension.GetS3ExtensionBucketHost(darkThemeExtensionID) + `/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx" version="1.0.0" hash_sha256="ae517d6273a4fc126961cb026e02946db4f9dbb58e3d9bc29f5e1270e3ce9834"></updatecheck>
     </app>
 </gupdate>`
 	testCall(t, server, http.MethodGet, contentTypeXML, query, requestBody, http.StatusOK, expectedResponse, "")
@@ -426,12 +431,12 @@ func TestUpdateExtensionsJSON(t *testing.T) {
 
 	// Single extension out of date
 	requestBody = lightThemeExtension("0.0.0")
-	expectedResponse = jsonPrefix + `{"response":{"protocol":"3.1","server":"prod","app":[{"appid":"ldimlcelhnjgpjjemdjokpgeeikdinbm","status":"ok","updatecheck":{"status":"ok","urls":{"url":[{"codebase":"https://` + extension.GetS3ExtensionBucketHost() + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"}]},"manifest":{"version":"1.0.0","packages":{"package":[{"name":"extension_1_0_0.crx","hash_sha256":"1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618","required":true}]}}}}]}}`
+	expectedResponse = jsonPrefix + `{"response":{"protocol":"3.1","server":"prod","app":[{"appid":"ldimlcelhnjgpjjemdjokpgeeikdinbm","status":"ok","updatecheck":{"status":"ok","urls":{"url":[{"codebase":"https://` + extension.GetS3ExtensionBucketHost(lightThemeExtensionID) + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"}]},"manifest":{"version":"1.0.0","packages":{"package":[{"name":"extension_1_0_0.crx","hash_sha256":"1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618","required":true}]}}}}]}}`
 	testCall(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusOK, expectedResponse, "")
 
 	// Single extension same version
 	requestBody = lightThemeExtension("1.0.0")
-	expectedResponse = jsonPrefix + `{"response":{"protocol":"3.1","server":"prod","app":[{"appid":"ldimlcelhnjgpjjemdjokpgeeikdinbm","status":"ok","updatecheck":{"status":"noupdate","urls":{"url":[{"codebase":"https://` + extension.GetS3ExtensionBucketHost() + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"}]},"manifest":{"version":"1.0.0","packages":{"package":[{"name":"extension_1_0_0.crx","hash_sha256":"1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618","required":true}]}}}}]}}`
+	expectedResponse = jsonPrefix + `{"response":{"protocol":"3.1","server":"prod","app":[{"appid":"ldimlcelhnjgpjjemdjokpgeeikdinbm","status":"ok","updatecheck":{"status":"noupdate","urls":{"url":[{"codebase":"https://` + extension.GetS3ExtensionBucketHost(lightThemeExtensionID) + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"}]},"manifest":{"version":"1.0.0","packages":{"package":[{"name":"extension_1_0_0.crx","hash_sha256":"1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618","required":true}]}}}}]}}`
 	testCall(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusOK, expectedResponse, "")
 
 	// Single extension greater version
@@ -448,17 +453,17 @@ func TestUpdateExtensionsJSON(t *testing.T) {
 
 	// Only one components out of date
 	requestBody = lightAndDarkThemeRequest("0.0.0", "70.0.0")
-	expectedResponse = jsonPrefix + `{"response":{"protocol":"3.1","server":"prod","app":[{"appid":"ldimlcelhnjgpjjemdjokpgeeikdinbm","status":"ok","updatecheck":{"status":"ok","urls":{"url":[{"codebase":"https://` + extension.GetS3ExtensionBucketHost() + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"}]},"manifest":{"version":"1.0.0","packages":{"package":[{"name":"extension_1_0_0.crx","hash_sha256":"1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618","required":true}]}}}}]}}`
+	expectedResponse = jsonPrefix + `{"response":{"protocol":"3.1","server":"prod","app":[{"appid":"ldimlcelhnjgpjjemdjokpgeeikdinbm","status":"ok","updatecheck":{"status":"ok","urls":{"url":[{"codebase":"https://` + extension.GetS3ExtensionBucketHost(lightThemeExtensionID) + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"}]},"manifest":{"version":"1.0.0","packages":{"package":[{"name":"extension_1_0_0.crx","hash_sha256":"1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618","required":true}]}}}}]}}`
 	testCall(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusOK, expectedResponse, "")
 
 	// Other component of 2 out of date
 	requestBody = lightAndDarkThemeRequest("70.0.0", "0.0.0")
-	expectedResponse = jsonPrefix + `{"response":{"protocol":"3.1","server":"prod","app":[{"appid":"bfdgpgibhagkpdlnjonhkabjoijopoge","status":"ok","updatecheck":{"status":"ok","urls":{"url":[{"codebase":"https://` + extension.GetS3ExtensionBucketHost() + `/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx"}]},"manifest":{"version":"1.0.0","packages":{"package":[{"name":"extension_1_0_0.crx","hash_sha256":"ae517d6273a4fc126961cb026e02946db4f9dbb58e3d9bc29f5e1270e3ce9834","required":true}]}}}}]}}`
+	expectedResponse = jsonPrefix + `{"response":{"protocol":"3.1","server":"prod","app":[{"appid":"bfdgpgibhagkpdlnjonhkabjoijopoge","status":"ok","updatecheck":{"status":"ok","urls":{"url":[{"codebase":"https://` + extension.GetS3ExtensionBucketHost(darkThemeExtensionID) + `/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx"}]},"manifest":{"version":"1.0.0","packages":{"package":[{"name":"extension_1_0_0.crx","hash_sha256":"ae517d6273a4fc126961cb026e02946db4f9dbb58e3d9bc29f5e1270e3ce9834","required":true}]}}}}]}}`
 	testCall(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusOK, expectedResponse, "")
 
 	// Both components need updates
 	requestBody = lightAndDarkThemeRequest("0.0.0", "0.0.0")
-	expectedResponse = jsonPrefix + `{"response":{"protocol":"3.1","server":"prod","app":[{"appid":"ldimlcelhnjgpjjemdjokpgeeikdinbm","status":"ok","updatecheck":{"status":"ok","urls":{"url":[{"codebase":"https://` + extension.GetS3ExtensionBucketHost() + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"}]},"manifest":{"version":"1.0.0","packages":{"package":[{"name":"extension_1_0_0.crx","hash_sha256":"1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618","required":true}]}}}},{"appid":"bfdgpgibhagkpdlnjonhkabjoijopoge","status":"ok","updatecheck":{"status":"ok","urls":{"url":[{"codebase":"https://` + extension.GetS3ExtensionBucketHost() + `/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx"}]},"manifest":{"version":"1.0.0","packages":{"package":[{"name":"extension_1_0_0.crx","hash_sha256":"ae517d6273a4fc126961cb026e02946db4f9dbb58e3d9bc29f5e1270e3ce9834","required":true}]}}}}]}}`
+	expectedResponse = jsonPrefix + `{"response":{"protocol":"3.1","server":"prod","app":[{"appid":"ldimlcelhnjgpjjemdjokpgeeikdinbm","status":"ok","updatecheck":{"status":"ok","urls":{"url":[{"codebase":"https://` + extension.GetS3ExtensionBucketHost(lightThemeExtensionID) + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"}]},"manifest":{"version":"1.0.0","packages":{"package":[{"name":"extension_1_0_0.crx","hash_sha256":"1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618","required":true}]}}}},{"appid":"bfdgpgibhagkpdlnjonhkabjoijopoge","status":"ok","updatecheck":{"status":"ok","urls":{"url":[{"codebase":"https://` + extension.GetS3ExtensionBucketHost(darkThemeExtensionID) + `/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx"}]},"manifest":{"version":"1.0.0","packages":{"package":[{"name":"extension_1_0_0.crx","hash_sha256":"ae517d6273a4fc126961cb026e02946db4f9dbb58e3d9bc29f5e1270e3ce9834","required":true}]}}}}]}}`
 	testCall(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusOK, expectedResponse, "")
 
 	// Unkonwn extension ID goes to Google server via componentupdater proxy
@@ -482,12 +487,12 @@ func TestUpdateExtensionsJSON(t *testing.T) {
 
 	// Single new extension out of date that was added in by the refresh timer
 	requestBody = extensiontest.ExtensionRequestFnForJSON("newext1eplbcioakkpcpgfkobkghlhen")("0.0.0")
-	expectedResponse = jsonPrefix + `{"response":{"protocol":"3.1","server":"prod","app":[{"appid":"newext1eplbcioakkpcpgfkobkghlhen","status":"ok","updatecheck":{"status":"ok","urls":{"url":[{"codebase":"https://` + extension.GetS3ExtensionBucketHost() + `/release/newext1eplbcioakkpcpgfkobkghlhen/extension_1_0_0.crx"}]},"manifest":{"version":"1.0.0","packages":{"package":[{"name":"extension_1_0_0.crx","hash_sha256":"4c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618","required":true}]}}}}]}}`
+	expectedResponse = jsonPrefix + `{"response":{"protocol":"3.1","server":"prod","app":[{"appid":"newext1eplbcioakkpcpgfkobkghlhen","status":"ok","updatecheck":{"status":"ok","urls":{"url":[{"codebase":"https://` + extension.GetS3ExtensionBucketHost(newExtensionID1) + `/release/newext1eplbcioakkpcpgfkobkghlhen/extension_1_0_0.crx"}]},"manifest":{"version":"1.0.0","packages":{"package":[{"name":"extension_1_0_0.crx","hash_sha256":"4c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618","required":true}]}}}}]}}`
 	testCall(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusOK, expectedResponse, "")
 
 	// Single second new extension out of date that was added in by the refresh timer
 	requestBody = extensiontest.ExtensionRequestFnForJSON("newext2eplbcioakkpcpgfkobkghlhen")("0.0.0")
-	expectedResponse = jsonPrefix + `{"response":{"protocol":"3.1","server":"prod","app":[{"appid":"newext2eplbcioakkpcpgfkobkghlhen","status":"ok","updatecheck":{"status":"ok","urls":{"url":[{"codebase":"https://` + extension.GetS3ExtensionBucketHost() + `/release/newext2eplbcioakkpcpgfkobkghlhen/extension_1_0_0.crx"}]},"manifest":{"version":"1.0.0","packages":{"package":[{"name":"extension_1_0_0.crx","hash_sha256":"3c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618","required":true}]}}}}]}}`
+	expectedResponse = jsonPrefix + `{"response":{"protocol":"3.1","server":"prod","app":[{"appid":"newext2eplbcioakkpcpgfkobkghlhen","status":"ok","updatecheck":{"status":"ok","urls":{"url":[{"codebase":"https://` + extension.GetS3ExtensionBucketHost(newExtensionID2) + `/release/newext2eplbcioakkpcpgfkobkghlhen/extension_1_0_0.crx"}]},"manifest":{"version":"1.0.0","packages":{"package":[{"name":"extension_1_0_0.crx","hash_sha256":"3c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618","required":true}]}}}}]}}`
 	testCall(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusOK, expectedResponse, "")
 }
 
@@ -508,7 +513,7 @@ func TestWebStoreUpdateExtensionJSON(t *testing.T) {
 	outdatedLightThemeExtension.Version = "0.0.0"
 	assert.True(t, ok)
 	query = "?" + getQueryParams(&outdatedLightThemeExtension)
-	expectedResponse = `{"gupdate":{"protocol":"3.1","server":"prod","app":[{"appid":"ldimlcelhnjgpjjemdjokpgeeikdinbm","status":"ok","updatecheck":{"status":"ok","codebase":"https://` + extension.GetS3ExtensionBucketHost() + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx","version":"1.0.0","hash_sha256":"1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618"}}]}}`
+	expectedResponse = `{"gupdate":{"protocol":"3.1","server":"prod","app":[{"appid":"ldimlcelhnjgpjjemdjokpgeeikdinbm","status":"ok","updatecheck":{"status":"ok","codebase":"https://` + extension.GetS3ExtensionBucketHost(lightThemeExtensionID) + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx","version":"1.0.0","hash_sha256":"1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618"}}]}}`
 	testCall(t, server, http.MethodGet, contentTypeJSON, query, requestBody, http.StatusOK, expectedResponse, "")
 
 	// Multiple extensions that we handle which are outdated should produce a response
@@ -516,7 +521,7 @@ func TestWebStoreUpdateExtensionJSON(t *testing.T) {
 	assert.True(t, ok)
 	outdatedDarkThemeExtension.Version = "0.0.0"
 	query = "?" + getQueryParams(&outdatedLightThemeExtension) + "&" + getQueryParams(&outdatedDarkThemeExtension)
-	expectedResponse = `{"gupdate":{"protocol":"3.1","server":"prod","app":[{"appid":"ldimlcelhnjgpjjemdjokpgeeikdinbm","status":"ok","updatecheck":{"status":"ok","codebase":"https://` + extension.GetS3ExtensionBucketHost() + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx","version":"1.0.0","hash_sha256":"1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618"}},{"appid":"bfdgpgibhagkpdlnjonhkabjoijopoge","status":"ok","updatecheck":{"status":"ok","codebase":"https://` + extension.GetS3ExtensionBucketHost() + `/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx","version":"1.0.0","hash_sha256":"ae517d6273a4fc126961cb026e02946db4f9dbb58e3d9bc29f5e1270e3ce9834"}}]}}`
+	expectedResponse = `{"gupdate":{"protocol":"3.1","server":"prod","app":[{"appid":"ldimlcelhnjgpjjemdjokpgeeikdinbm","status":"ok","updatecheck":{"status":"ok","codebase":"https://` + extension.GetS3ExtensionBucketHost(lightThemeExtensionID) + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx","version":"1.0.0","hash_sha256":"1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618"}},{"appid":"bfdgpgibhagkpdlnjonhkabjoijopoge","status":"ok","updatecheck":{"status":"ok","codebase":"https://` + extension.GetS3ExtensionBucketHost(darkThemeExtensionID) + `/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx","version":"1.0.0","hash_sha256":"ae517d6273a4fc126961cb026e02946db4f9dbb58e3d9bc29f5e1270e3ce9834"}}]}}`
 	testCall(t, server, http.MethodGet, contentTypeJSON, query, requestBody, http.StatusOK, expectedResponse, "")
 
 	// Extension that we handle which is up to date should NOT produce an update but still be successful

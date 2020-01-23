@@ -4,11 +4,41 @@ import (
 	"os"
 )
 
-// GetS3ExtensionBucketHost returns the bucket to use for accessing the crx files
-func GetS3ExtensionBucketHost() string {
+var torClientMacExtensionID = "cldoidikboihgcjfkhdeidbpclkineef"
+var torClientWindowsExtensionID = "cpoalefficncklhjfpglfiplenlpccdb"
+var torClientLinuxExtensionID = "biahpgbdmdkfgndcmfiipgcebobojjkp"
+
+// TorClientExtensionIDs is used to add an exception to return the dedicated
+// proxy url for downloading the tor client crx
+var TorClientExtensionIDs = []string{torClientMacExtensionID, torClientWindowsExtensionID, torClientLinuxExtensionID}
+
+func isTorExtension(id string) bool {
+	for _, torID := range TorClientExtensionIDs {
+		if torID == id {
+			return true
+		}
+	}
+	return false
+}
+
+// GetS3ExtensionBucketHost returns the url to use for accessing crx files
+func GetS3ExtensionBucketHost(id string) string {
+	if isTorExtension(id) {
+		return GetS3TorExtensionBucketHost()
+	}
+
 	s3BucketHost, ok := os.LookupEnv("S3_EXTENSIONS_BUCKET_HOST")
 	if !ok {
 		s3BucketHost = "brave-core-ext.s3.brave.com"
+	}
+	return s3BucketHost
+}
+
+// GetS3TorExtensionBucketHost returns the url to use for accessing tor client crx
+func GetS3TorExtensionBucketHost() string {
+	s3BucketHost, ok := os.LookupEnv("S3_EXTENSIONS_BUCKET_HOST_TOR")
+	if !ok {
+		s3BucketHost = "tor.bravesoftware.com"
 	}
 	return s3BucketHost
 }
