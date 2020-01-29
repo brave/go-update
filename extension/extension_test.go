@@ -79,3 +79,19 @@ func TestFilterForUpdates(t *testing.T) {
 	check = outdatedExtensionCheck.FilterForUpdates(&allExtensionsBlacklistedMap)
 	assert.Equal(t, 0, len(check))
 }
+
+func TestS3BucketForExtension(t *testing.T) {
+	allExtensionsMap := LoadExtensionsIntoMap(&OfferedExtensions)
+	torExtensionMac, ok := allExtensionsMap["cldoidikboihgcjfkhdeidbpclkineef"]
+	assert.True(t, ok)
+	assert.Equal(t, GetS3ExtensionBucketHost(torExtensionMac.ID), "tor.bravesoftware.com")
+	torExtensionWin, ok := allExtensionsMap["cpoalefficncklhjfpglfiplenlpccdb"]
+	assert.True(t, ok)
+	assert.Equal(t, GetS3ExtensionBucketHost(torExtensionWin.ID), "tor.bravesoftware.com")
+	torExtensionLinux, ok := allExtensionsMap["biahpgbdmdkfgndcmfiipgcebobojjkp"]
+	assert.True(t, ok)
+	assert.Equal(t, GetS3ExtensionBucketHost(torExtensionLinux.ID), "tor.bravesoftware.com")
+	lightThemeExtension, ok := allExtensionsMap["ldimlcelhnjgpjjemdjokpgeeikdinbm"]
+	assert.True(t, ok)
+	assert.Equal(t, GetS3ExtensionBucketHost(lightThemeExtension.ID), "brave-core-ext.s3.brave.com")
+}

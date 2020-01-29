@@ -297,5 +297,26 @@ var OfferedExtensions = Extensions{
 		Title:       "Brave Tracking Protection Updater",
 		URL:         "",
 		Blacklisted: false,
+	}, {
+		ID:          "cldoidikboihgcjfkhdeidbpclkineef",
+		Version:     "1.0.1",
+		SHA256:      "fd623c12f6063698a6670b1f4bcbf3150fca83057b0f46e12738da35009243f7",
+		Title:       "Brave Tor Client Updater (Mac)",
+		URL:         "",
+		Blacklisted: false,
+	}, {
+		ID:          "cpoalefficncklhjfpglfiplenlpccdb",
+		Version:     "1.0.1",
+		SHA256:      "fd623c12f6063698a6670b1f4bcbf3150fca83057b0f46e12738da35009243f7",
+		Title:       "Brave Tor Client Updater (Mac)",
+		URL:         "",
+		Blacklisted: false,
+	}, {
+		ID:          "biahpgbdmdkfgndcmfiipgcebobojjkp",
+		Version:     "1.0.1",
+		SHA256:      "fd623c12f6063698a6670b1f4bcbf3150fca83057b0f46e12738da35009243f7",
+		Title:       "Brave Tor Client Updater (Mac)",
+		URL:         "",
+		Blacklisted: false,
 	},
 }

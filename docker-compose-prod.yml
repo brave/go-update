@@ -4,6 +4,7 @@ services:
     build: .
     environment:
       - S3_EXTENSIONS_BUCKET_HOST=brave-core-ext.s3.brave.com
+      - S3_EXTENSIONS_BUCKET_HOST_TOR=tor.bravesoftware.com
       - SENTRY_DSN=https://bdeadb80b91f490cbaa4d23d3250f58e@sentry.io/1862572
     ports:
       - "80:8192"
