@@ -14,3 +14,4 @@ services:
         awslogs-stream: go-updater
     ports:
       - "80:8192"
+    restart: unless-stopped
