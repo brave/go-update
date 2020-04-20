@@ -160,7 +160,7 @@ func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
 		id := strings.Trim(values.Get("id"), "[]")
 		v := values.Get("v")
 		if len(id) == 0 {
-			http.Error(w, fmt.Sprintf("No extension ID specified."), http.StatusBadRequest)
+			http.Error(w, "No extension ID specified.", http.StatusBadRequest)
 			return
 		}
 
