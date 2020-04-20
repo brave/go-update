@@ -17,6 +17,8 @@ When there is only a single extension requested, and if we do not support the ex
 
 This server also serves as a filter so Brave can blacklist any extension before it has a chance to redirect to Google's component updater.
 
+## Runbook
+https://github.com/brave/devops/tree/master/docs/runbooks/go-updater
 
 ## Dependencies
 
