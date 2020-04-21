@@ -14,6 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -33,7 +34,8 @@ func setupRouter(ctx context.Context, logger *logrus.Logger, testRouter bool) (c
 	r.Use(chiware.Heartbeat("/"))
 	r.Use(chiware.Timeout(60 * time.Second))
 	r.Use(middleware.BearerToken)
-	if logger != nil {
+	log, ok := os.LookupEnv("LOG_REQUEST")
+	if ok && log == "true" && logger != nil {
 		// Also handles panic recovery
 		r.Use(middleware.RequestLogger(logger))
 	}
