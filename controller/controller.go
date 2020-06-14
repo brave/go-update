@@ -24,6 +24,10 @@ import (
 // PDF viewer extension install from chrome web store to the extension updater proxy
 var PDFJSExtensionID = "oemmndcbldboiebfnladdacbdfmadadm"
 
+// WidivineExtensionID is used to add an exception to pass the request for widivine
+// directly to google servers
+var WidivineExtensionID = "oimompecagnajdejgnnjijobebaeigek"
+
 // AllExtensionsMap holds a mapping of extension ID to extension object.
 // This list for tests is populated by extensions.OfferedExtensions.
 // For normal operaitons of this server it is obtained from the AWS config
@@ -248,10 +252,14 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 			if len(r.URL.RawQuery) != 0 {
 				queryString = "?" + r.URL.RawQuery
 			}
+			host := "componentupdater.brave.com"
+			if updateRequest[0].ID == WidivineExtensionID {
+				host = "update.googleapis.com"
+			}
 			if jsonRequest {
-				http.Redirect(w, r, "https://componentupdater.brave.com/service/update2/json"+queryString, http.StatusTemporaryRedirect)
+				http.Redirect(w, r, "https://"+host+"/service/update2/json"+queryString, http.StatusTemporaryRedirect)
 			} else {
-				http.Redirect(w, r, "https://componentupdater.brave.com/service/update2"+queryString, http.StatusTemporaryRedirect)
+				http.Redirect(w, r, "https://"+host+"/service/update2"+queryString, http.StatusTemporaryRedirect)
 			}
 			return
 		}
