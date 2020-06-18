@@ -3,7 +3,7 @@ services:
   app:
     build: .
     environment:
-      - S3_EXTENSIONS_BUCKET_HOST=brave-core-ext-dev.s3.bravesoftware.com
-      - S3_EXTENSIONS_BUCKET_HOST_TOR=brave-core-ext-tor-development.s3-us-west-2.amazonaws.com
+      - S3_EXTENSIONS_BUCKET_HOST=brave-ext-dev.s3.bravesoftware.com
+      - S3_EXTENSIONS_BUCKET_HOST_TOR=brave-ext-tor-dev.s3-us-west-2.amazonaws.com
     ports:
       - "80:8192"
