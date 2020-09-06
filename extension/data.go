@@ -318,5 +318,26 @@ var OfferedExtensions = Extensions{
 		Title:       "Brave Tor Client Updater (Mac)",
 		URL:         "",
 		Blacklisted: false,
+	}, {
+		ID:          "nljcddpbnaianmglkpkneakjaapinabi",
+		Version:     "1.0.1",
+		SHA256:      "1bfdea8bd9fcac4a7109e85cbfe76670f9cb1f716fb36d36e2d5f1bbaafb734a",
+		Title:       "Brave Ipfs Daemon Updater (Mac)",
+		URL:         "",
+		Blacklisted: false,
+	}, {
+		ID:          "lnbclahgobmjphilkalbhebakmblnbij",
+		Version:     "1.0.1",
+		SHA256:      "efc1b8a1ade508e2028c918c5b3451a568ec3ecce1703f01c09659403bc91526",
+		Title:       "Brave Ipfs Daemon Updater (Windows)",
+		URL:         "",
+		Blacklisted: false,
+	}, {
+		ID:          "oecghfpdmkjlhnfpmmjegjacfimiafjp",
+		Version:     "1.0.1",
+		SHA256:      "6641042f9f75f16066d28741cd699fc3a04df3e414629a7cda33d8df2b15c717",
+		Title:       "Brave Ipfs Daemon Updater (Linux)",
+		URL:         "",
+		Blacklisted: false,
 	},
 }

@@ -12,9 +12,26 @@ var torClientLinuxExtensionID = "biahpgbdmdkfgndcmfiipgcebobojjkp"
 // proxy url for downloading the tor client crx
 var TorClientExtensionIDs = []string{torClientMacExtensionID, torClientWindowsExtensionID, torClientLinuxExtensionID}
 
+var ipfsClientMacExtensionID = "nljcddpbnaianmglkpkneakjaapinabi"
+var ipfsClientWindowsExtensionID = "lnbclahgobmjphilkalbhebakmblnbij"
+var ipfsClientLinuxExtensionID = "oecghfpdmkjlhnfpmmjegjacfimiafjp"
+
+// ipfsClientExtensionIDs is used to add an exception to return the dedicated
+// proxy url for downloading the ipfs crx
+var ipfsClientExtensionIDs = []string{ipfsClientMacExtensionID, ipfsClientWindowsExtensionID, ipfsClientLinuxExtensionID}
+
 func isTorExtension(id string) bool {
 	for _, torID := range TorClientExtensionIDs {
 		if torID == id {
+			return true
+		}
+	}
+	return false
+}
+
+func isIPFSExtension(id string) bool {
+	for _, ipfsID := range ipfsClientExtensionIDs {
+		if ipfsID == id {
 			return true
 		}
 	}
@@ -25,6 +42,10 @@ func isTorExtension(id string) bool {
 func GetS3ExtensionBucketHost(id string) string {
 	if isTorExtension(id) {
 		return GetS3TorExtensionBucketHost()
+	}
+
+	if isIPFSExtension(id) {
+		return GetS3IPFSExtensionBucketHost()
 	}
 
 	s3BucketHost, ok := os.LookupEnv("S3_EXTENSIONS_BUCKET_HOST")
@@ -39,6 +60,15 @@ func GetS3TorExtensionBucketHost() string {
 	s3BucketHost, ok := os.LookupEnv("S3_EXTENSIONS_BUCKET_HOST_TOR")
 	if !ok {
 		s3BucketHost = "tor.bravesoftware.com"
+	}
+	return s3BucketHost
+}
+
+// GetS3IPFSExtensionBucketHost returns the url to use for accessing go-ipfs client crx
+func GetS3IPFSExtensionBucketHost() string {
+	s3BucketHost, ok := os.LookupEnv("S3_EXTENSIONS_BUCKET_HOST_IPFS")
+	if !ok {
+		s3BucketHost = "ipfs.bravesoftware.com"
 	}
 	return s3BucketHost
 }
