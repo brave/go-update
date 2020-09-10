@@ -91,6 +91,15 @@ func TestS3BucketForExtension(t *testing.T) {
 	torExtensionLinux, ok := allExtensionsMap["biahpgbdmdkfgndcmfiipgcebobojjkp"]
 	assert.True(t, ok)
 	assert.Equal(t, GetS3ExtensionBucketHost(torExtensionLinux.ID), "tor.bravesoftware.com")
+	ipfsExtensionMac, ok := allExtensionsMap["nljcddpbnaianmglkpkneakjaapinabi"]
+	assert.True(t, ok)
+	assert.Equal(t, GetS3ExtensionBucketHost(ipfsExtensionMac.ID), "ipfs.bravesoftware.com")
+	ipfsExtensionWin, ok := allExtensionsMap["lnbclahgobmjphilkalbhebakmblnbij"]
+	assert.True(t, ok)
+	assert.Equal(t, GetS3ExtensionBucketHost(ipfsExtensionWin.ID), "ipfs.bravesoftware.com")
+	ipfsExtensionLinux, ok := allExtensionsMap["oecghfpdmkjlhnfpmmjegjacfimiafjp"]
+	assert.True(t, ok)
+	assert.Equal(t, GetS3ExtensionBucketHost(ipfsExtensionLinux.ID), "ipfs.bravesoftware.com")
 	lightThemeExtension, ok := allExtensionsMap["ldimlcelhnjgpjjemdjokpgeeikdinbm"]
 	assert.True(t, ok)
 	assert.Equal(t, GetS3ExtensionBucketHost(lightThemeExtension.ID), "brave-core-ext.s3.brave.com")
