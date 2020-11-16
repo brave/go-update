@@ -44,7 +44,7 @@ func IsJSONRequest(contentType string) bool {
 
 func initExtensionUpdatesFromDynamoDB() {
 	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String("us-east-2")},
+		Region: aws.String("us-west-2")},
 	)
 
 	if err != nil {
