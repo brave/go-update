@@ -73,6 +73,15 @@ func GetS3IPFSExtensionBucketHost() string {
 	return s3BucketHost
 }
 
+// GetDynamoRegion returns the dynamoDB region
+func GetDynamoRegion() string {
+	region, ok := os.LookupEnv("REGION")
+	if !ok {
+		region = "us-west-2"
+	}
+	return region
+}
+
 // GetUpdateStatus returns the status of an update response for an extension
 func GetUpdateStatus(extension Extension) string {
 	if extension.Status == "" {
