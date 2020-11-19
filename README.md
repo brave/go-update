@@ -22,19 +22,15 @@ https://github.com/brave/devops/tree/master/docs/runbooks/go-updater
 
 ## Dependencies
 
-- Install Go 1.10 or later.
-- `dep` is used to install the Go dependencies.
-- `go get -u github.com/golangci/golangci-lint/cmd/golangci-lint`
-
-## Setup
-
-```
-go get -d github.com/brave/go-update
-cd ~/go/src/github.com/brave/go-update
-dep ensure
-```
+Go 1.15.
 
 ## Run lint:
+
+Install `golangci-lint` if you don't already have it:
+
+`go get github.com/golangci/golangci-lint/cmd/golangci-lint`
+
+Then:
 
 `make lint`
 
