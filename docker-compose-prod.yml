@@ -7,7 +7,7 @@ services:
       - S3_EXTENSIONS_BUCKET_HOST_TOR=tor.bravesoftware.com
       - S3_EXTENSIONS_BUCKET_HOST_IPFS=ipfs.bravesoftware.com
       - SENTRY_DSN=https://bdeadb80b91f490cbaa4d23d3250f58e@sentry.io/1862572
-      - REGION=us-west-2
+      - AWS_REGION=us-west-2
     logging:
       driver: awslogs
       options:

@@ -43,9 +43,7 @@ func IsJSONRequest(contentType string) bool {
 }
 
 func initExtensionUpdatesFromDynamoDB() {
-	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(extension.GetDynamoRegion())},
-	)
+	sess, err := session.NewSession(&aws.Config{},)
 
 	if err != nil {
 		log.Printf("failed to connect to new session %v\n", err)
