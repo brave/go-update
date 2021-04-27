@@ -4,6 +4,11 @@ package server
 import (
 	"context"
 	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"time"
+
 	"github.com/brave-intl/bat-go/middleware"
 	"github.com/brave/go-update/controller"
 	"github.com/brave/go-update/extension"
@@ -12,10 +17,6 @@ import (
 	chiware "github.com/go-chi/chi/middleware"
 	"github.com/pressly/lg"
 	"github.com/sirupsen/logrus"
-	"log"
-	"net/http"
-	"os"
-	"time"
 )
 
 func setupLogger(ctx context.Context) (context.Context, *logrus.Logger) {
@@ -41,7 +42,6 @@ func setupRouter(ctx context.Context, logger *logrus.Logger, testRouter bool) (c
 	}
 	extensions := extension.OfferedExtensions
 	r.Mount("/extensions", controller.ExtensionsRouter(extensions, testRouter))
-	r.Get("/metrics", middleware.Metrics())
 	return ctx, r
 }
 
@@ -49,6 +49,16 @@ func setupRouter(ctx context.Context, logger *logrus.Logger, testRouter bool) (c
 func StartServer() {
 	serverCtx, logger := setupLogger(context.Background())
 	logger.WithFields(logrus.Fields{"prefix": "main"}).Info("Starting server")
+
+	go func() {
+		// setup metrics on another non-public port 9090
+		err := http.ListenAndServe(":9090", middleware.Metrics())
+		if err != nil {
+			sentry.CaptureException(err)
+			panic(fmt.Sprintf("metrics HTTP server start failed: %s", err.Error()))
+		}
+	}()
+
 	serverCtx, r := setupRouter(serverCtx, logger, false)
 	port := ":8192"
 	fmt.Printf("Starting server: http://localhost%s", port)
