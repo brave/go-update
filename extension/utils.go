@@ -17,7 +17,6 @@ var ipfsClientWindowsExtensionID = "lnbclahgobmjphilkalbhebakmblnbij"
 var ipfsClientLinuxExtensionID = "oecghfpdmkjlhnfpmmjegjacfimiafjp"
 var ipfsClientMacArm64ExtensionID = "lejaflgbgglfaomemffoaappaihfligf"
 
-
 // ipfsClientExtensionIDs is used to add an exception to return the dedicated
 // proxy url for downloading the ipfs crx
 var ipfsClientExtensionIDs = []string{ipfsClientMacExtensionID, ipfsClientWindowsExtensionID, ipfsClientLinuxExtensionID, ipfsClientMacArm64ExtensionID}
