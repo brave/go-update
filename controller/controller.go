@@ -4,13 +4,6 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/brave/go-update/extension"
-	"github.com/getsentry/sentry-go"
-	"github.com/go-chi/chi"
-	"github.com/pressly/lg"
 	"io"
 	"io/ioutil"
 	"log"
@@ -18,6 +11,14 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/brave/go-update/extension"
+	"github.com/getsentry/sentry-go"
+	"github.com/go-chi/chi"
+	"github.com/pressly/lg"
 )
 
 // PDFJSExtensionID will be used to add an exception to pass the request for
@@ -250,7 +251,7 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 			if len(r.URL.RawQuery) != 0 {
 				queryString = "?" + r.URL.RawQuery
 			}
-			host := "componentupdater.brave.com"
+			host := extension.GetComponentUpdaterHost()
 			if updateRequest[0].ID == WidivineExtensionID {
 				host = "update.googleapis.com"
 			}

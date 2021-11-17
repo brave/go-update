@@ -39,6 +39,13 @@ func isIPFSExtension(id string) bool {
 	return false
 }
 
+func lookupEnvFallback(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
+}
+
 // GetS3ExtensionBucketHost returns the url to use for accessing crx files
 func GetS3ExtensionBucketHost(id string) string {
 	if isTorExtension(id) {
@@ -49,29 +56,17 @@ func GetS3ExtensionBucketHost(id string) string {
 		return GetS3IPFSExtensionBucketHost()
 	}
 
-	s3BucketHost, ok := os.LookupEnv("S3_EXTENSIONS_BUCKET_HOST")
-	if !ok {
-		s3BucketHost = "brave-core-ext.s3.brave.com"
-	}
-	return s3BucketHost
+	return lookupEnvFallback("S3_EXTENSIONS_BUCKET_HOST", "brave-core-ext.s3.brave.com")
 }
 
 // GetS3TorExtensionBucketHost returns the url to use for accessing tor client crx
 func GetS3TorExtensionBucketHost() string {
-	s3BucketHost, ok := os.LookupEnv("S3_EXTENSIONS_BUCKET_HOST_TOR")
-	if !ok {
-		s3BucketHost = "tor.bravesoftware.com"
-	}
-	return s3BucketHost
+	return lookupEnvFallback("S3_EXTENSIONS_BUCKET_HOST_TOR", "tor.bravesoftware.com")
 }
 
 // GetS3IPFSExtensionBucketHost returns the url to use for accessing go-ipfs client crx
 func GetS3IPFSExtensionBucketHost() string {
-	s3BucketHost, ok := os.LookupEnv("S3_EXTENSIONS_BUCKET_HOST_IPFS")
-	if !ok {
-		s3BucketHost = "ipfs.bravesoftware.com"
-	}
-	return s3BucketHost
+	return lookupEnvFallback("S3_EXTENSIONS_BUCKET_HOST_IPFS", "ipfs.bravesoftware.com")
 }
 
 // GetUpdateStatus returns the status of an update response for an extension
@@ -80,4 +75,9 @@ func GetUpdateStatus(extension Extension) string {
 		return "ok"
 	}
 	return extension.Status
+}
+
+// GetComponentUpdaterHost returns the url to use for extension updates
+func GetComponentUpdaterHost() string {
+	return lookupEnvFallback("COMPONENT_UPDATER_HOST", "componentupdater.brave.com")
 }
