@@ -1,0 +1,30 @@
+name: "Test"
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: "1.15"
+          check-latest: true
+
+      # TODO: uncomment after migrating to Go >= 1.16 or after go mod tidy
+      # Error: ../../../go/pkg/mod/github.com/daixiang0/gci@v0.3.3/pkg/io/search.go:4:2: package io/fs is not in GOROOT (/opt/hostedtoolcache/go/1.15.15/x64/src/io/fs)
+      # - name: Lint
+      #   run: |
+      #     go get github.com/golangci/golangci-lint/cmd/golangci-lint
+      #     make lint
+
+      - name: Test
+        run: make test
