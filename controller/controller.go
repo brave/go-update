@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -34,13 +33,7 @@ var WidivineExtensionID = "oimompecagnajdejgnnjijobebaeigek"
 // This list for tests is populated by extensions.OfferedExtensions.
 // For normal operaitons of this server it is obtained from the AWS config
 // of the host machine for DynamoDB.
-
-type ExtensionsMap struct {
-	sync.RWMutex
-	data map[string]extension.Extension
-}
-
-var AllExtensionsMap = &ExtensionsMap{data: make(map[string]extension.Extension)}
+var AllExtensionsMap = extension.NewExtensionMap()
 
 // ExtensionUpdaterTimeout is the amount of time to wait between getting new updates from DynamoDB for the list of extensions
 var ExtensionUpdaterTimeout = time.Minute * 10
@@ -76,18 +69,16 @@ func initExtensionUpdatesFromDynamoDB() {
 	}
 
 	// Update the extensions map
-	AllExtensionsMap.Lock()
 	for _, item := range result.Items {
 		id := *item["ID"].S
-		AllExtensionsMap.data[id] = extension.Extension{
+		AllExtensionsMap.Store(id, extension.Extension{
 			ID:          id,
 			Blacklisted: *item["Disabled"].BOOL,
 			SHA256:      *item["SHA256"].S,
 			Title:       *item["Title"].S,
 			Version:     *item["Version"].S,
-		}
+		})
 	}
-	AllExtensionsMap.Unlock()
 }
 
 // RefreshExtensionsTicker updates the list of extensions by
@@ -119,25 +110,19 @@ func ExtensionsRouter(extensions extension.Extensions, testRouter bool) chi.Rout
 // It simply prints out text for all extensions when visiting /extensions/test.
 // Since our internally maintained list is always small by design, this is not a big deal for performance.
 func PrintExtensions(w http.ResponseWriter, r *http.Request) {
-	AllExtensionsMap.RLock()
-	defer AllExtensionsMap.RUnlock()
 	log := lg.Log(r.Context())
-	w.Header().Set("content-type", "text/plain")
+	w.Header().Set("content-type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	if len(AllExtensionsMap.data) == 0 {
-		_, err := w.Write([]byte("No extensions found, do you have the AWS config correct for DynamoDB?"))
-		if err != nil {
-			log.Errorf("Error writing response for printing extensions: %v", err)
-		}
+
+	data, err := AllExtensionsMap.MarshalJSON()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error in marshal %v", err), http.StatusInternalServerError)
 		return
 	}
-	for key, val := range AllExtensionsMap.data {
-		s := fmt.Sprintf("%s=%+v\n\n", key, val)
-		_, err := w.Write([]byte(s))
-		if err != nil {
-			log.Errorf("Error writing response for printing extensions: %v", err)
-			break
-		}
+
+	_, err = w.Write([]byte(data))
+	if err != nil {
+		log.Errorf("Error writing response for printing extensions: %v", err)
 	}
 }
 
@@ -182,7 +167,7 @@ func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		foundExtension, ok := AllExtensionsMap.data[id]
+		foundExtension, ok := AllExtensionsMap.Load(id)
 		if (!ok || id == PDFJSExtensionID) && len(xValues) == 1 {
 			http.Redirect(w, r, "https://extensionupdater.brave.com/service/update2/crx?"+r.URL.RawQuery, http.StatusTemporaryRedirect)
 			return
@@ -260,7 +245,7 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 	// Special case, if there's only 1 extension in the request and it is not something
 	// we know about, redirect the client to google component update server.
 	if len(updateRequest) == 1 {
-		_, ok := AllExtensionsMap.data[updateRequest[0].ID]
+		_, ok := AllExtensionsMap.Load(updateRequest[0].ID)
 		if !ok {
 			queryString := ""
 			if len(r.URL.RawQuery) != 0 {
@@ -286,7 +271,7 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	updateResponse := updateRequest.FilterForUpdates(&AllExtensionsMap.data)
+	updateResponse := updateRequest.FilterForUpdates(AllExtensionsMap)
 
 	if jsonRequest {
 		data, err = json.Marshal(&updateResponse)
