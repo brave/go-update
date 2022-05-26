@@ -5,17 +5,18 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
-	"github.com/brave/go-update/controller"
-	"github.com/brave/go-update/extension"
-	"github.com/brave/go-update/extension/extensiontest"
-	"github.com/go-chi/chi"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/brave/go-update/controller"
+	"github.com/brave/go-update/extension"
+	"github.com/brave/go-update/extension/extensiontest"
+	"github.com/go-chi/chi"
+	"github.com/stretchr/testify/assert"
 )
 
 var newExtension1 = extension.Extension{}
@@ -52,16 +53,17 @@ func init() {
 	// We maintain a count to make sure the refresh function is called more than just
 	// the first time.
 	count := 0
-	controller.AllExtensionsMap = extension.LoadExtensionsIntoMap(&extension.OfferedExtensions)
+	controller.AllExtensionsMap = extension.NewExtensionMap()
+	controller.AllExtensionsMap.StoreExtensions(&extension.OfferedExtensions)
 	controller.ExtensionUpdaterTimeout = time.Millisecond * 1
 	testCtx, logger := setupLogger(context.Background())
 	handler = chi.ServerBaseContext(setupRouter(testCtx, logger, true))
 	controller.RefreshExtensionsTicker(func() {
 		count++
 		if count == 1 {
-			controller.AllExtensionsMap[newExtensionID1] = newExtension1
+			controller.AllExtensionsMap.Store(newExtensionID1, newExtension1)
 		} else if count == 2 {
-			controller.AllExtensionsMap[newExtensionID2] = newExtension2
+			controller.AllExtensionsMap.Store(newExtensionID2, newExtension2)
 		}
 	})
 }
@@ -342,7 +344,8 @@ func TestWebStoreUpdateExtensionXML(t *testing.T) {
 	server := httptest.NewServer(handler)
 	defer server.Close()
 
-	allExtensionsMap := extension.LoadExtensionsIntoMap(&extension.OfferedExtensions)
+	allExtensionsMap := extension.NewExtensionMap()
+	allExtensionsMap.StoreExtensions(&extension.OfferedExtensions)
 
 	// Empty query param request, no extensions.
 	requestBody := ""
@@ -351,7 +354,7 @@ func TestWebStoreUpdateExtensionXML(t *testing.T) {
 	testCall(t, server, http.MethodGet, contentTypeXML, query, requestBody, http.StatusOK, expectedResponse, "")
 
 	// Extension that we handle which is outdated should produce a response
-	outdatedLightThemeExtension, ok := allExtensionsMap["ldimlcelhnjgpjjemdjokpgeeikdinbm"]
+	outdatedLightThemeExtension, ok := allExtensionsMap.Load("ldimlcelhnjgpjjemdjokpgeeikdinbm")
 	outdatedLightThemeExtension.Version = "0.0.0"
 	assert.True(t, ok)
 	query = "?" + getQueryParams(&outdatedLightThemeExtension)
@@ -363,7 +366,7 @@ func TestWebStoreUpdateExtensionXML(t *testing.T) {
 	testCall(t, server, http.MethodGet, contentTypeXML, query, requestBody, http.StatusOK, expectedResponse, "")
 
 	// Multiple extensions that we handle which are outdated should produce a response
-	outdatedDarkThemeExtension, ok := allExtensionsMap["bfdgpgibhagkpdlnjonhkabjoijopoge"]
+	outdatedDarkThemeExtension, ok := allExtensionsMap.Load("bfdgpgibhagkpdlnjonhkabjoijopoge")
 	assert.True(t, ok)
 	outdatedDarkThemeExtension.Version = "0.0.0"
 	query = "?" + getQueryParams(&outdatedLightThemeExtension) + "&" + getQueryParams(&outdatedDarkThemeExtension)
@@ -378,7 +381,7 @@ func TestWebStoreUpdateExtensionXML(t *testing.T) {
 	testCall(t, server, http.MethodGet, contentTypeXML, query, requestBody, http.StatusOK, expectedResponse, "")
 
 	// Extension that we handle which is up to date should NOT produce an update but still be successful
-	lightThemeExtension, ok := allExtensionsMap["ldimlcelhnjgpjjemdjokpgeeikdinbm"]
+	lightThemeExtension, ok := allExtensionsMap.Load("ldimlcelhnjgpjjemdjokpgeeikdinbm")
 	assert.True(t, ok)
 	query = "?" + getQueryParams(&lightThemeExtension)
 	expectedResponse = `<gupdate protocol="3.1" server="prod"></gupdate>`
@@ -505,7 +508,8 @@ func TestWebStoreUpdateExtensionJSON(t *testing.T) {
 	server := httptest.NewServer(handler)
 	defer server.Close()
 
-	allExtensionsMap := extension.LoadExtensionsIntoMap(&extension.OfferedExtensions)
+	allExtensionsMap := extension.NewExtensionMap()
+	allExtensionsMap.StoreExtensions(&extension.OfferedExtensions)
 
 	// Empty query param request, no extensions.
 	requestBody := ""
@@ -514,7 +518,7 @@ func TestWebStoreUpdateExtensionJSON(t *testing.T) {
 	testCall(t, server, http.MethodGet, contentTypeJSON, query, requestBody, http.StatusOK, expectedResponse, "")
 
 	// Extension that we handle which is outdated should produce a response
-	outdatedLightThemeExtension, ok := allExtensionsMap["ldimlcelhnjgpjjemdjokpgeeikdinbm"]
+	outdatedLightThemeExtension, ok := allExtensionsMap.Load("ldimlcelhnjgpjjemdjokpgeeikdinbm")
 	outdatedLightThemeExtension.Version = "0.0.0"
 	assert.True(t, ok)
 	query = "?" + getQueryParams(&outdatedLightThemeExtension)
@@ -522,7 +526,7 @@ func TestWebStoreUpdateExtensionJSON(t *testing.T) {
 	testCall(t, server, http.MethodGet, contentTypeJSON, query, requestBody, http.StatusOK, expectedResponse, "")
 
 	// Multiple extensions that we handle which are outdated should produce a response
-	outdatedDarkThemeExtension, ok := allExtensionsMap["bfdgpgibhagkpdlnjonhkabjoijopoge"]
+	outdatedDarkThemeExtension, ok := allExtensionsMap.Load("bfdgpgibhagkpdlnjonhkabjoijopoge")
 	assert.True(t, ok)
 	outdatedDarkThemeExtension.Version = "0.0.0"
 	query = "?" + getQueryParams(&outdatedLightThemeExtension) + "&" + getQueryParams(&outdatedDarkThemeExtension)
@@ -530,7 +534,7 @@ func TestWebStoreUpdateExtensionJSON(t *testing.T) {
 	testCall(t, server, http.MethodGet, contentTypeJSON, query, requestBody, http.StatusOK, expectedResponse, "")
 
 	// Extension that we handle which is up to date should NOT produce an update but still be successful
-	lightThemeExtension, ok := allExtensionsMap["ldimlcelhnjgpjjemdjokpgeeikdinbm"]
+	lightThemeExtension, ok := allExtensionsMap.Load("ldimlcelhnjgpjjemdjokpgeeikdinbm")
 	assert.True(t, ok)
 	query = "?" + getQueryParams(&lightThemeExtension)
 	expectedResponse = `{"gupdate":{"protocol":"3.1","server":"prod","app":null}}`
@@ -579,11 +583,11 @@ func TestPrintExtensions(t *testing.T) {
 	assert.True(t, strings.Contains(string(actual), "ldimlcelhnjgpjjemdjokpgeeikdinbm"))
 
 	// Clear out the extensions map.
-	controller.AllExtensionsMap = map[string]extension.Extension{}
+	controller.AllExtensionsMap = extension.NewExtensionMap()
 	resp, err = client.Do(req)
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	actual, err = ioutil.ReadAll(resp.Body)
 	assert.Nil(t, err)
-	assert.Equal(t, string(actual), "No extensions found, do you have the AWS config correct for DynamoDB?")
+	assert.Equal(t, string(actual), "{}")
 }

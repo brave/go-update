@@ -1,8 +1,10 @@
 package extension
 
 import (
+	"encoding/json"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 // Extension represents an extension which is both used in update checks
@@ -19,6 +21,12 @@ type Extension struct {
 
 // Extensions is type for a slice of Extension.
 type Extensions []Extension
+
+// ExtensionsMap is safe for use across goroutines.
+type ExtensionsMap struct {
+	sync.RWMutex
+	data map[string]Extension
+}
 
 // UpdateRequest represents an extension XML request.
 type UpdateRequest Extensions
@@ -61,21 +69,14 @@ func CompareVersions(version1 string, version2 string) int {
 	return 0
 }
 
-// LoadExtensionsIntoMap converts a slice of extensions into a map from ID to extension.Extension
-func LoadExtensionsIntoMap(extensions *Extensions) map[string]Extension {
-	m := make(map[string]Extension)
-	for _, extension := range *extensions {
-		m[extension.ID] = extension
-	}
-	return m
-}
-
 // FilterForUpdates filters `extensions` down to only the extensions that are being checked,
 // and only the ones that we have updates for.
-func (updateRequest *UpdateRequest) FilterForUpdates(allExtensionsMap *map[string]Extension) UpdateResponse {
+func (updateRequest *UpdateRequest) FilterForUpdates(allExtensionsMap *ExtensionsMap) UpdateResponse {
 	filteredExtensions := UpdateResponse{}
+	allExtensionsMap.RLock()
+	defer allExtensionsMap.RUnlock()
 	for _, extensionBeingChecked := range *updateRequest {
-		foundExtension, ok := (*allExtensionsMap)[extensionBeingChecked.ID]
+		foundExtension, ok := allExtensionsMap.data[extensionBeingChecked.ID]
 		if ok {
 			status := CompareVersions(extensionBeingChecked.Version, foundExtension.Version)
 			if !foundExtension.Blacklisted && status <= 0 {
@@ -87,4 +88,42 @@ func (updateRequest *UpdateRequest) FilterForUpdates(allExtensionsMap *map[strin
 		}
 	}
 	return filteredExtensions
+}
+
+// Store adds or overwrites the key in the map with the Extension
+func (m *ExtensionsMap) Store(key string, extension Extension) {
+	m.Lock()
+	defer m.Unlock()
+	m.data[key] = extension
+}
+
+// Load looks up the Extension in the map by it's key
+func (m *ExtensionsMap) Load(key string) (extension Extension, ok bool) {
+	m.RLock()
+	defer m.RUnlock()
+	extension, ok = m.data[key]
+	return
+}
+
+// StoreExtensions converts a slice of extensions into a map from ID to extension.Extension
+func (m *ExtensionsMap) StoreExtensions(extensions *Extensions) {
+	m.Lock()
+	defer m.Unlock()
+	for _, extension := range *extensions {
+		m.data[extension.ID] = extension
+	}
+}
+
+// MarshalJSON marshals the Extension map into a JSON byte slice
+func (m *ExtensionsMap) MarshalJSON() ([]byte, error) {
+	m.RLock()
+	defer m.RUnlock()
+	return json.Marshal(m.data)
+}
+
+// NewExtensionMap creates a new map of Extension structs where access is controlled by a RW mutex
+func NewExtensionMap() *ExtensionsMap {
+	return &ExtensionsMap{
+		data: make(map[string]Extension),
+	}
 }
