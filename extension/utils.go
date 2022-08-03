@@ -8,9 +8,14 @@ var torClientMacExtensionID = "cldoidikboihgcjfkhdeidbpclkineef"
 var torClientWindowsExtensionID = "cpoalefficncklhjfpglfiplenlpccdb"
 var torClientLinuxExtensionID = "biahpgbdmdkfgndcmfiipgcebobojjkp"
 
+var torPluggableTransportsMacExtensionID = "einfndjnccmoohcngmlldpmellegjjnk"
+var torPluggableTransportsWindowsExtensionID = "dnkcahhmfcanmkjhnjejoomdihffoefm"
+var torPluggableTransportsLinuxExtensionID = "apfggiafobakjahnkchiecbomjgigkkn"
+
 // TorClientExtensionIDs is used to add an exception to return the dedicated
 // proxy url for downloading the tor client crx
 var TorClientExtensionIDs = []string{torClientMacExtensionID, torClientWindowsExtensionID, torClientLinuxExtensionID}
+var TorPluggableTransportsExtensionIDs = []string{torPluggableTransportsMacExtensionID, torPluggableTransportsWindowsExtensionID, torPluggableTransportsLinuxExtensionID}
 
 var ipfsClientMacExtensionID = "nljcddpbnaianmglkpkneakjaapinabi"
 var ipfsClientWindowsExtensionID = "lnbclahgobmjphilkalbhebakmblnbij"
@@ -24,6 +29,11 @@ var ipfsClientExtensionIDs = []string{ipfsClientMacExtensionID, ipfsClientWindow
 func isTorExtension(id string) bool {
 	for _, torID := range TorClientExtensionIDs {
 		if torID == id {
+			return true
+		}
+	}
+	for _, torPtID := range TorPluggableTransportsExtensionIDs {
+		if torPtID == id {
 			return true
 		}
 	}
