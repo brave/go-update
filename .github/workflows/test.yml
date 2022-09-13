@@ -16,7 +16,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v3
         with:
-          go-version: "1.15"
+          go-version: "1.19"
           check-latest: true
 
       # TODO: uncomment after migrating to Go >= 1.16 or after go mod tidy
