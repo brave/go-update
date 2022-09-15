@@ -22,7 +22,7 @@ https://github.com/brave/devops/tree/master/docs/runbooks/go-updater
 
 ## Dependencies
 
-Go 1.15.
+Go 1.19.
 
 ## Run lint:
 
