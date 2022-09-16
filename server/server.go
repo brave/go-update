@@ -32,6 +32,7 @@ func setupRouter(ctx context.Context, logger *logrus.Logger, testRouter bool) (c
 	r := chi.NewRouter()
 	r.Use(chiware.RequestID)
 	r.Use(chiware.RealIP)
+	r.Use(chiware.Compress(5, "application/*", "text/*"))
 	r.Use(chiware.Heartbeat("/"))
 	r.Use(chiware.Timeout(60 * time.Second))
 	r.Use(middleware.BearerToken)
