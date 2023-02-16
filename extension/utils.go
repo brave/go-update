@@ -7,6 +7,7 @@ import (
 var torClientMacExtensionID = "cldoidikboihgcjfkhdeidbpclkineef"
 var torClientWindowsExtensionID = "cpoalefficncklhjfpglfiplenlpccdb"
 var torClientLinuxExtensionID = "biahpgbdmdkfgndcmfiipgcebobojjkp"
+var torClientLinuxArm64ExtensionID = "fmmldihckdnognaabhligdpckkeancng"
 
 var torPluggableTransportsMacExtensionID = "einfndjnccmoohcngmlldpmellegjjnk"
 var torPluggableTransportsWindowsExtensionID = "dnkcahhmfcanmkjhnjejoomdihffoefm"
@@ -14,7 +15,7 @@ var torPluggableTransportsLinuxExtensionID = "apfggiafobakjahnkchiecbomjgigkkn"
 
 // TorClientExtensionIDs is used to add an exception to return the dedicated
 // proxy url for downloading the tor client crx
-var TorClientExtensionIDs = []string{torClientMacExtensionID, torClientWindowsExtensionID, torClientLinuxExtensionID}
+var TorClientExtensionIDs = []string{torClientMacExtensionID, torClientWindowsExtensionID, torClientLinuxExtensionID, torClientLinuxArm64ExtensionID}
 var TorPluggableTransportsExtensionIDs = []string{torPluggableTransportsMacExtensionID, torPluggableTransportsWindowsExtensionID, torPluggableTransportsLinuxExtensionID}
 
 var ipfsClientMacExtensionID = "nljcddpbnaianmglkpkneakjaapinabi"
