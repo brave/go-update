@@ -7,7 +7,7 @@ import (
 var torClientMacExtensionID = "cldoidikboihgcjfkhdeidbpclkineef"
 var torClientWindowsExtensionID = "cpoalefficncklhjfpglfiplenlpccdb"
 var torClientLinuxExtensionID = "biahpgbdmdkfgndcmfiipgcebobojjkp"
-var torClientLinuxArm64ExtensionID = "fmmldihckdnognaabhligdpckkeancng"
+var torClientLinuxArm64ExtensionID = "monolafkoghdlanndjfeebmdfkbklejg"
 
 var torPluggableTransportsMacExtensionID = "einfndjnccmoohcngmlldpmellegjjnk"
 var torPluggableTransportsWindowsExtensionID = "dnkcahhmfcanmkjhnjejoomdihffoefm"
