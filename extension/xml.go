@@ -32,10 +32,10 @@ func (updateResponse *UpdateResponse) MarshalXML(e *xml.Encoder, start xml.Start
 		Packages Packages
 	}
 	type UpdateCheck struct {
-		XMLName  xml.Name `xml:"updatecheck"`
-		URLs     URLs
-		Status   string `xml:"status,attr"`
-		Manifest Manifest
+		XMLName  xml.Name  `xml:"updatecheck"`
+		URLs     *URLs     `xml:"urls,omitempty"`
+		Status   string    `xml:"status,attr"`
+		Manifest *Manifest `xml:"manifest,omitempty"`
 	}
 	type App struct {
 		XMLName     xml.Name `xml:"app"`
@@ -56,18 +56,25 @@ func (updateResponse *UpdateResponse) MarshalXML(e *xml.Encoder, start xml.Start
 		app.UpdateCheck = UpdateCheck{Status: GetUpdateStatus(extension)}
 		extensionName := "extension_" + strings.Replace(extension.Version, ".", "_", -1) + ".crx"
 		url := "https://" + GetS3ExtensionBucketHost(extension.ID) + "/release/" + extension.ID + "/" + extensionName
-		app.UpdateCheck.URLs.URLs = append(app.UpdateCheck.URLs.URLs, URL{
-			Codebase: url,
-		})
-		app.UpdateCheck.Manifest = Manifest{
-			Version: extension.Version,
+		if app.UpdateCheck.Status == "ok" {
+			if app.UpdateCheck.URLs == nil {
+				app.UpdateCheck.URLs = &URLs{
+					URLs: []URL{},
+				}
+			}
+			app.UpdateCheck.URLs.URLs = append(app.UpdateCheck.URLs.URLs, URL{
+				Codebase: url,
+			})
+			app.UpdateCheck.Manifest = &Manifest{
+				Version: extension.Version,
+			}
+			pkg := Package{
+				Name:     extensionName,
+				SHA256:   extension.SHA256,
+				Required: true,
+			}
+			app.UpdateCheck.Manifest.Packages.Package = append(app.UpdateCheck.Manifest.Packages.Package, pkg)
 		}
-		pkg := Package{
-			Name:     extensionName,
-			SHA256:   extension.SHA256,
-			Required: true,
-		}
-		app.UpdateCheck.Manifest.Packages.Package = append(app.UpdateCheck.Manifest.Packages.Package, pkg)
 		response.Apps = append(response.Apps, app)
 	}
 	e.Indent("", "    ")

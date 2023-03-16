@@ -183,16 +183,7 @@ func TestUpdateExtensionsXML(t *testing.T) {
 	requestBody = lightThemeExtension("1.0.0")
 	expectedResponse = `<response protocol="3.1" server="prod">
     <app appid="ldimlcelhnjgpjjemdjokpgeeikdinbm">
-        <updatecheck status="noupdate">
-            <urls>
-                <url codebase="https://` + extension.GetS3ExtensionBucketHost(lightThemeExtensionID) + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"></url>
-            </urls>
-            <manifest version="1.0.0">
-                <packages>
-                    <package name="extension_1_0_0.crx" hash_sha256="1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618" required="true"></package>
-                </packages>
-            </manifest>
-        </updatecheck>
+        <updatecheck status="noupdate"></updatecheck>
     </app>
 </response>`
 	testCall(t, server, http.MethodPost, contentTypeXML, "", requestBody, http.StatusOK, expectedResponse, "")
@@ -444,7 +435,7 @@ func TestUpdateExtensionsJSON(t *testing.T) {
 
 	// Single extension same version
 	requestBody = lightThemeExtension("1.0.0")
-	expectedResponse = jsonPrefix + `{"response":{"protocol":"3.1","server":"prod","app":[{"appid":"ldimlcelhnjgpjjemdjokpgeeikdinbm","status":"ok","updatecheck":{"status":"noupdate","urls":{"url":[{"codebase":"https://` + extension.GetS3ExtensionBucketHost(lightThemeExtensionID) + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"}]},"manifest":{"version":"1.0.0","packages":{"package":[{"name":"extension_1_0_0.crx","hash_sha256":"1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618","required":true}]}}}}]}}`
+	expectedResponse = jsonPrefix + `{"response":{"protocol":"3.1","server":"prod","app":[{"appid":"ldimlcelhnjgpjjemdjokpgeeikdinbm","status":"ok","updatecheck":{"status":"noupdate"}}]}}`
 	testCall(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusOK, expectedResponse, "")
 
 	// Single extension greater version
