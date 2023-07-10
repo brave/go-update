@@ -224,7 +224,7 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Error reading body: %v", err), http.StatusBadRequest)
 		return
 	}
-	if len(body) == int(limit) {
+	if len(body) >= int(limit) {
 		http.Error(w, "Request too large", http.StatusBadRequest)
 		return
 	}
