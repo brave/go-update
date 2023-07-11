@@ -3,7 +3,7 @@ module github.com/brave/go-update
 go 1.19
 
 require (
-	github.com/aws/aws-sdk-go v1.44.298
+	github.com/aws/aws-sdk-go v1.44.299
 	github.com/brave-intl/bat-go v0.1.0
 	github.com/getsentry/sentry-go v0.22.0
 	github.com/go-chi/chi v4.1.2+incompatible
