@@ -266,12 +266,12 @@ func TestUpdateExtensionsXML(t *testing.T) {
 </response>`
 	testCall(t, server, http.MethodPost, contentTypeXML, "", requestBody, http.StatusOK, expectedResponse, "")
 
-	// Unkonwn extension ID goes to Google server via componentupdater proxy
+	// Unknown extension ID goes to Google server via componentupdater proxy
 	requestBody = extensiontest.ExtensionRequestFnForXML("aaaaaaaaaaaaaaaaaaaa")("0.0.0")
 	expectedResponse = ""
 	testCall(t, server, http.MethodPost, contentTypeXML, "", requestBody, http.StatusTemporaryRedirect, expectedResponse, "https://componentupdater.brave.com/service/update2")
 
-	// Unkonwn extension ID goes to Google server via componentupdater proxy
+	// Unknown extension ID goes to Google server via componentupdater proxy
 	// and preserves query params
 	requestBody = extensiontest.ExtensionRequestFnForXML("aaaaaaaaaaaaaaaaaaaa")("0.0.0")
 	expectedResponse = ""
@@ -378,7 +378,7 @@ func TestWebStoreUpdateExtensionXML(t *testing.T) {
 	expectedResponse = `<gupdate protocol="3.1" server="prod"></gupdate>`
 	testCall(t, server, http.MethodGet, contentTypeXML, query, requestBody, http.StatusOK, expectedResponse, "")
 
-	// Unkonwn extension ID goes to Google server
+	// Unknown extension ID goes to Google server
 	unknownExtension := extension.Extension{
 		ID:      "aaaaaaaaaaaaaaaaaaaa",
 		Version: "0.0.0",
@@ -387,7 +387,7 @@ func TestWebStoreUpdateExtensionXML(t *testing.T) {
 	expectedResponse = `<a href="https://extensionupdater.brave.com/service/update2/crx?x=id%3Daaaaaaaaaaaaaaaaaaaa%26v%3D0.0.0">Temporary Redirect</a>.`
 	testCall(t, server, http.MethodGet, contentTypeXML, query, requestBody, http.StatusTemporaryRedirect, expectedResponse, "https://extensionupdater.brave.com/service/update2/crx?x=id%3Daaaaaaaaaaaaaaaaaaaa%26v%3D0.0.0")
 
-	// Unkonwn extension ID with multiple extensions, we try to handle ourselves.
+	// Unknown extension ID with multiple extensions, we try to handle ourselves.
 	unknownExtension = extension.Extension{
 		ID:      "aaaaaaaaaaaaaaaaaaaa",
 		Version: "0.0.0",
@@ -465,12 +465,12 @@ func TestUpdateExtensionsJSON(t *testing.T) {
 	expectedResponse = jsonPrefix + `{"response":{"protocol":"3.1","server":"prod","app":[{"appid":"ldimlcelhnjgpjjemdjokpgeeikdinbm","status":"ok","updatecheck":{"status":"ok","urls":{"url":[{"codebase":"https://` + extension.GetS3ExtensionBucketHost(lightThemeExtensionID) + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"}]},"manifest":{"version":"1.0.0","packages":{"package":[{"name":"extension_1_0_0.crx","hash_sha256":"1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618","required":true}]}}}},{"appid":"bfdgpgibhagkpdlnjonhkabjoijopoge","status":"ok","updatecheck":{"status":"ok","urls":{"url":[{"codebase":"https://` + extension.GetS3ExtensionBucketHost(darkThemeExtensionID) + `/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx"}]},"manifest":{"version":"1.0.0","packages":{"package":[{"name":"extension_1_0_0.crx","hash_sha256":"ae517d6273a4fc126961cb026e02946db4f9dbb58e3d9bc29f5e1270e3ce9834","required":true}]}}}}]}}`
 	testCall(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusOK, expectedResponse, "")
 
-	// Unkonwn extension ID goes to Google server via componentupdater proxy
+	// Unknown extension ID goes to Google server via componentupdater proxy
 	requestBody = extensiontest.ExtensionRequestFnForJSON("aaaaaaaaaaaaaaaaaaaa")("0.0.0")
 	expectedResponse = ""
 	testCall(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusTemporaryRedirect, expectedResponse, "https://componentupdater.brave.com/service/update2/json")
 
-	// Unkonwn extension ID goes to Google server via componentupdater proxy
+	// Unknown extension ID goes to Google server via componentupdater proxy
 	// and preserves query params
 	requestBody = extensiontest.ExtensionRequestFnForJSON("aaaaaaaaaaaaaaaaaaaa")("0.0.0")
 	expectedResponse = ""
@@ -531,7 +531,7 @@ func TestWebStoreUpdateExtensionJSON(t *testing.T) {
 	expectedResponse = `{"gupdate":{"protocol":"3.1","server":"prod","app":null}}`
 	testCall(t, server, http.MethodGet, contentTypeJSON, query, requestBody, http.StatusOK, expectedResponse, "")
 
-	// Unkonwn extension ID goes to Google server
+	// Unknown extension ID goes to Google server
 	unknownExtension := extension.Extension{
 		ID:      "aaaaaaaaaaaaaaaaaaaa",
 		Version: "0.0.0",
@@ -540,7 +540,7 @@ func TestWebStoreUpdateExtensionJSON(t *testing.T) {
 	expectedResponse = "<a href=\"https://extensionupdater.brave.com/service/update2/crx?x=id%3Daaaaaaaaaaaaaaaaaaaa%26v%3D0.0.0\">Temporary Redirect</a>."
 	testCall(t, server, http.MethodGet, contentTypeJSON, query, requestBody, http.StatusTemporaryRedirect, expectedResponse, "https://extensionupdater.brave.com/service/update2/crx?x=id%3Daaaaaaaaaaaaaaaaaaaa%26v%3D0.0.0")
 
-	// Unkonwn extension ID with multiple extensions, we try to handle ourselves.
+	// Unknown extension ID with multiple extensions, we try to handle ourselves.
 	unknownExtension = extension.Extension{
 		ID:      "aaaaaaaaaaaaaaaaaaaa",
 		Version: "0.0.0",

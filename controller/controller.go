@@ -31,7 +31,7 @@ var WidivineExtensionID = "oimompecagnajdejgnnjijobebaeigek"
 
 // AllExtensionsMap holds a mapping of extension ID to extension object.
 // This list for tests is populated by extensions.OfferedExtensions.
-// For normal operaitons of this server it is obtained from the AWS config
+// For normal operations of this server it is obtained from the AWS config
 // of the host machine for DynamoDB.
 var AllExtensionsMap = extension.NewExtensionMap()
 
@@ -126,7 +126,7 @@ func PrintExtensions(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// WebStoreUpdateExtension is the handler for updating extensions made via the GET HTTP methhod.
+// WebStoreUpdateExtension is the handler for updating extensions made via the GET HTTP method.
 // Get requests look like this:
 // /extensions?os=mac&arch=x64&os_arch=x86_64&nacl_arch=x86-64&prod=chromiumcrx&prodchannel=&prodversion=69.0.54.0&lang=en-US&acceptformat=crx2,crx3&x=id%3Doemmndcbldboiebfnladdacbdfmadadm%26v%3D0.0.0.0%26installedby%3Dpolicy%26uc%26ping%3Dr%253D-1%2526e%253D1"
 // The query parameter x contains the encoded extension information, there can be more than one x parameter.

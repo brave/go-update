@@ -35,7 +35,7 @@ type UpdateRequest Extensions
 type UpdateResponse Extensions
 
 // WebStoreUpdateResponse represents a webstore XML response.
-// There is no symmetric WebStoreUpdateRequest becuase the request is URL query parameters.
+// There is no symmetric WebStoreUpdateRequest because the request is URL query parameters.
 type WebStoreUpdateResponse Extensions
 
 // CompareVersions compares 2 versions:
