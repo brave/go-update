@@ -23,10 +23,11 @@ var ipfsClientWindowsExtensionID = "lnbclahgobmjphilkalbhebakmblnbij"
 var ipfsClientLinuxExtensionID = "oecghfpdmkjlhnfpmmjegjacfimiafjp"
 var ipfsClientMacArm64ExtensionID = "lejaflgbgglfaomemffoaappaihfligf"
 var ipfsClientLinuxArm64ExtensionID = "fmmldihckdnognaabhligdpckkeancng"
+var ipfsClientWindowsArm64ExtensionID = "nbhgdecjnlofkpafjpcjfajdceeppaih"
 
 // ipfsClientExtensionIDs is used to add an exception to return the dedicated
 // proxy url for downloading the ipfs crx
-var ipfsClientExtensionIDs = []string{ipfsClientMacExtensionID, ipfsClientWindowsExtensionID, ipfsClientLinuxExtensionID, ipfsClientMacArm64ExtensionID, ipfsClientLinuxArm64ExtensionID}
+var ipfsClientExtensionIDs = []string{ipfsClientMacExtensionID, ipfsClientWindowsExtensionID, ipfsClientLinuxExtensionID, ipfsClientMacArm64ExtensionID, ipfsClientLinuxArm64ExtensionID, ipfsClientWindowsArm64ExtensionID}
 
 func isTorExtension(id string) bool {
 	for _, torID := range TorClientExtensionIDs {
