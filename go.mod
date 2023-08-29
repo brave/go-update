@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/aws/aws-sdk-go v1.44.299
 	github.com/brave-intl/bat-go v0.1.0
-	github.com/getsentry/sentry-go v0.22.0
+	github.com/getsentry/sentry-go v0.23.0
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/pressly/lg v1.1.1
 	github.com/sirupsen/logrus v1.9.3
