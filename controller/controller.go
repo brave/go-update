@@ -120,7 +120,7 @@ func PrintExtensions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = w.Write([]byte(data))
+	_, err = w.Write(data)
 	if err != nil {
 		log.Errorf("Error writing response for printing extensions: %v", err)
 	}
