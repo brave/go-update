@@ -284,13 +284,6 @@ var OfferedExtensions = Extensions{
 		URL:         "",
 		Blacklisted: false,
 	}, {
-		ID:          "oofiananboodjbbmdelgdommihjbkfag",
-		Version:     "1.0.1",
-		SHA256:      "c3c40af8bff5aacf90cb4176b820644756665de82c5e37170c7ad6f2878fea36",
-		Title:       "Brave HTTPS Everywhere Updater",
-		URL:         "",
-		Blacklisted: false,
-	}, {
 		ID:          "afalakplffnnnlkncjhbmahjfjhmlkal",
 		Version:     "1.0.1",
 		SHA256:      "190866dbaa189c463fded59130deaa8f950e0bead46b4340b3beeb05129e3a76",
