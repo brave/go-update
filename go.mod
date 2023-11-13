@@ -3,7 +3,7 @@ module github.com/brave/go-update
 go 1.21
 
 require (
-	github.com/aws/aws-sdk-go v1.47.8
+	github.com/aws/aws-sdk-go v1.47.10
 	github.com/brave-intl/bat-go v0.1.0
 	github.com/getsentry/sentry-go v0.25.0
 	github.com/go-chi/chi v4.1.2+incompatible
