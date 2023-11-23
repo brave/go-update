@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -77,7 +78,7 @@ func TestPing(t *testing.T) {
 		t.Fatalf("Received non-200 response: %d\n", resp.StatusCode)
 	}
 	expected := "."
-	actual, err := ioutil.ReadAll(resp.Body)
+	actual, err := io.ReadAll(resp.Body)
 	assert.Nil(t, err)
 	if expected != string(actual) {
 		t.Errorf("Expected the message '%s'\n", expected)
