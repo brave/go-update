@@ -8,12 +8,14 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/brave/go-update/extension"
 	"github.com/getsentry/sentry-go"
 	"github.com/go-chi/chi"
@@ -43,8 +45,11 @@ func IsJSONRequest(contentType string) bool {
 }
 
 func initExtensionUpdatesFromDynamoDB() {
-	sess, err := session.NewSession(&aws.Config{})
-
+	awsConfig := &aws.Config{}
+	if endpoint := os.Getenv("DYNAMODB_ENDPOINT"); endpoint != "" {
+		awsConfig.Endpoint = aws.String(endpoint)
+	}
+	sess, err := session.NewSession(awsConfig)
 	if err != nil {
 		log.Printf("failed to connect to new session %v\n", err)
 		sentry.CaptureException(err)
@@ -70,13 +75,27 @@ func initExtensionUpdatesFromDynamoDB() {
 	// Update the extensions map
 	for _, item := range result.Items {
 		id := *item["ID"].S
-		AllExtensionsMap.Store(id, extension.Extension{
+
+		ext := extension.Extension{
 			ID:          id,
 			Blacklisted: *item["Disabled"].BOOL,
 			SHA256:      *item["SHA256"].S,
 			Title:       *item["Title"].S,
 			Version:     *item["Version"].S,
-		})
+		}
+
+		if plist := item["PatchList"]; plist != nil {
+			var pinfo map[string]*extension.PatchInfo
+			if err := dynamodbattribute.UnmarshalMap(plist.M, &pinfo); err != nil {
+				log.Printf("failed to parse PatchList %v\n", err)
+				sentry.CaptureException(err)
+			} else {
+				ext.PatchList = pinfo
+			}
+		}
+
+		AllExtensionsMap.Store(id, ext)
+
 	}
 }
 

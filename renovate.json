@@ -1,5 +1,13 @@
 {
   "extends": [
-    "config:base"
+    "local>brave/renovate-config"
+  ],
+  "packageRules": [
+    {
+      "packageNames": ["github.com/aws/aws-sdk-go"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "autoApprove": true,
+      "automerge": true
+    }
   ]
 }

@@ -3,13 +3,13 @@ module github.com/brave/go-update
 go 1.21
 
 require (
-	github.com/aws/aws-sdk-go v1.45.2
+	github.com/aws/aws-sdk-go v1.52.1
 	github.com/brave-intl/bat-go v0.1.0
-	github.com/getsentry/sentry-go v0.23.0
+	github.com/getsentry/sentry-go v0.27.0
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/pressly/lg v1.1.1
 	github.com/sirupsen/logrus v1.9.3
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 )
 
 require (
@@ -28,7 +28,7 @@ require (
 	github.com/prometheus/common v0.44.0 // indirect
 	github.com/prometheus/procfs v0.11.0 // indirect
 	golang.org/x/sys v0.10.0 // indirect
-	golang.org/x/text v0.11.0 // indirect
-	google.golang.org/protobuf v1.31.0 // indirect
+	golang.org/x/text v0.13.0 // indirect
+	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

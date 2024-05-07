@@ -7,16 +7,24 @@ import (
 	"sync"
 )
 
+type PatchInfo struct {
+	Hashdiff string `json:"hashdiff"`
+	Namediff string `json:"namediff"`
+	Sizediff int    `json:"sizediff"`
+}
+
 // Extension represents an extension which is both used in update checks
 // and responses.
 type Extension struct {
 	ID          string
+	FP          string
 	Version     string
 	SHA256      string
 	Title       string
 	URL         string
 	Blacklisted bool
 	Status      string
+	PatchList   map[string]*PatchInfo
 }
 
 // Extensions is type for a slice of Extension.
@@ -83,6 +91,9 @@ func (updateRequest *UpdateRequest) FilterForUpdates(allExtensionsMap *Extension
 				if status == 0 {
 					foundExtension.Status = "noupdate"
 				}
+
+				foundExtension.FP = extensionBeingChecked.FP
+
 				filteredExtensions = append(filteredExtensions, foundExtension)
 			}
 		}
