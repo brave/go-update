@@ -5,7 +5,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -139,7 +138,7 @@ func PrintExtensions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = w.Write([]byte(data))
+	_, err = w.Write(data)
 	if err != nil {
 		log.Errorf("Error writing response for printing extensions: %v", err)
 	}
@@ -238,7 +237,7 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	limit := int64(1024 * 1024 * 10) // 10MiB
-	body, err := ioutil.ReadAll(io.LimitReader(r.Body, limit))
+	body, err := io.ReadAll(io.LimitReader(r.Body, limit))
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error reading body: %v", err), http.StatusBadRequest)
 		return
