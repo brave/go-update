@@ -1,0 +1,14 @@
+linters-settings:
+  govet:
+    enable:
+      - shadow
+
+linters:
+  enable:
+    - govet
+    - revive
+    - gofmt
+    - goimports
+
+issues:
+  exclude-use-default: false
