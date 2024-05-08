@@ -112,7 +112,7 @@ func RefreshExtensionsTicker(extensionMapUpdater func()) {
 }
 
 // ExtensionsRouter is the router for /extensions endpoints
-func ExtensionsRouter(extensions extension.Extensions, testRouter bool) chi.Router {
+func ExtensionsRouter(_ extension.Extensions, testRouter bool) chi.Router {
 	if !testRouter {
 		RefreshExtensionsTicker(initExtensionUpdatesFromDynamoDB)
 	}
