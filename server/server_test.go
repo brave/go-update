@@ -93,7 +93,7 @@ func testCall(t *testing.T, server *httptest.Server, method string, contentType 
 	req.Header.Add("Content-Type", contentType)
 
 	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
 	}
@@ -563,7 +563,7 @@ func TestPrintExtensions(t *testing.T) {
 	req, err := http.NewRequest(http.MethodGet, testURL, bytes.NewBuffer([]byte("")))
 	assert.Nil(t, err)
 	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
 	}
