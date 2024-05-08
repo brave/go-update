@@ -19,12 +19,10 @@ jobs:
           go-version: "1.21"
           check-latest: true
 
-      # TODO: uncomment after migrating to Go >= 1.16 or after go mod tidy
-      # Error: ../../../go/pkg/mod/github.com/daixiang0/gci@v0.3.3/pkg/io/search.go:4:2: package io/fs is not in GOROOT (/opt/hostedtoolcache/go/1.15.15/x64/src/io/fs)
-      # - name: Lint
-      #   run: |
-      #     go get github.com/golangci/golangci-lint/cmd/golangci-lint
-      #     make lint
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@23faadfdeb23a6f9e511beaba149bb123b5b145a # v6
+        with:
+          version: v1.58.0
 
       - name: Test
         run: make test
