@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -77,7 +78,7 @@ func TestPing(t *testing.T) {
 		t.Fatalf("Received non-200 response: %d\n", resp.StatusCode)
 	}
 	expected := "."
-	actual, err := ioutil.ReadAll(resp.Body)
+	actual, err := io.ReadAll(resp.Body)
 	assert.Nil(t, err)
 	if expected != string(actual) {
 		t.Errorf("Expected the message '%s'\n", expected)
@@ -92,7 +93,7 @@ func testCall(t *testing.T, server *httptest.Server, method string, contentType 
 	req.Header.Add("Content-Type", contentType)
 
 	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
 	}
@@ -562,7 +563,7 @@ func TestPrintExtensions(t *testing.T) {
 	req, err := http.NewRequest(http.MethodGet, testURL, bytes.NewBuffer([]byte("")))
 	assert.Nil(t, err)
 	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
 	}

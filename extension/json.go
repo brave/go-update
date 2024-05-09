@@ -59,7 +59,7 @@ func (updateResponse *UpdateResponse) MarshalJSON() ([]byte, error) {
 		app.UpdateCheck = UpdateCheck{Status: GetUpdateStatus(extension)}
 		extensionName := "extension_" + strings.Replace(extension.Version, ".", "_", -1) + ".crx"
 		url := "https://" + GetS3ExtensionBucketHost(extension.ID) + "/release/" + extension.ID + "/" + extensionName
-		diffUrl := "https://" + GetS3ExtensionBucketHost(extension.ID) + "/release/" + extension.ID + "/patches/" + extension.SHA256 + "/"
+		diffURL := "https://" + GetS3ExtensionBucketHost(extension.ID) + "/release/" + extension.ID + "/patches/" + extension.SHA256 + "/"
 		if app.UpdateCheck.Status == "ok" {
 			if app.UpdateCheck.URLs == nil {
 				app.UpdateCheck.URLs = &URLs{
@@ -83,7 +83,7 @@ func (updateResponse *UpdateResponse) MarshalJSON() ([]byte, error) {
 
 			if pInfoFound {
 				app.UpdateCheck.URLs.URLs = append(app.UpdateCheck.URLs.URLs, URL{
-					CodebaseDiff: diffUrl,
+					CodebaseDiff: diffURL,
 				})
 				pkg.NameDiff = patchInfo.Namediff
 				pkg.DiffSHA256 = patchInfo.Hashdiff

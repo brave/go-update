@@ -7,7 +7,7 @@ import (
 )
 
 // MarshalXML encodes the extension list into response XML
-func (updateResponse *UpdateResponse) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+func (updateResponse *UpdateResponse) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 	type URL struct {
 		XMLName  xml.Name `xml:"url"`
 		Codebase string   `xml:"codebase,attr"`
@@ -83,7 +83,7 @@ func (updateResponse *UpdateResponse) MarshalXML(e *xml.Encoder, start xml.Start
 }
 
 // MarshalXML encodes the extension list into response XML
-func (updateResponse *WebStoreUpdateResponse) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+func (updateResponse *WebStoreUpdateResponse) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 	type UpdateCheck struct {
 		XMLName  xml.Name `xml:"updatecheck"`
 		Status   string   `xml:"status,attr"`

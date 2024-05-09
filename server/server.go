@@ -37,8 +37,8 @@ func setupRouter(ctx context.Context, logger *logrus.Logger, testRouter bool) (c
 	r.Use(chiware.Heartbeat("/"))
 	r.Use(chiware.Timeout(60 * time.Second))
 	r.Use(middleware.BearerToken)
-	log, ok := os.LookupEnv("LOG_REQUEST")
-	if ok && log == "true" && logger != nil {
+	shouldLog, ok := os.LookupEnv("LOG_REQUEST")
+	if ok && shouldLog == "true" && logger != nil {
 		// Also handles panic recovery
 		r.Use(middleware.RequestLogger(logger))
 	}
