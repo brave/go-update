@@ -44,7 +44,6 @@ func setupRouter(ctx context.Context, logger *logrus.Logger, testRouter bool) (c
 	}
 	extensions := extension.OfferedExtensions
 	r.Mount("/extensions", controller.ExtensionsRouter(extensions, testRouter))
-
 	return ctx, r
 }
 
