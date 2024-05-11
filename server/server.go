@@ -45,17 +45,6 @@ func setupRouter(ctx context.Context, logger *logrus.Logger, testRouter bool) (c
 	extensions := extension.OfferedExtensions
 	r.Mount("/extensions", controller.ExtensionsRouter(extensions, testRouter))
 
-	// Add profiling flag to enable profiling routes.
-	if os.Getenv("PPROF_ENABLED") != "" {
-		// pprof attaches routes to default serve mux
-		// host:6061/debug/pprof/
-		go func() {
-			if err := http.ListenAndServe(":6061", http.DefaultServeMux); err != nil {
-				logger.WithError(err).Error("Server failed to start")
-			}
-		}()
-	}
-
 	return ctx, r
 }
 
@@ -72,6 +61,17 @@ func StartServer() {
 			panic(fmt.Sprintf("metrics HTTP server start failed: %s", err.Error()))
 		}
 	}()
+
+	// Add profiling flag to enable profiling routes.
+	if os.Getenv("PPROF_ENABLED") != "" {
+		// pprof attaches routes to default serve mux
+		// host:6061/debug/pprof/
+		go func() {
+			if err := http.ListenAndServe(":6061", http.DefaultServeMux); err != nil {
+				logger.WithError(err).Error("Server failed to start")
+			}
+		}()
+	}
 
 	serverCtx, r := setupRouter(serverCtx, logger, false)
 	port := ":8192"
