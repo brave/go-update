@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	_ "net/http/pprof" // pprof magic
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/brave-intl/bat-go/middleware"
@@ -59,6 +61,17 @@ func StartServer() {
 			panic(fmt.Sprintf("metrics HTTP server start failed: %s", err.Error()))
 		}
 	}()
+
+	// Add profiling flag to enable profiling routes.
+	if on, _ := strconv.ParseBool(os.Getenv("PPROF_ENABLED")); on {
+		// pprof attaches routes to default serve mux
+		// host:6061/debug/pprof/
+		go func() {
+			if err := http.ListenAndServe(":6061", http.DefaultServeMux); err != nil {
+				logger.WithError(err).Error("Server failed to start")
+			}
+		}()
+	}
 
 	serverCtx, r := setupRouter(serverCtx, logger, false)
 	port := ":8192"
