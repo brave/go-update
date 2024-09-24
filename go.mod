@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/aws/aws-sdk-go v1.55.5
 	github.com/brave-intl/bat-go v0.1.0
-	github.com/getsentry/sentry-go v0.28.1
+	github.com/getsentry/sentry-go v0.29.0
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/pressly/lg v1.1.1
 	github.com/sirupsen/logrus v1.9.3
