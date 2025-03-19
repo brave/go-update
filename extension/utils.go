@@ -2,6 +2,7 @@ package extension
 
 import (
 	"os"
+	"strings"
 )
 
 var torClientMacExtensionID = "cldoidikboihgcjfkhdeidbpclkineef"
@@ -39,6 +40,10 @@ func lookupEnvFallback(key, fallback string) string {
 	return fallback
 }
 
+func GetEnvironment() string {
+	return lookupEnvFallback("ENVIRONMENT", "production")
+}
+
 // GetS3ExtensionBucketHost returns the url to use for accessing crx files
 func GetS3ExtensionBucketHost(id string) string {
 	if isTorExtension(id) {
@@ -64,4 +69,14 @@ func GetUpdateStatus(extension Extension) string {
 // GetComponentUpdaterHost returns the url to use for extension updates
 func GetComponentUpdaterHost() string {
 	return lookupEnvFallback("COMPONENT_UPDATER_HOST", "componentupdater.brave.com")
+}
+
+func ConstructURL(host, path string) string {
+	if strings.HasPrefix(host, "http://") {
+		if GetEnvironment() != "local" {
+			panic("Cannot use http:// in non-local environment")
+		}
+		return host + path
+	}
+	return "https://" + host + path
 }

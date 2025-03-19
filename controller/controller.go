@@ -274,9 +274,9 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 				host = "update.googleapis.com"
 			}
 			if jsonRequest {
-				http.Redirect(w, r, "https://"+host+"/service/update2/json"+queryString, http.StatusTemporaryRedirect)
+				http.Redirect(w, r, extension.ConstructURL(host, "/service/update2/json"+queryString), http.StatusTemporaryRedirect)
 			} else {
-				http.Redirect(w, r, "https://"+host+"/service/update2"+queryString, http.StatusTemporaryRedirect)
+				http.Redirect(w, r, extension.ConstructURL(host, "/service/update2"+queryString), http.StatusTemporaryRedirect)
 			}
 			return
 		}

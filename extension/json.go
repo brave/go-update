@@ -58,8 +58,8 @@ func (updateResponse *UpdateResponse) MarshalJSON() ([]byte, error) {
 		patchInfo, pInfoFound := extension.PatchList[extension.FP]
 		app.UpdateCheck = UpdateCheck{Status: GetUpdateStatus(extension)}
 		extensionName := "extension_" + strings.Replace(extension.Version, ".", "_", -1) + ".crx"
-		url := "https://" + GetS3ExtensionBucketHost(extension.ID) + "/release/" + extension.ID + "/" + extensionName
-		diffURL := "https://" + GetS3ExtensionBucketHost(extension.ID) + "/release/" + extension.ID + "/patches/" + extension.SHA256 + "/"
+		url := ConstructURL(GetS3ExtensionBucketHost(extension.ID), "/release/"+extension.ID+"/"+extensionName)
+		diffURL := ConstructURL(GetS3ExtensionBucketHost(extension.ID), "/release/"+extension.ID+"/patches/"+extension.SHA256+"/")
 		if app.UpdateCheck.Status == "ok" {
 			if app.UpdateCheck.URLs == nil {
 				app.UpdateCheck.URLs = &URLs{
@@ -135,7 +135,7 @@ func (updateResponse *WebStoreUpdateResponse) MarshalJSON() ([]byte, error) {
 				Status:   "ok",
 				SHA256:   extension.SHA256,
 				Version:  extension.Version,
-				Codebase: "https://" + GetS3ExtensionBucketHost(extension.ID) + "/release/" + extension.ID + "/" + extensionName,
+				Codebase: ConstructURL(GetS3ExtensionBucketHost(extension.ID), "/release/"+extension.ID+"/"+extensionName),
 			},
 		}
 		response.Apps = append(response.Apps, app)

@@ -1,0 +1,30 @@
+networks:
+  main:
+
+services:
+  localstack:
+    image: localstack/localstack
+    ports:
+      - "127.0.0.1:4566:4566"
+      - "127.0.0.1:4510-4559:4510-4559"
+    networks:
+      - main
+    volumes:
+      - ./misc/create_in_localstack.sh:/etc/localstack/init/ready.d/create.sh
+  app:
+    build: .
+    networks:
+      - main
+    environment:
+      DYNAMODB_ENDPOINT: http://localstack:4566
+      AWS_REGION: us-west-2
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      COMPONENT_UPDATER_HOST: http://localhost:8192
+      S3_EXTENSIONS_BUCKET_HOST: http://localhost:4566/brave-core-ext
+      ENVIRONMENT: local
+    depends_on:
+      - localstack
+    restart: on-failure
+    ports:
+      - "127.0.0.1:8192:8192"
