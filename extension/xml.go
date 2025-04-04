@@ -139,7 +139,8 @@ func (updateRequest *UpdateRequest) UnmarshalXML(d *xml.Decoder, start xml.Start
 	}
 	type Request struct {
 		XMLName  xml.Name `xml:"request"`
-		App      []App    `xml:"app"`
+		App      []App    `xml:"app,omitempty"`  // For 3.x
+		Apps     []App    `xml:"apps,omitempty"` // For 4.0
 		Protocol string   `xml:"protocol,attr"`
 	}
 
@@ -149,17 +150,28 @@ func (updateRequest *UpdateRequest) UnmarshalXML(d *xml.Decoder, start xml.Start
 		return err
 	}
 
+	// Validate protocol
+	protocol := request.Protocol
+	if protocol != "3.0" && protocol != "3.1" && protocol != "4.0" {
+		return fmt.Errorf("request version: %v not supported", protocol)
+	}
+
 	*updateRequest = UpdateRequest{}
-	for _, app := range request.App {
+
+	// Determine which app list to use
+	var appsToProcess []App
+	if protocol == "4.0" { // Use 'apps' for protocol 4.0
+		appsToProcess = request.Apps
+	} else { // Fallback to 'app' for 3.x
+		appsToProcess = request.App
+	}
+
+	for _, app := range appsToProcess {
 		*updateRequest = append(*updateRequest, Extension{
 			ID:      app.AppID,
 			Version: app.Version,
 		})
 	}
 
-	if request.Protocol != "3.0" && request.Protocol != "3.1" {
-		err = fmt.Errorf("request version: %v not supported", request.Protocol)
-	}
-
-	return err
+	return nil
 }
