@@ -154,6 +154,9 @@ func (updateRequest *UpdateRequest) UnmarshalJSON(b []byte) error {
 	type Packages struct {
 		Package []Package `json:"package"`
 	}
+	type CachedItem struct {
+		Sha256 string `json:"sha256"`
+	}
 	type App struct {
 		AppID       string       `json:"appid"`
 		FP          string       `json:"fp,omitempty"`           // For 3.x
