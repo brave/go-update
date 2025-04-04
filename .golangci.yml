@@ -1,6 +1,6 @@
 version: "2"
 run:
-  go: "1.22"
+  go: "1.24"
   # Timeout for analysis, e.g. 30s, 5m, default is 3m
   timeout: 3m
 linters:
