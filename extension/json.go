@@ -186,15 +186,11 @@ func (updateRequest *UpdateRequest) UnmarshalJSON(b []byte) error {
 
 	*updateRequest = UpdateRequest{}
 
-	// Determine which app list to use
 	var appsToProcess []App
-	if len(request.Request.Apps) > 0 && protocol == "4.0" { // Prefer 'apps' for protocol 4.0
+	if protocol == "4.0" { // Use 'apps' for protocol 4.0
 		appsToProcess = request.Request.Apps
-	} else if len(request.Request.App) > 0 { // Fallback to 'app' for 3.x or if 'apps' is empty
+	} else { // Fallback to 'app' for 3.x
 		appsToProcess = request.Request.App
-	} else {
-		// No apps found, return empty request
-		return nil
 	}
 
 	for _, app := range appsToProcess {
