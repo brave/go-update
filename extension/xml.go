@@ -55,7 +55,7 @@ func (updateResponse *UpdateResponse) MarshalXML(e *xml.Encoder, _ xml.StartElem
 		app := App{AppID: extension.ID}
 		app.UpdateCheck = UpdateCheck{Status: GetUpdateStatus(extension)}
 		extensionName := "extension_" + strings.Replace(extension.Version, ".", "_", -1) + ".crx"
-		url := "https://" + GetS3ExtensionBucketHost(extension.ID) + "/release/" + extension.ID + "/" + extensionName
+		url := ConstructURL(GetS3ExtensionBucketHost(extension.ID), "/release/"+extension.ID+"/"+extensionName)
 		if app.UpdateCheck.Status == "ok" {
 			if app.UpdateCheck.URLs == nil {
 				app.UpdateCheck.URLs = &URLs{
@@ -116,7 +116,7 @@ func (updateResponse *WebStoreUpdateResponse) MarshalXML(e *xml.Encoder, _ xml.S
 				Status:   "ok",
 				SHA256:   extension.SHA256,
 				Version:  extension.Version,
-				Codebase: "https://" + GetS3ExtensionBucketHost(extension.ID) + "/release/" + extension.ID + "/" + extensionName,
+				Codebase: ConstructURL(GetS3ExtensionBucketHost(extension.ID), "/release/"+extension.ID+"/"+extensionName),
 			},
 		}
 		response.Apps = append(response.Apps, app)
