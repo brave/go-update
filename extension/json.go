@@ -154,16 +154,22 @@ func (updateRequest *UpdateRequest) UnmarshalJSON(b []byte) error {
 	type Packages struct {
 		Package []Package `json:"package"`
 	}
+	type CachedItem struct {
+		Sha256 string `json:"sha256"`
+	}
 	type App struct {
-		AppID    string   `json:"appid"`
-		FP       string   `json:"fp"`
-		Version  string   `json:"version"`
-		Packages Packages `json:"packages"`
+		AppID       string       `json:"appid"`
+		FP          string       `json:"fp,omitempty"`           // For 3.x
+		CachedItems []CachedItem `json:"cached_items,omitempty"` // For 4.0
+		Version     string       `json:"version"`
+		Packages    Packages     `json:"packages"`
 	}
 	type Request struct {
 		OS       string `json:"@os"`
-		Updater  string `json:"@updater"`
-		App      []App  `json:"app"`
+		Updater  string `json:"@updater,omitempty"`  // For 3.x
+		Updaters string `json:"@updaters,omitempty"` // For 4.0
+		App      []App  `json:"app,omitempty"`       // For 3.x
+		Apps     []App  `json:"apps,omitempty"`      // For 4.0
 		Protocol string `json:"protocol"`
 	}
 	type JSONRequest struct {
@@ -171,13 +177,26 @@ func (updateRequest *UpdateRequest) UnmarshalJSON(b []byte) error {
 	}
 
 	request := JSONRequest{}
-	err := json.Unmarshal(b, &request)
-	if err != nil {
+	if err := json.Unmarshal(b, &request); err != nil {
 		return err
 	}
 
+	// Validate protocol
+	protocol := request.Request.Protocol
+	if protocol != "3.0" && protocol != "3.1" && protocol != "4.0" {
+		return fmt.Errorf("request version: %v not supported", protocol)
+	}
+
 	*updateRequest = UpdateRequest{}
-	for _, app := range request.Request.App {
+
+	var appsToProcess []App
+	if protocol == "4.0" { // Use 'apps' for protocol 4.0
+		appsToProcess = request.Request.Apps
+	} else { // Fallback to 'app' for 3.x
+		appsToProcess = request.Request.App
+	}
+
+	for _, app := range appsToProcess {
 		fp := app.FP
 		// spec discrepancy: FP might be set within a "package" object (v3) instead of the "app" object (v3.1)
 		// https://github.com/google/omaha/blob/main/doc/ServerProtocolV3.md#package-request
@@ -189,12 +208,9 @@ func (updateRequest *UpdateRequest) UnmarshalJSON(b []byte) error {
 			ID:      app.AppID,
 			FP:      fp,
 			Version: app.Version,
+			// Protocol is not stored on the extension itself anymore
 		})
 	}
 
-	if request.Request.Protocol != "3.0" && request.Request.Protocol != "3.1" {
-		err = fmt.Errorf("request version: %v not supported", request.Request.Protocol)
-	}
-
-	return err
+	return nil
 }

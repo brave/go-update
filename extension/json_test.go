@@ -86,6 +86,35 @@ func TestUpdateRequestUnmarshalJSON(t *testing.T) {
 	data = []byte(`{"request":{"protocol":"2","version":"chrome-53.0.2785.116","prodversion":"53.0.2785.116","requestid":"{e821bacd-8dbf-4cc8-9e8c-bcbe8c1cfd3d}","lang":"","updaterchannel":"stable","prodchannel":"stable","os":"mac","arch":"x64","nacl_arch":"x86-64","hw":{"physmemory":16},"os":{"arch":"x86_64","platform":"Mac OS X","version":"10.14.3"}}}`)
 	err = json.Unmarshal(data, &updateRequest)
 	assert.NotNil(t, err, "Unrecognized protocol should have an error")
+
+	// Test omaha4 protocol format
+	data = []byte(`{
+		"request": {
+			"@os": "win",
+			"@updater": "BraveComponentUpdater",
+			"acceptformat": "crx3,download,puff,run",
+			"apps": [
+				{
+					"appid": "aomjjhallfgjeglblehebfpbcfeobpgk",
+					"enabled": true,
+					"installsource": "ondemand",
+					"ping": { "r": -2 },
+					"updatecheck": {},
+					"version": "4.7.0.90"
+				}
+			],
+			"protocol": "4.0",
+			"requestid": "{f122a713-8896-473a-a79f-c4be1755c47b}"
+		}
+	}`)
+	err = json.Unmarshal(data, &updateRequest)
+	assert.Nil(t, err, "Unmarshal should succeed for valid omaha4 format")
+	assert.Equal(t, 1, len(updateRequest), "Should parse one extension from omaha4 request")
+	// Expand assertions to check parsed values
+	if len(updateRequest) == 1 {
+		assert.Equal(t, onePasswordID, updateRequest[0].ID, "Parsed ID should match input")
+		assert.Equal(t, onePasswordVersion, updateRequest[0].Version, "Parsed Version should match input")
+	}
 }
 
 func TestWebStoreUpdateResponseMarshalJSON(t *testing.T) {
