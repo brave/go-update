@@ -163,7 +163,8 @@ func (updateRequest *UpdateRequest) UnmarshalJSON(b []byte) error {
 	type Request struct {
 		OS       string `json:"@os"`
 		Updater  string `json:"@updater"`
-		App      []App  `json:"app"`
+		App      []App  `json:"app,omitempty"`
+		Apps     []App  `json:"apps,omitempty"`
 		Protocol string `json:"protocol"`
 	}
 	type JSONRequest struct {
@@ -171,13 +172,30 @@ func (updateRequest *UpdateRequest) UnmarshalJSON(b []byte) error {
 	}
 
 	request := JSONRequest{}
-	err := json.Unmarshal(b, &request)
-	if err != nil {
+	if err := json.Unmarshal(b, &request); err != nil {
 		return err
 	}
 
+	// Validate protocol
+	protocol := request.Request.Protocol
+	if protocol != "3.0" && protocol != "3.1" && protocol != "4.0" {
+		return fmt.Errorf("request version: %v not supported", protocol)
+	}
+
 	*updateRequest = UpdateRequest{}
-	for _, app := range request.Request.App {
+
+	// Determine which app list to use
+	var appsToProcess []App
+	if len(request.Request.Apps) > 0 && protocol == "4.0" { // Prefer 'apps' for protocol 4.0
+		appsToProcess = request.Request.Apps
+	} else if len(request.Request.App) > 0 { // Fallback to 'app' for 3.x or if 'apps' is empty
+		appsToProcess = request.Request.App
+	} else {
+		// No apps found, return empty request
+		return nil
+	}
+
+	for _, app := range appsToProcess {
 		fp := app.FP
 		// spec discrepancy: FP might be set within a "package" object (v3) instead of the "app" object (v3.1)
 		// https://github.com/google/omaha/blob/main/doc/ServerProtocolV3.md#package-request
@@ -189,12 +207,9 @@ func (updateRequest *UpdateRequest) UnmarshalJSON(b []byte) error {
 			ID:      app.AppID,
 			FP:      fp,
 			Version: app.Version,
+			// Protocol is not stored on the extension itself anymore
 		})
 	}
 
-	if request.Request.Protocol != "3.0" && request.Request.Protocol != "3.1" {
-		err = fmt.Errorf("request version: %v not supported", request.Request.Protocol)
-	}
-
-	return err
+	return nil
 }

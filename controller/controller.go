@@ -260,6 +260,7 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Error reading body %v", err), http.StatusBadRequest)
 		return
 	}
+
 	// Special case, if there's only 1 extension in the request and it is not something
 	// we know about, redirect the client to google component update server.
 	if len(updateRequest) == 1 {
