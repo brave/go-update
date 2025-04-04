@@ -155,16 +155,18 @@ func (updateRequest *UpdateRequest) UnmarshalJSON(b []byte) error {
 		Package []Package `json:"package"`
 	}
 	type App struct {
-		AppID    string   `json:"appid"`
-		FP       string   `json:"fp"`
-		Version  string   `json:"version"`
-		Packages Packages `json:"packages"`
+		AppID       string       `json:"appid"`
+		FP          string       `json:"fp,omitempty"`           // For 3.x
+		CachedItems []CachedItem `json:"cached_items,omitempty"` // For 4.0
+		Version     string       `json:"version"`
+		Packages    Packages     `json:"packages"`
 	}
 	type Request struct {
 		OS       string `json:"@os"`
-		Updater  string `json:"@updater"`
-		App      []App  `json:"app,omitempty"`
-		Apps     []App  `json:"apps,omitempty"`
+		Updater  string `json:"@updater,omitempty"`  // For 3.x
+		Updaters string `json:"@updaters,omitempty"` // For 4.0
+		App      []App  `json:"app,omitempty"`       // For 3.x
+		Apps     []App  `json:"apps,omitempty"`      // For 4.0
 		Protocol string `json:"protocol"`
 	}
 	type JSONRequest struct {
