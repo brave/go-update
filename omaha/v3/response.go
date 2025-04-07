@@ -20,7 +20,7 @@ func GetUpdateStatus(extension extension.Extension) string {
 }
 
 // MarshalJSON encodes the extension list into response JSON
-func (r *Response) MarshalJSON(protocolVersion string) ([]byte, error) {
+func (r *Response) MarshalJSON() ([]byte, error) {
 	type URL struct {
 		Codebase     string `json:"codebase,omitempty"`
 		CodebaseDiff string `json:"codebasediff,omitempty"`
@@ -64,7 +64,7 @@ func (r *Response) MarshalJSON(protocolVersion string) ([]byte, error) {
 	}
 
 	response := ResponseWrapper{}
-	response.Protocol = protocolVersion
+	response.Protocol = "3.1"
 	response.Server = "prod"
 	for _, ext := range *r {
 		app := App{AppID: ext.ID, Status: "ok"}
@@ -95,7 +95,7 @@ func (r *Response) MarshalJSON(protocolVersion string) ([]byte, error) {
 			}
 
 			// Only v3.1 supports diffs
-			if pInfoFound && protocolVersion == "3.1" {
+			if pInfoFound {
 				app.UpdateCheck.URLs.URLs = append(app.UpdateCheck.URLs.URLs, URL{
 					CodebaseDiff: diffURL,
 				})
@@ -116,7 +116,7 @@ func (r *Response) MarshalJSON(protocolVersion string) ([]byte, error) {
 }
 
 // MarshalXML encodes the extension list into response XML
-func (r *Response) MarshalXML(e *xml.Encoder, _ xml.StartElement, protocolVersion string) error {
+func (r *Response) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 	type URL struct {
 		XMLName  xml.Name `xml:"url"`
 		Codebase string   `xml:"codebase,attr"`
@@ -158,7 +158,7 @@ func (r *Response) MarshalXML(e *xml.Encoder, _ xml.StartElement, protocolVersio
 		Apps     []App
 	}
 	response := ResponseWrapper{}
-	response.Protocol = protocolVersion
+	response.Protocol = "3.1"
 	response.Server = "prod"
 	for _, ext := range *r {
 		app := App{AppID: ext.ID}
@@ -200,7 +200,7 @@ func (r *Response) AsExtensionResponse() extension.UpdateResponse {
 type WebStoreResponse extension.WebStoreUpdateResponse
 
 // MarshalJSON encodes the extension list into response JSON
-func (r *WebStoreResponse) MarshalJSON(protocolVersion string) ([]byte, error) {
+func (r *WebStoreResponse) MarshalJSON() ([]byte, error) {
 	type UpdateCheck struct {
 		Status   string `json:"status"`
 		Codebase string `json:"codebase"`
@@ -221,7 +221,7 @@ func (r *WebStoreResponse) MarshalJSON(protocolVersion string) ([]byte, error) {
 		GUpdate GUpdate `json:"gupdate"`
 	}
 	response := GUpdate{}
-	response.Protocol = protocolVersion
+	response.Protocol = "3.1"
 	response.Server = "prod"
 
 	for _, ext := range *r {
@@ -245,7 +245,7 @@ func (r *WebStoreResponse) MarshalJSON(protocolVersion string) ([]byte, error) {
 }
 
 // MarshalXML encodes the extension list into response XML
-func (r *WebStoreResponse) MarshalXML(e *xml.Encoder, _ xml.StartElement, protocolVersion string) error {
+func (r *WebStoreResponse) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 	type UpdateCheck struct {
 		XMLName  xml.Name `xml:"updatecheck"`
 		Status   string   `xml:"status,attr"`
@@ -266,7 +266,7 @@ func (r *WebStoreResponse) MarshalXML(e *xml.Encoder, _ xml.StartElement, protoc
 		Apps     []App
 	}
 	response := GUpdate{}
-	response.Protocol = protocolVersion
+	response.Protocol = "3.1"
 	response.Server = "prod"
 
 	for _, ext := range *r {

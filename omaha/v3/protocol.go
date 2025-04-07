@@ -74,10 +74,10 @@ func (h *VersionedHandler) FormatResponse(response extension.UpdateResponse, isW
 	if contentType == "application/json" {
 		if isWebStore {
 			webStoreResponse := WebStoreResponse(response)
-			return webStoreResponse.MarshalJSON(h.version)
+			return webStoreResponse.MarshalJSON()
 		}
 		standardResponse := Response(response)
-		return standardResponse.MarshalJSON(h.version)
+		return standardResponse.MarshalJSON()
 	}
 
 	// XML response
@@ -87,10 +87,10 @@ func (h *VersionedHandler) FormatResponse(response extension.UpdateResponse, isW
 
 	if isWebStore {
 		webStoreResponse := WebStoreResponse(response)
-		err = webStoreResponse.MarshalXML(encoder, xml.StartElement{Name: xml.Name{Local: "gupdate"}}, h.version)
+		err = webStoreResponse.MarshalXML(encoder, xml.StartElement{Name: xml.Name{Local: "gupdate"}})
 	} else {
 		standardResponse := Response(response)
-		err = standardResponse.MarshalXML(encoder, xml.StartElement{Name: xml.Name{Local: "response"}}, h.version)
+		err = standardResponse.MarshalXML(encoder, xml.StartElement{Name: xml.Name{Local: "response"}})
 	}
 
 	if err != nil {
