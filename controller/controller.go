@@ -1,8 +1,6 @@
 package controller
 
 import (
-	"encoding/json"
-	"encoding/xml"
 	"fmt"
 	"io"
 	"log"
@@ -17,6 +15,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/brave/go-update/extension"
+	"github.com/brave/go-update/omaha"
+	"github.com/brave/go-update/omaha/common"
 	"github.com/getsentry/sentry-go"
 	"github.com/go-chi/chi"
 	"github.com/pressly/lg"
@@ -39,10 +39,8 @@ var AllExtensionsMap = extension.NewExtensionMap()
 // ExtensionUpdaterTimeout is the amount of time to wait between getting new updates from DynamoDB for the list of extensions
 var ExtensionUpdaterTimeout = time.Minute * 10
 
-// IsJSONRequest is used to check if JSON parser should be used
-func IsJSONRequest(contentType string) bool {
-	return contentType == "application/json"
-}
+// ProtocolFactory is the factory used to create protocol handlers
+var ProtocolFactory = &omaha.DefaultFactory{}
 
 func initExtensionUpdatesFromDynamoDB() {
 	awsConfig := &aws.Config{}
@@ -149,9 +147,7 @@ func PrintExtensions(w http.ResponseWriter, r *http.Request) {
 // /extensions?os=mac&arch=x64&os_arch=x86_64&nacl_arch=x86-64&prod=chromiumcrx&prodchannel=&prodversion=69.0.54.0&lang=en-US&acceptformat=crx2,crx3&x=id%3Doemmndcbldboiebfnladdacbdfmadadm%26v%3D0.0.0.0%26installedby%3Dpolicy%26uc%26ping%3Dr%253D-1%2526e%253D1"
 // The query parameter x contains the encoded extension information, there can be more than one x parameter.
 func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
-	var data []byte
-	var err error
-
+	contentType := r.Header.Get("Content-Type")
 	log := lg.Log(r.Context())
 	defer func() {
 		err := r.Body.Close()
@@ -203,18 +199,26 @@ func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 
-	if IsJSONRequest(r.Header.Get("Content-Type")) {
-		w.Header().Set("content-type", "application/json")
-		data, err = json.Marshal(&webStoreResponse)
-	} else {
-		w.Header().Set("content-type", "application/xml")
-		data, err = xml.Marshal(&webStoreResponse)
-	}
-
+	// Always use protocol 3.1 for responses
+	protocolHandler, err := ProtocolFactory.CreateProtocol("3.1")
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error in marshal %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Error creating protocol handler: %v", err), http.StatusInternalServerError)
 		return
 	}
+
+	data, err := protocolHandler.FormatResponse(extension.UpdateResponse(webStoreResponse), true, contentType)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error formatting response: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Set content type
+	if common.IsJSONRequest(contentType) {
+		w.Header().Set("content-type", "application/json")
+	} else {
+		w.Header().Set("content-type", "application/xml")
+	}
+
 	_, err = w.Write(data)
 	if err != nil {
 		log.Errorf("Error writing response: %v", err)
@@ -223,9 +227,7 @@ func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
 
 // UpdateExtensions is the handler for updating extensions
 func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
-	var data []byte
-	var err error
-
+	contentType := r.Header.Get("content-type")
 	jsonPrefix := []byte(")]}'\n")
 
 	log := lg.Log(r.Context())
@@ -247,19 +249,38 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jsonRequest := IsJSONRequest(r.Header.Get("content-type"))
-
-	updateRequest := extension.UpdateRequest{}
-	if jsonRequest {
-		err = json.Unmarshal(body, &updateRequest)
-	} else {
-		err = xml.Unmarshal(body, &updateRequest)
-	}
-
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Error reading body %v", err), http.StatusBadRequest)
+	// Special case for empty body
+	if len(body) == 0 {
+		http.Error(w, "Error parsing request: EOF", http.StatusBadRequest)
 		return
 	}
+
+	// Use protocol handler to format response
+	protocolVersion, err := omaha.DetectProtocolVersion(body, contentType)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error parsing request: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	// Special case for unsupported protocol versions
+	if protocolVersion != "3.0" && protocolVersion != "3.1" {
+		http.Error(w, fmt.Sprintf("Error parsing request: request version: %s not supported", protocolVersion), http.StatusBadRequest)
+		return
+	}
+
+	protocolHandler, err := ProtocolFactory.CreateProtocol(protocolVersion)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error parsing request: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	// Parse the request
+	updateRequest, err := protocolHandler.ParseRequest(body, contentType)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error parsing request: %v", err), http.StatusBadRequest)
+		return
+	}
+
 	// Special case, if there's only 1 extension in the request and it is not something
 	// we know about, redirect the client to google component update server.
 	if len(updateRequest) == 1 {
@@ -273,7 +294,7 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 			if updateRequest[0].ID == WidivineExtensionID {
 				host = "update.googleapis.com"
 			}
-			if jsonRequest {
+			if common.IsJSONRequest(contentType) {
 				http.Redirect(w, r, "https://"+host+"/service/update2/json"+queryString, http.StatusTemporaryRedirect)
 			} else {
 				http.Redirect(w, r, "https://"+host+"/service/update2"+queryString, http.StatusTemporaryRedirect)
@@ -282,7 +303,8 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if jsonRequest {
+	// Set content type header
+	if common.IsJSONRequest(contentType) {
 		w.Header().Set("content-type", "application/json")
 	} else {
 		w.Header().Set("content-type", "application/xml")
@@ -291,18 +313,20 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	updateResponse := updateRequest.FilterForUpdates(AllExtensionsMap)
 
-	if jsonRequest {
-		data, err = json.Marshal(&updateResponse)
-	} else {
-		data, err = xml.Marshal(&updateResponse)
-	}
-
+	// Always use protocol 3.1 in responses regardless of input protocol
+	responseProtocolHandler, err := ProtocolFactory.CreateProtocol("3.1")
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error in marshal %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Error creating response protocol handler: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	if jsonRequest {
+	data, err := responseProtocolHandler.FormatResponse(updateResponse, false, contentType)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error formatting response: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	if common.IsJSONRequest(contentType) {
 		data = append(jsonPrefix, data...)
 	}
 
