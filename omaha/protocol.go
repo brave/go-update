@@ -50,29 +50,29 @@ func DetectProtocolVersion(data []byte, contentType string) (string, error) {
 		}
 
 		return protocolVersion, nil
-	} else {
-		// Parse XML to extract protocol version
-		decoder := xml.NewDecoder(strings.NewReader(string(data)))
-		for {
-			token, err := decoder.Token()
-			if err != nil {
-				if err == io.EOF {
-					break
-				}
-				return "", fmt.Errorf("error parsing XML: %v", err)
-			}
+	}
 
-			if se, ok := token.(xml.StartElement); ok {
-				if se.Name.Local == "request" {
-					for _, attr := range se.Attr {
-						if attr.Name.Local == "protocol" {
-							return attr.Value, nil
-						}
+	// Parse XML to extract protocol version
+	decoder := xml.NewDecoder(strings.NewReader(string(data)))
+	for {
+		token, err := decoder.Token()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return "", fmt.Errorf("error parsing XML: %v", err)
+		}
+
+		if se, ok := token.(xml.StartElement); ok {
+			if se.Name.Local == "request" {
+				for _, attr := range se.Attr {
+					if attr.Name.Local == "protocol" {
+						return attr.Value, nil
 					}
-					return "", fmt.Errorf("protocol attribute not found in request element")
 				}
+				return "", fmt.Errorf("protocol attribute not found in request element")
 			}
 		}
-		return "", fmt.Errorf("request element not found in XML")
 	}
+	return "", fmt.Errorf("request element not found in XML")
 }
