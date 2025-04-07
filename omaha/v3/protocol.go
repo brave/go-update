@@ -12,9 +12,9 @@ type Protocol interface {
 	// GetVersion returns the protocol version
 	GetVersion() string
 	// ParseRequest parses a request in the appropriate format
-	ParseRequest([]byte, string) (extension.UpdateRequest, error)
+	ParseRequest([]byte, string) (extension.Extensions, error)
 	// FormatResponse formats a response in the appropriate format based on content type
-	FormatResponse(extension.UpdateResponse, bool, string) ([]byte, error)
+	FormatResponse(extension.Extensions, bool, string) ([]byte, error)
 }
 
 // VersionedHandler is a unified implementation of the Protocol interface
@@ -36,7 +36,7 @@ func (h *VersionedHandler) GetVersion() string {
 }
 
 // ParseRequest parses a request in the appropriate format (JSON or XML)
-func (h *VersionedHandler) ParseRequest(data []byte, contentType string) (extension.UpdateRequest, error) {
+func (h *VersionedHandler) ParseRequest(data []byte, contentType string) (extension.Extensions, error) {
 	var request Request
 	var err error
 
@@ -66,18 +66,19 @@ func (h *VersionedHandler) ParseRequest(data []byte, contentType string) (extens
 		return nil, err
 	}
 
-	return extension.UpdateRequest(request), nil
+	return extension.Extensions(request), nil
 }
 
 // FormatResponse formats a response in the appropriate format based on content type
-func (h *VersionedHandler) FormatResponse(response extension.UpdateResponse, isWebStore bool, contentType string) ([]byte, error) {
+func (h *VersionedHandler) FormatResponse(extensions extension.Extensions, isWebStore bool, contentType string) ([]byte, error) {
+	response := Response(extensions)
+
 	if contentType == "application/json" {
 		if isWebStore {
 			webStoreResponse := WebStoreResponse(response)
 			return webStoreResponse.MarshalJSON()
 		}
-		standardResponse := Response(response)
-		return standardResponse.MarshalJSON()
+		return response.MarshalJSON()
 	}
 
 	// XML response
@@ -89,8 +90,7 @@ func (h *VersionedHandler) FormatResponse(response extension.UpdateResponse, isW
 		webStoreResponse := WebStoreResponse(response)
 		err = webStoreResponse.MarshalXML(encoder, xml.StartElement{Name: xml.Name{Local: "gupdate"}})
 	} else {
-		standardResponse := Response(response)
-		err = standardResponse.MarshalXML(encoder, xml.StartElement{Name: xml.Name{Local: "response"}})
+		err = response.MarshalXML(encoder, xml.StartElement{Name: xml.Name{Local: "response"}})
 	}
 
 	if err != nil {

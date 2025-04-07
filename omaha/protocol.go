@@ -16,11 +16,12 @@ type Protocol interface {
 	GetVersion() string
 
 	// ParseRequest parses an update request according to this protocol version
-	ParseRequest([]byte, string) (extension.UpdateRequest, error)
+	// It returns a slice of Extension objects and any error encountered
+	ParseRequest([]byte, string) (extension.Extensions, error)
 
 	// FormatResponse formats an update response according to this protocol version
 	// The boolean parameter indicates whether this is a web store response
-	FormatResponse(extension.UpdateResponse, bool, string) ([]byte, error)
+	FormatResponse(extension.Extensions, bool, string) ([]byte, error)
 }
 
 // SupportedProtocolVersions is a list of Omaha protocol versions that we support

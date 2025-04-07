@@ -520,7 +520,7 @@ func TestProtocolHandler(t *testing.T) {
 	}
 
 	// Test v3.0 response formatting
-	response30 := extension.UpdateResponse{
+	response30 := Response{
 		{
 			ID:      "test-app-id",
 			Version: "1.0.0",
@@ -528,7 +528,7 @@ func TestProtocolHandler(t *testing.T) {
 		},
 	}
 
-	jsonResponse30, err := protocol30.FormatResponse(response30, false, "application/json")
+	jsonResponse30, err := protocol30.FormatResponse(extension.Extensions(response30), false, "application/json")
 	if err != nil {
 		t.Fatalf("Failed to format v3.0 response: %v", err)
 	}
@@ -540,7 +540,7 @@ func TestProtocolHandler(t *testing.T) {
 	}
 
 	// Test v3.1 response formatting with diff information
-	response31 := extension.UpdateResponse{
+	response31 := Response{
 		{
 			ID:      "test-app-id",
 			Version: "1.0.0",
@@ -556,7 +556,7 @@ func TestProtocolHandler(t *testing.T) {
 		},
 	}
 
-	jsonResponse31, err := protocol31.FormatResponse(response31, false, "application/json")
+	jsonResponse31, err := protocol31.FormatResponse(extension.Extensions(response31), false, "application/json")
 	if err != nil {
 		t.Fatalf("Failed to format v3.1 response: %v", err)
 	}

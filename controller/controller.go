@@ -146,7 +146,8 @@ func PrintExtensions(w http.ResponseWriter, r *http.Request) {
 // /extensions?os=mac&arch=x64&os_arch=x86_64&nacl_arch=x86-64&prod=chromiumcrx&prodchannel=&prodversion=69.0.54.0&lang=en-US&acceptformat=crx2,crx3&x=id%3Doemmndcbldboiebfnladdacbdfmadadm%26v%3D0.0.0.0%26installedby%3Dpolicy%26uc%26ping%3Dr%253D-1%2526e%253D1"
 // The query parameter x contains the encoded extension information, there can be more than one x parameter.
 func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
-	contentType := r.Header.Get("Content-Type")
+	contentType := r.Header.Get("content-type")
+
 	log := lg.Log(r.Context())
 	defer func() {
 		err := r.Body.Close()
@@ -156,7 +157,7 @@ func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	xValues := r.URL.Query()["x"]
-	webStoreResponse := extension.WebStoreUpdateResponse{}
+	webStoreResponse := extension.Extensions{}
 
 	AllExtensionsMap.RLock()
 	defer AllExtensionsMap.RUnlock()
@@ -205,7 +206,7 @@ func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := protocolHandler.FormatResponse(extension.UpdateResponse(webStoreResponse), true, contentType)
+	data, err := protocolHandler.FormatResponse(webStoreResponse, true, contentType)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error formatting response: %v", err), http.StatusInternalServerError)
 		return
@@ -310,7 +311,9 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	updateResponse := updateRequest.FilterForUpdates(AllExtensionsMap)
+
+	// Use the generic FilterForUpdates function
+	updateResponse := extension.FilterForUpdates(updateRequest, AllExtensionsMap)
 
 	// Always use protocol 3.1 in responses regardless of input protocol
 	responseProtocolHandler, err := ProtocolFactory.CreateProtocol("3.1")

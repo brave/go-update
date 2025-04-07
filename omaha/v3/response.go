@@ -9,7 +9,7 @@ import (
 )
 
 // Response represents an Omaha v3 update response
-type Response extension.UpdateResponse
+type Response []extension.Extension
 
 // GetUpdateStatus determines the update status based on extension data
 func GetUpdateStatus(extension extension.Extension) string {
@@ -191,15 +191,10 @@ func (r *Response) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 	return err
 }
 
-// AsExtensionResponse converts v3.Response to extension.UpdateResponse
-func (r *Response) AsExtensionResponse() extension.UpdateResponse {
-	return extension.UpdateResponse(*r)
-}
-
 // WebStoreResponse represents a web store update response
-type WebStoreResponse extension.WebStoreUpdateResponse
+type WebStoreResponse []extension.Extension
 
-// MarshalJSON encodes the extension list into response JSON
+// MarshalJSON encodes the extension list into web store response JSON
 func (r *WebStoreResponse) MarshalJSON() ([]byte, error) {
 	type UpdateCheck struct {
 		Status   string `json:"status"`
@@ -244,7 +239,7 @@ func (r *WebStoreResponse) MarshalJSON() ([]byte, error) {
 	return json.Marshal(jsonGupdate)
 }
 
-// MarshalXML encodes the extension list into response XML
+// MarshalXML encodes the extension list into web store response XML
 func (r *WebStoreResponse) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 	type UpdateCheck struct {
 		XMLName  xml.Name `xml:"updatecheck"`
@@ -286,9 +281,4 @@ func (r *WebStoreResponse) MarshalXML(e *xml.Encoder, _ xml.StartElement) error 
 	e.Indent("", "    ")
 	err := e.EncodeElement(response, xml.StartElement{Name: xml.Name{Local: "gupdate"}})
 	return err
-}
-
-// AsExtensionWebStoreResponse converts v3.WebStoreResponse to extension.WebStoreUpdateResponse
-func (r *WebStoreResponse) AsExtensionWebStoreResponse() extension.WebStoreUpdateResponse {
-	return extension.WebStoreUpdateResponse(*r)
 }

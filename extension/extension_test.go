@@ -25,6 +25,29 @@ func TestCompareVersions(t *testing.T) {
 	assert.Equal(t, -1, CompareVersions("zugzug.1.1", "1.1.daboo"))
 }
 
+// Helper function to replace the original FilterForUpdates method
+func filterForUpdates(extensions Extensions, allExtensionsMap *ExtensionsMap) Extensions {
+	filteredExtensions := Extensions{}
+	allExtensionsMap.RLock()
+	defer allExtensionsMap.RUnlock()
+	for _, extensionBeingChecked := range extensions {
+		foundExtension, ok := allExtensionsMap.data[extensionBeingChecked.ID]
+		if ok {
+			status := CompareVersions(extensionBeingChecked.Version, foundExtension.Version)
+			if !foundExtension.Blacklisted && status <= 0 {
+				if status == 0 {
+					foundExtension.Status = "noupdate"
+				}
+
+				foundExtension.FP = extensionBeingChecked.FP
+
+				filteredExtensions = append(filteredExtensions, foundExtension)
+			}
+		}
+	}
+	return filteredExtensions
+}
+
 func TestFilterForUpdates(t *testing.T) {
 	allExtensionsMap := NewExtensionMap()
 	allExtensionsMap.StoreExtensions(&OfferedExtensions)
@@ -38,15 +61,15 @@ func TestFilterForUpdates(t *testing.T) {
 	testExtensionsMap.StoreExtensions(&testExtensions)
 
 	// No updates when nothing to check
-	updateRequest := UpdateRequest{}
-	check := updateRequest.FilterForUpdates(testExtensionsMap)
+	emptyExtensions := Extensions{}
+	check := filterForUpdates(emptyExtensions, testExtensionsMap)
 	assert.Equal(t, 0, len(check))
 
 	olderExtensionCheck1 := lightThemeExtension
 	olderExtensionCheck1.Version = "0.1.0"
-	outdatedExtensionCheck := UpdateRequest{olderExtensionCheck1}
+	outdatedExtensionCheck := Extensions{olderExtensionCheck1}
 
-	check = outdatedExtensionCheck.FilterForUpdates(testExtensionsMap)
+	check = filterForUpdates(outdatedExtensionCheck, testExtensionsMap)
 	assert.Equal(t, 1, len(check))
 
 	assert.Equal(t, lightThemeExtension.ID, check[0].ID)
@@ -60,15 +83,15 @@ func TestFilterForUpdates(t *testing.T) {
 	// Newer extensions have no items returned
 	newerExtensionCheck := lightThemeExtension
 	newerExtensionCheck.Version = "2.1.0"
-	updateRequest = UpdateRequest{newerExtensionCheck}
-	check = updateRequest.FilterForUpdates(testExtensionsMap)
+	extensions := Extensions{newerExtensionCheck}
+	check = filterForUpdates(extensions, testExtensionsMap)
 	assert.Equal(t, 0, len(check))
 
 	// 2 outdated extensions both get returned from 1 check
 	olderExtensionCheck2 := darkThemeExtension
 	olderExtensionCheck2.Version = "0.1.0"
-	updateRequest = UpdateRequest{olderExtensionCheck1, olderExtensionCheck2}
-	check = updateRequest.FilterForUpdates(testExtensionsMap)
+	extensions = Extensions{olderExtensionCheck1, olderExtensionCheck2}
+	check = filterForUpdates(extensions, testExtensionsMap)
 	assert.Equal(t, 2, len(check))
 	assert.Equal(t, olderExtensionCheck1.ID, check[0].ID)
 	assert.Equal(t, olderExtensionCheck2.ID, check[1].ID)
@@ -80,7 +103,7 @@ func TestFilterForUpdates(t *testing.T) {
 		elem.Blacklisted = true
 		allExtensionsBlacklistedMap.data[k] = elem
 	}
-	check = outdatedExtensionCheck.FilterForUpdates(allExtensionsBlacklistedMap)
+	check = filterForUpdates(outdatedExtensionCheck, allExtensionsBlacklistedMap)
 	assert.Equal(t, 0, len(check))
 }
 

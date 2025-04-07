@@ -36,16 +36,6 @@ type ExtensionsMap struct {
 	data map[string]Extension
 }
 
-// UpdateRequest represents an extension XML request.
-type UpdateRequest Extensions
-
-// UpdateResponse represents an extension XML response.
-type UpdateResponse Extensions
-
-// WebStoreUpdateResponse represents a webstore XML response.
-// There is no symmetric WebStoreUpdateRequest because the request is URL query parameters.
-type WebStoreUpdateResponse Extensions
-
 // CompareVersions compares 2 versions:
 // returns 0 if both versions are the same.
 // returns 1 if version1 is more recent.
@@ -77,13 +67,13 @@ func CompareVersions(version1 string, version2 string) int {
 	return 0
 }
 
-// FilterForUpdates filters `extensions` down to only the extensions that are being checked,
+// FilterForUpdates filters extensions down to only the extensions that are being checked,
 // and only the ones that we have updates for.
-func (updateRequest *UpdateRequest) FilterForUpdates(allExtensionsMap *ExtensionsMap) UpdateResponse {
-	filteredExtensions := UpdateResponse{}
+func FilterForUpdates(extensions Extensions, allExtensionsMap *ExtensionsMap) Extensions {
+	filteredExtensions := Extensions{}
 	allExtensionsMap.RLock()
 	defer allExtensionsMap.RUnlock()
-	for _, extensionBeingChecked := range *updateRequest {
+	for _, extensionBeingChecked := range extensions {
 		foundExtension, ok := allExtensionsMap.data[extensionBeingChecked.ID]
 		if ok {
 			status := CompareVersions(extensionBeingChecked.Version, foundExtension.Version)

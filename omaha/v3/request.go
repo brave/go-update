@@ -220,15 +220,3 @@ func ExtractXMLProtocolVersion(start xml.StartElement) (string, error) {
 	}
 	return "", fmt.Errorf("protocol attribute not found in request element")
 }
-
-// FilterForUpdates filters the request down to only the extensions that are being checked,
-// and only the ones that we have updates for.
-func (r *Request) FilterForUpdates(allExtensionsMap *extension.ExtensionsMap) extension.UpdateResponse {
-	updateRequest := extension.UpdateRequest(*r)
-	return updateRequest.FilterForUpdates(allExtensionsMap)
-}
-
-// AsExtensionRequest converts v3.Request to extension.UpdateRequest
-func (r *Request) AsExtensionRequest() extension.UpdateRequest {
-	return extension.UpdateRequest(*r)
-}
