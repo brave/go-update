@@ -255,7 +255,7 @@ func TestResponseMarshalJSONV30(t *testing.T) {
 		},
 	}
 
-	data, err := response.MarshalJSON("3.0")
+	data, err := response.MarshalJSON()
 	if err != nil {
 		t.Fatalf("Failed to marshal to JSON: %v", err)
 	}
@@ -270,8 +270,8 @@ func TestResponseMarshalJSONV30(t *testing.T) {
 		t.Fatalf("Expected 'response' field in JSON output")
 	}
 
-	if responseObj["protocol"] != "3.0" {
-		t.Errorf("Expected protocol '3.0', got '%v'", responseObj["protocol"])
+	if responseObj["protocol"] != "3.1" {
+		t.Errorf("Expected protocol '3.1', got '%v'", responseObj["protocol"])
 	}
 
 	apps, ok := responseObj["app"].([]interface{})
@@ -311,7 +311,7 @@ func TestResponseMarshalJSONV31(t *testing.T) {
 		},
 	}
 
-	data, err := response.MarshalJSON("3.1")
+	data, err := response.MarshalJSON()
 	if err != nil {
 		t.Fatalf("Failed to marshal to JSON: %v", err)
 	}
@@ -370,7 +370,7 @@ func TestWebStoreResponseMarshalJSONV30(t *testing.T) {
 		},
 	}
 
-	data, err := response.MarshalJSON("3.0")
+	data, err := response.MarshalJSON()
 	if err != nil {
 		t.Fatalf("Failed to marshal to JSON: %v", err)
 	}
@@ -385,8 +385,8 @@ func TestWebStoreResponseMarshalJSONV30(t *testing.T) {
 		t.Fatalf("Expected 'gupdate' field in JSON output")
 	}
 
-	if gupdateObj["protocol"] != "3.0" {
-		t.Errorf("Expected protocol '3.0', got '%v'", gupdateObj["protocol"])
+	if gupdateObj["protocol"] != "3.1" {
+		t.Errorf("Expected protocol '3.1', got '%v'", gupdateObj["protocol"])
 	}
 
 	apps, ok := gupdateObj["app"].([]interface{})
@@ -418,7 +418,7 @@ func TestWebStoreResponseMarshalJSONV31(t *testing.T) {
 		},
 	}
 
-	data, err := response.MarshalJSON("3.1")
+	data, err := response.MarshalJSON()
 	if err != nil {
 		t.Fatalf("Failed to marshal to JSON: %v", err)
 	}
@@ -460,12 +460,11 @@ func TestWebStoreResponseMarshalJSONV31(t *testing.T) {
 func TestProtocolHandler(t *testing.T) {
 	protocol30, err := NewProtocol("3.0")
 	if err != nil {
-		t.Fatalf("Failed to create v3.0 protocol handler: %v", err)
+		t.Fatalf("Failed to create v3.0 protocol: %v", err)
 	}
-
 	protocol31, err := NewProtocol("3.1")
 	if err != nil {
-		t.Fatalf("Failed to create v3.1 protocol handler: %v", err)
+		t.Fatalf("Failed to create v3.1 protocol: %v", err)
 	}
 
 	// Test v3.0 JSON request parsing
@@ -534,9 +533,10 @@ func TestProtocolHandler(t *testing.T) {
 		t.Fatalf("Failed to format v3.0 response: %v", err)
 	}
 
-	// Check that response contains v3.0
-	if !strings.Contains(string(jsonResponse30), `"protocol":"3.0"`) {
-		t.Errorf("Expected v3.0 protocol in response")
+	// With hardcoded protocol version, we expect 3.1 in the response
+	// regardless of the protocol handler version
+	if !strings.Contains(string(jsonResponse30), `"protocol":"3.1"`) {
+		t.Errorf("Expected v3.1 protocol in response")
 	}
 
 	// Test v3.1 response formatting with diff information
