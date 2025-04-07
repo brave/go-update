@@ -16,7 +16,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/brave/go-update/extension"
 	"github.com/brave/go-update/omaha"
-	"github.com/brave/go-update/omaha/common"
 	"github.com/getsentry/sentry-go"
 	"github.com/go-chi/chi"
 	"github.com/pressly/lg"
@@ -213,7 +212,7 @@ func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Set content type
-	if common.IsJSONRequest(contentType) {
+	if omaha.IsJSONRequest(contentType) {
 		w.Header().Set("content-type", "application/json")
 	} else {
 		w.Header().Set("content-type", "application/xml")
@@ -294,7 +293,7 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 			if updateRequest[0].ID == WidivineExtensionID {
 				host = "update.googleapis.com"
 			}
-			if common.IsJSONRequest(contentType) {
+			if omaha.IsJSONRequest(contentType) {
 				http.Redirect(w, r, "https://"+host+"/service/update2/json"+queryString, http.StatusTemporaryRedirect)
 			} else {
 				http.Redirect(w, r, "https://"+host+"/service/update2"+queryString, http.StatusTemporaryRedirect)
@@ -304,7 +303,7 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Set content type header
-	if common.IsJSONRequest(contentType) {
+	if omaha.IsJSONRequest(contentType) {
 		w.Header().Set("content-type", "application/json")
 	} else {
 		w.Header().Set("content-type", "application/xml")
@@ -326,7 +325,7 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if common.IsJSONRequest(contentType) {
+	if omaha.IsJSONRequest(contentType) {
 		data = append(jsonPrefix, data...)
 	}
 

@@ -2,42 +2,7 @@ package omaha
 
 import (
 	"testing"
-
-	"github.com/brave/go-update/omaha/common"
 )
-
-func TestCommonIsJSONRequest(t *testing.T) {
-	tests := []struct {
-		name        string
-		contentType string
-		want        bool
-	}{
-		{
-			name:        "JSON content type",
-			contentType: "application/json",
-			want:        true,
-		},
-		{
-			name:        "XML content type",
-			contentType: "application/xml",
-			want:        false,
-		},
-		{
-			name:        "Empty content type",
-			contentType: "",
-			want:        false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := common.IsJSONRequest(tt.contentType)
-			if got != tt.want {
-				t.Errorf("common.IsJSONRequest() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
 
 func TestDetectProtocolVersion(t *testing.T) {
 	// Test with empty data

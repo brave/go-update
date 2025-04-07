@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/brave/go-update/extension"
-	"github.com/brave/go-update/omaha/common"
 )
 
 // Protocol defines methods to support the Omaha v3 protocol
@@ -45,7 +44,7 @@ func (h *VersionedHandler) ParseRequest(data []byte, contentType string) (extens
 	var request Request
 	var err error
 
-	if common.IsJSONRequest(contentType) {
+	if contentType == "application/json" {
 		err = request.UnmarshalJSON(data, h.version)
 	} else {
 		decoder := xml.NewDecoder(strings.NewReader(string(data)))
@@ -72,7 +71,7 @@ func (h *VersionedHandler) ParseRequest(data []byte, contentType string) (extens
 
 // FormatResponse formats a response in the appropriate format based on content type
 func (h *VersionedHandler) FormatResponse(response extension.UpdateResponse, isWebStore bool, contentType string) ([]byte, error) {
-	if common.IsJSONRequest(contentType) {
+	if contentType == "application/json" {
 		if isWebStore {
 			webStoreResponse := WebStoreResponse(response)
 			return webStoreResponse.MarshalJSON(h.version)

@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/brave/go-update/extension"
-	"github.com/brave/go-update/omaha/common"
 )
 
 // Protocol defines the interface for different Omaha protocol versions
@@ -31,7 +30,7 @@ func DetectProtocolVersion(data []byte, contentType string) (string, error) {
 		return "3.1", nil
 	}
 
-	if common.IsJSONRequest(contentType) {
+	if IsJSONRequest(contentType) {
 		// Parse JSON to extract protocol version
 		var rawRequest map[string]interface{}
 		err := json.Unmarshal(data, &rawRequest)

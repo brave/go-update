@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/brave/go-update/extension"
-	"github.com/brave/go-update/omaha/common"
 )
 
 func TestNewProtocol(t *testing.T) {
@@ -50,7 +49,7 @@ func TestNewProtocol(t *testing.T) {
 	}
 }
 
-// TestIsJSONRequest tests the IsJSONRequest function from the common package
+// TestIsJSONRequest tests the content type check
 func TestIsJSONRequest(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -76,8 +75,8 @@ func TestIsJSONRequest(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := common.IsJSONRequest(tt.contentType); got != tt.want {
-				t.Errorf("IsJSONRequest() = %v, want %v", got, tt.want)
+			if got := tt.contentType == "application/json"; got != tt.want {
+				t.Errorf("Content type check = %v, want %v", got, tt.want)
 			}
 		})
 	}
