@@ -261,8 +261,8 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Special case for unsupported protocol versions
-	if protocolVersion != "3.0" && protocolVersion != "3.1" {
+	// Check if the protocol version is supported
+	if !omaha.IsProtocolVersionSupported(protocolVersion) {
 		http.Error(w, fmt.Sprintf("Error parsing request: request version: %s not supported", protocolVersion), http.StatusBadRequest)
 		return
 	}

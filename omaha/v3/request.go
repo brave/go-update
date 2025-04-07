@@ -11,8 +11,14 @@ import (
 // Request represents an Omaha v3 update request
 type Request []extension.Extension
 
+// ExtractedRequest stores the unmarshalled request and its protocol version
+type ExtractedRequest struct {
+	Request  Request
+	Protocol string
+}
+
 // UnmarshalJSON decodes the update server request JSON data
-func (r *Request) UnmarshalJSON(b []byte, protocolVersion string) error {
+func (r *Request) UnmarshalJSON(b []byte) error {
 	type Package struct {
 		FP string `json:"fp"`
 	}
@@ -41,6 +47,11 @@ func (r *Request) UnmarshalJSON(b []byte, protocolVersion string) error {
 		return err
 	}
 
+	// Verify that we have a proper request structure
+	if request.Request.Protocol == "" {
+		return fmt.Errorf("malformed JSON request, missing protocol field")
+	}
+
 	*r = Request{}
 	for _, app := range request.Request.App {
 		fp := app.FP
@@ -57,25 +68,50 @@ func (r *Request) UnmarshalJSON(b []byte, protocolVersion string) error {
 		})
 	}
 
-	// Verify the protocol version
-	if request.Request.Protocol != protocolVersion {
-		err = fmt.Errorf("request version: %v not supported by %v handler", request.Request.Protocol, protocolVersion)
+	return nil
+}
+
+// ExtractProtocolVersion extracts protocol version from JSON request without unmarshalling the entire request
+func ExtractProtocolVersion(b []byte) (string, error) {
+	var raw map[string]interface{}
+	err := json.Unmarshal(b, &raw)
+	if err != nil {
+		return "", err
 	}
 
-	return err
+	requestObj, ok := raw["request"].(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("malformed JSON request, missing 'request' object")
+	}
+
+	protocol, ok := requestObj["protocol"].(string)
+	if !ok {
+		return "", fmt.Errorf("malformed JSON request, missing 'protocol' field")
+	}
+
+	return protocol, nil
 }
 
 // UnmarshalXML decodes the update server request XML data
-func (r *Request) UnmarshalXML(d *xml.Decoder, start xml.StartElement, protocolVersion string) error {
+func (r *Request) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	// Common XML elements
 	type UpdateCheck struct {
 		XMLName xml.Name `xml:"updatecheck"`
 	}
 
+	// Check request for protocol version
+	var protocol string
+	for _, attr := range start.Attr {
+		if attr.Name.Local == "protocol" {
+			protocol = attr.Value
+			break
+		}
+	}
+
 	// Version-specific types
 	var apps []extension.Extension
 
-	if protocolVersion == "3.0" {
+	if protocol == "3.0" {
 		type Package struct {
 			XMLName xml.Name `xml:"package"`
 			FP      string   `xml:"fp,attr"`
@@ -114,11 +150,7 @@ func (r *Request) UnmarshalXML(d *xml.Decoder, start xml.StartElement, protocolV
 				Version: app.Version,
 			})
 		}
-
-		if request.Protocol != protocolVersion {
-			return fmt.Errorf("request version: %v not supported by %v handler", request.Protocol, protocolVersion)
-		}
-	} else if protocolVersion == "3.1" {
+	} else if protocol == "3.1" {
 		type App struct {
 			XMLName     xml.Name `xml:"app"`
 			AppID       string   `xml:"appid,attr"`
@@ -145,16 +177,48 @@ func (r *Request) UnmarshalXML(d *xml.Decoder, start xml.StartElement, protocolV
 				Version: app.Version,
 			})
 		}
-
-		if request.Protocol != protocolVersion {
-			return fmt.Errorf("request version: %v not supported by %v handler", request.Protocol, protocolVersion)
-		}
 	} else {
-		return fmt.Errorf("unsupported protocol version: %s", protocolVersion)
+		// Default to the simplest structure
+		type App struct {
+			XMLName     xml.Name `xml:"app"`
+			AppID       string   `xml:"appid,attr"`
+			FP          string   `xml:"fp,attr"`
+			UpdateCheck UpdateCheck
+			Version     string `xml:"version,attr"`
+		}
+		type RequestWrapper struct {
+			XMLName  xml.Name `xml:"request"`
+			App      []App    `xml:"app"`
+			Protocol string   `xml:"protocol,attr"`
+		}
+
+		request := RequestWrapper{}
+		err := d.DecodeElement(&request, &start)
+		if err != nil {
+			return err
+		}
+
+		for _, app := range request.App {
+			apps = append(apps, extension.Extension{
+				ID:      app.AppID,
+				FP:      app.FP,
+				Version: app.Version,
+			})
+		}
 	}
 
 	*r = apps
 	return nil
+}
+
+// ExtractXMLProtocolVersion extracts protocol version from XML start element
+func ExtractXMLProtocolVersion(start xml.StartElement) (string, error) {
+	for _, attr := range start.Attr {
+		if attr.Name.Local == "protocol" {
+			return attr.Value, nil
+		}
+	}
+	return "", fmt.Errorf("protocol attribute not found in request element")
 }
 
 // FilterForUpdates filters the request down to only the extensions that are being checked,

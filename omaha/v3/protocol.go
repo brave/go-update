@@ -2,7 +2,6 @@ package v3
 
 import (
 	"encoding/xml"
-	"fmt"
 	"strings"
 
 	"github.com/brave/go-update/extension"
@@ -26,9 +25,6 @@ type VersionedHandler struct {
 
 // NewProtocol returns a Protocol implementation for the specified version
 func NewProtocol(version string) (Protocol, error) {
-	if version != "3.0" && version != "3.1" {
-		return nil, fmt.Errorf("unsupported protocol version: %s", version)
-	}
 	return &VersionedHandler{
 		version: version,
 	}, nil
@@ -45,8 +41,10 @@ func (h *VersionedHandler) ParseRequest(data []byte, contentType string) (extens
 	var err error
 
 	if contentType == "application/json" {
-		err = request.UnmarshalJSON(data, h.version)
+		// Unmarshal the JSON data
+		err = request.UnmarshalJSON(data)
 	} else {
+		// Set up XML decoder
 		decoder := xml.NewDecoder(strings.NewReader(string(data)))
 		var start xml.StartElement
 		for {
@@ -59,7 +57,9 @@ func (h *VersionedHandler) ParseRequest(data []byte, contentType string) (extens
 				break
 			}
 		}
-		err = request.UnmarshalXML(decoder, start, h.version)
+
+		// Unmarshal the XML
+		err = request.UnmarshalXML(decoder, start)
 	}
 
 	if err != nil {

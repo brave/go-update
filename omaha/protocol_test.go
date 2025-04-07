@@ -46,3 +46,40 @@ func TestDetectProtocolVersion(t *testing.T) {
 		}
 	})
 }
+
+func TestIsProtocolVersionSupported(t *testing.T) {
+	tests := []struct {
+		name    string
+		version string
+		want    bool
+	}{
+		{
+			name:    "Version 3.0",
+			version: "3.0",
+			want:    true,
+		},
+		{
+			name:    "Version 3.1",
+			version: "3.1",
+			want:    true,
+		},
+		{
+			name:    "Unsupported version",
+			version: "4.0",
+			want:    false,
+		},
+		{
+			name:    "Empty version",
+			version: "",
+			want:    false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsProtocolVersionSupported(tt.version); got != tt.want {
+				t.Errorf("IsProtocolVersionSupported(%q) = %v, want %v", tt.version, got, tt.want)
+			}
+		})
+	}
+}

@@ -23,6 +23,17 @@ type Protocol interface {
 	FormatResponse(extension.UpdateResponse, bool, string) ([]byte, error)
 }
 
+// SupportedProtocolVersions is a list of Omaha protocol versions that we support
+var SupportedProtocolVersions = map[string]bool{
+	"3.0": true,
+	"3.1": true,
+}
+
+// IsProtocolVersionSupported checks if the given protocol version is supported
+func IsProtocolVersionSupported(version string) bool {
+	return SupportedProtocolVersions[version]
+}
+
 // DetectProtocolVersion attempts to detect the protocol version from the request
 func DetectProtocolVersion(data []byte, contentType string) (string, error) {
 	if len(data) == 0 {

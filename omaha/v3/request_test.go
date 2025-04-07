@@ -12,20 +12,20 @@ import (
 func TestRequestUnmarshalJSON(t *testing.T) {
 	// Empty data returns an error
 	request := Request{}
-	err := request.UnmarshalJSON([]byte(""), "3.1")
+	err := request.UnmarshalJSON([]byte(""))
 	assert.NotNil(t, err, "UnmarshalJSON should return an error for empty content")
 
 	// Malformed JSON returns an error
-	err = request.UnmarshalJSON([]byte("{"), "3.1")
+	err = request.UnmarshalJSON([]byte("{"))
 	assert.NotNil(t, err, "UnmarshalJSON should return an error for malformed JSON")
 
 	// Wrong schema returns an error
-	err = request.UnmarshalJSON([]byte(`{"response":"hello world!"}`), "3.1")
+	err = request.UnmarshalJSON([]byte(`{"response":"hello world!"}`))
 	assert.NotNil(t, err, "UnmarshalJSON should return an error for wrong JSON Schema")
 
 	// No extensions JSON with proper schema, no error with 0 extensions returned
 	data := []byte(`{"request":{"protocol":"3.1","version":"chrome-53.0.2785.116","prodversion":"53.0.2785.116","requestid":"{e821bacd-8dbf-4cc8-9e8c-bcbe8c1cfd3d}","lang":"","updaterchannel":"stable","prodchannel":"stable","os":"mac","arch":"x64","nacl_arch":"x86-64","hw":{"physmemory":16},"os":{"arch":"x86_64","platform":"Mac OS X","version":"10.14.3"}}}`)
-	err = request.UnmarshalJSON(data, "3.1")
+	err = request.UnmarshalJSON(data)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(request))
 
@@ -33,7 +33,7 @@ func TestRequestUnmarshalJSON(t *testing.T) {
 	onePasswordVersion := "4.7.0.90"
 	onePasswordRequest := extensiontest.ExtensionRequestFnForJSON(onePasswordID)
 	data = []byte(onePasswordRequest(onePasswordVersion))
-	err = request.UnmarshalJSON(data, "3.1")
+	err = request.UnmarshalJSON(data)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(request))
 	assert.Equal(t, onePasswordID, request[0].ID)
@@ -43,18 +43,29 @@ func TestRequestUnmarshalJSON(t *testing.T) {
 	pdfJSVersion := "1.0.0"
 	twoExtensionRequest := extensiontest.ExtensionRequestFnForTwoJSON(onePasswordID, pdfJSID)
 	data = []byte(twoExtensionRequest(onePasswordVersion, pdfJSVersion))
-	err = request.UnmarshalJSON(data, "3.1")
+	err = request.UnmarshalJSON(data)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(request))
 	assert.Equal(t, onePasswordID, request[0].ID)
 	assert.Equal(t, onePasswordVersion, request[0].Version)
 	assert.Equal(t, pdfJSID, request[1].ID)
 	assert.Equal(t, pdfJSVersion, request[1].Version)
+}
 
-	// Check for unsupported protocol version
-	data = []byte(`{"request":{"protocol":"3.0","version":"chrome-53.0.2785.116","prodversion":"53.0.2785.116","requestid":"{e821bacd-8dbf-4cc8-9e8c-bcbe8c1cfd3d}","lang":"","updaterchannel":"stable","prodchannel":"stable","os":"mac","arch":"x64","nacl_arch":"x86-64","hw":{"physmemory":16},"os":{"arch":"x86_64","platform":"Mac OS X","version":"10.14.3"}}}`)
-	err = request.UnmarshalJSON(data, "3.1")
-	assert.NotNil(t, err, "Protocol version mismatch should have an error")
+func TestExtractProtocolVersion(t *testing.T) {
+	// Test protocol extraction from JSON
+	data := []byte(`{"request":{"protocol":"3.1"}}`)
+	protocol, err := ExtractProtocolVersion(data)
+	assert.Nil(t, err)
+	assert.Equal(t, "3.1", protocol)
+
+	// Test protocol extraction from malformed JSON
+	_, err = ExtractProtocolVersion([]byte("{"))
+	assert.NotNil(t, err)
+
+	// Test protocol extraction from wrong schema
+	_, err = ExtractProtocolVersion([]byte(`{"response":{"protocol":"3.1"}}`))
+	assert.NotNil(t, err)
 }
 
 func TestRequestUnmarshalXML(t *testing.T) {
@@ -91,7 +102,7 @@ func TestRequestUnmarshalXML(t *testing.T) {
 		}
 	}
 
-	err = request.UnmarshalXML(decoder, start, "3.0")
+	err = request.UnmarshalXML(decoder, start)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(request))
 	assert.Equal(t, "test-app-id", request[0].ID)
@@ -119,22 +130,40 @@ func TestRequestUnmarshalXML(t *testing.T) {
 	}
 
 	request = Request{}
-	err = request.UnmarshalXML(decoder, start, "3.1")
+	err = request.UnmarshalXML(decoder, start)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(request))
 	assert.Equal(t, "test-app-id", request[0].ID)
 	assert.Equal(t, "1.0.0", request[0].Version)
 	assert.Equal(t, "test-fingerprint", request[0].FP)
+}
 
-	// Check for protocol version mismatch
+func TestExtractXMLProtocolVersion(t *testing.T) {
+	// Test protocol extraction from XML start element
+	data := []byte(`<?xml version="1.0" encoding="UTF-8"?>
+		<request protocol="3.0">
+		</request>`)
+
+	decoder := xml.NewDecoder(strings.NewReader(string(data)))
+	var start xml.StartElement
+	for {
+		token, err := decoder.Token()
+		if err != nil {
+			t.Fatalf("Failed to get XML token: %v", err)
+		}
+		if se, ok := token.(xml.StartElement); ok {
+			start = se
+			break
+		}
+	}
+
+	protocol, err := ExtractXMLProtocolVersion(start)
+	assert.Nil(t, err)
+	assert.Equal(t, "3.0", protocol)
+
+	// Test protocol extraction from start element without protocol attribute
 	data = []byte(`<?xml version="1.0" encoding="UTF-8"?>
-		<request protocol="3.0" version="chrome-53.0.2785.116" prodversion="53.0.2785.116" requestid="{b4f77b70-af29-462b-a637-8a3e4be5ecd9}" lang="" updaterchannel="stable" prodchannel="stable" os="mac" arch="x64" nacl_arch="x86-64">
-		<app appid="test-app-id" version="1.0.0">
-			<updatecheck />
-			<packages>
-				<package fp="test-fingerprint" />
-			</packages>
-		</app>
+		<request>
 		</request>`)
 
 	decoder = xml.NewDecoder(strings.NewReader(string(data)))
@@ -149,7 +178,6 @@ func TestRequestUnmarshalXML(t *testing.T) {
 		}
 	}
 
-	request = Request{}
-	err = request.UnmarshalXML(decoder, start, "3.1")
-	assert.NotNil(t, err, "Protocol version mismatch should have an error")
+	_, err = ExtractXMLProtocolVersion(start)
+	assert.NotNil(t, err)
 }
