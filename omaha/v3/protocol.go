@@ -13,8 +13,10 @@ type Protocol interface {
 	GetVersion() string
 	// ParseRequest parses a request in the appropriate format
 	ParseRequest([]byte, string) (extension.Extensions, error)
-	// FormatResponse formats a response in the appropriate format based on content type
-	FormatResponse(extension.Extensions, bool, string) ([]byte, error)
+	// FormatUpdateResponse formats a standard update response based on content type
+	FormatUpdateResponse(extension.Extensions, string) ([]byte, error)
+	// FormatWebStoreResponse formats a web store update response based on content type
+	FormatWebStoreResponse(extension.Extensions, string) ([]byte, error)
 }
 
 // VersionedHandler is a unified implementation of the Protocol interface
@@ -69,30 +71,45 @@ func (h *VersionedHandler) ParseRequest(data []byte, contentType string) (extens
 	return extension.Extensions(request), nil
 }
 
-// FormatResponse formats a response in the appropriate format based on content type
-func (h *VersionedHandler) FormatResponse(extensions extension.Extensions, isWebStore bool, contentType string) ([]byte, error) {
+// FormatUpdateResponse formats a standard update response in the appropriate format based on content type
+func (h *VersionedHandler) FormatUpdateResponse(extensions extension.Extensions, contentType string) ([]byte, error) {
 	response := Response(extensions)
 
 	if contentType == "application/json" {
-		if isWebStore {
-			webStoreResponse := WebStoreResponse(response)
-			return webStoreResponse.MarshalJSON()
-		}
 		return response.MarshalJSON()
 	}
 
 	// XML response
 	var buf strings.Builder
 	encoder := xml.NewEncoder(&buf)
-	var err error
 
-	if isWebStore {
-		webStoreResponse := WebStoreResponse(response)
-		err = webStoreResponse.MarshalXML(encoder, xml.StartElement{Name: xml.Name{Local: "gupdate"}})
-	} else {
-		err = response.MarshalXML(encoder, xml.StartElement{Name: xml.Name{Local: "response"}})
+	err := response.MarshalXML(encoder, xml.StartElement{Name: xml.Name{Local: "response"}})
+	if err != nil {
+		return nil, err
 	}
 
+	err = encoder.Flush()
+	if err != nil {
+		return nil, err
+	}
+
+	return []byte(buf.String()), nil
+}
+
+// FormatWebStoreResponse formats a web store response in the appropriate format based on content type
+func (h *VersionedHandler) FormatWebStoreResponse(extensions extension.Extensions, contentType string) ([]byte, error) {
+	response := Response(extensions)
+	webStoreResponse := WebStoreResponse(response)
+
+	if contentType == "application/json" {
+		return webStoreResponse.MarshalJSON()
+	}
+
+	// XML response
+	var buf strings.Builder
+	encoder := xml.NewEncoder(&buf)
+
+	err := webStoreResponse.MarshalXML(encoder, xml.StartElement{Name: xml.Name{Local: "gupdate"}})
 	if err != nil {
 		return nil, err
 	}

@@ -19,9 +19,11 @@ type Protocol interface {
 	// It returns a slice of Extension objects and any error encountered
 	ParseRequest([]byte, string) (extension.Extensions, error)
 
-	// FormatResponse formats an update response according to this protocol version
-	// The boolean parameter indicates whether this is a web store response
-	FormatResponse(extension.Extensions, bool, string) ([]byte, error)
+	// FormatUpdateResponse formats a standard update response based on content type
+	FormatUpdateResponse(extension.Extensions, string) ([]byte, error)
+
+	// FormatWebStoreResponse formats a web store update response based on content type
+	FormatWebStoreResponse(extension.Extensions, string) ([]byte, error)
 }
 
 // SupportedProtocolVersions is a list of Omaha protocol versions that we support

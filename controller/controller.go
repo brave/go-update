@@ -206,7 +206,7 @@ func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := protocolHandler.FormatResponse(webStoreResponse, true, contentType)
+	data, err := protocolHandler.FormatWebStoreResponse(webStoreResponse, contentType)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error formatting response: %v", err), http.StatusInternalServerError)
 		return
@@ -322,7 +322,7 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := responseProtocolHandler.FormatResponse(updateResponse, false, contentType)
+	data, err := responseProtocolHandler.FormatUpdateResponse(updateResponse, contentType)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error formatting response: %v", err), http.StatusInternalServerError)
 		return

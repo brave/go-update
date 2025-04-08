@@ -491,7 +491,7 @@ func TestProtocolHandler(t *testing.T) {
 		},
 	}
 
-	jsonResponse30, err := protocol30.FormatResponse(extension.Extensions(response30), false, "application/json")
+	jsonResponse30, err := protocol30.FormatUpdateResponse(extension.Extensions(response30), "application/json")
 	if err != nil {
 		t.Fatalf("Failed to format v3.0 response: %v", err)
 	}
@@ -519,7 +519,7 @@ func TestProtocolHandler(t *testing.T) {
 		},
 	}
 
-	jsonResponse31, err := protocol31.FormatResponse(extension.Extensions(response31), false, "application/json")
+	jsonResponse31, err := protocol31.FormatUpdateResponse(extension.Extensions(response31), "application/json")
 	if err != nil {
 		t.Fatalf("Failed to format v3.1 response: %v", err)
 	}
@@ -531,5 +531,16 @@ func TestProtocolHandler(t *testing.T) {
 
 	if !strings.Contains(string(jsonResponse31), `"namediff"`) {
 		t.Errorf("Expected diff information in v3.1 response")
+	}
+
+	// Test web store response formatting
+	webStoreResponse31, err := protocol31.FormatWebStoreResponse(extension.Extensions(response31), "application/json")
+	if err != nil {
+		t.Fatalf("Failed to format web store response: %v", err)
+	}
+
+	// Check that response contains gupdate
+	if !strings.Contains(string(webStoreResponse31), `"gupdate"`) {
+		t.Errorf("Expected gupdate in web store response")
 	}
 }
