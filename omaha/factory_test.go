@@ -24,7 +24,7 @@ func TestDefaultFactory_CreateProtocol(t *testing.T) {
 		},
 		{
 			name:    "Invalid version",
-			version: "4.0",
+			version: "0.0.1",
 			wantErr: true,
 		},
 	}

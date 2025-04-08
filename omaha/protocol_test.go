@@ -65,7 +65,7 @@ func TestIsProtocolVersionSupported(t *testing.T) {
 		},
 		{
 			name:    "Unsupported version",
-			version: "4.0",
+			version: "3.99",
 			want:    false,
 		},
 		{
