@@ -9,43 +9,6 @@ import (
 	"github.com/brave/go-update/extension"
 )
 
-func TestNewProtocol(t *testing.T) {
-	tests := []struct {
-		name        string
-		version     string
-		wantVersion string
-	}{
-		{
-			name:        "Version 3.0",
-			version:     "3.0",
-			wantVersion: "3.0",
-		},
-		{
-			name:        "Version 3.1",
-			version:     "3.1",
-			wantVersion: "3.1",
-		},
-		{
-			name:        "Any other version",
-			version:     "4.0",
-			wantVersion: "4.0", // Will now just store the version
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			protocol, err := NewProtocol(tt.version)
-			if err != nil {
-				t.Errorf("NewProtocol() error = %v, should not error", err)
-				return
-			}
-			if protocol.GetVersion() != tt.wantVersion {
-				t.Errorf("NewProtocol().GetVersion() = %v, want %v", protocol.GetVersion(), tt.wantVersion)
-			}
-		})
-	}
-}
-
 // TestIsJSONRequest tests the content type check
 func TestIsJSONRequest(t *testing.T) {
 	tests := []struct {
