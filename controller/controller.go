@@ -263,6 +263,12 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// For protocol v4, ensure JSON content type
+	if protocolVersion == "4.0" && !protocol.IsJSONRequest(contentType) {
+		http.Error(w, "Protocol v4 only supports JSON format", http.StatusBadRequest)
+		return
+	}
+
 	// The validation now happens inside CreateProtocol, so we don't need a separate check here
 	protocolHandler, err := ProtocolFactory.CreateProtocol(protocolVersion)
 	if err != nil {
@@ -311,8 +317,14 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 	// Use the generic FilterForUpdates function
 	updateResponse := extension.FilterForUpdates(updateRequest, AllExtensionsMap)
 
-	// Always use protocol 3.1 in responses regardless of input protocol
-	responseProtocolHandler, err := ProtocolFactory.CreateProtocol("3.1")
+	// Use the same protocol version for response as the request for v4
+	// Otherwise default to 3.1 for backward compatibility
+	responseProtocolVersion := "3.1"
+	if protocolVersion == "4.0" {
+		responseProtocolVersion = protocolVersion
+	}
+
+	responseProtocolHandler, err := ProtocolFactory.CreateProtocol(responseProtocolVersion)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error creating response protocol handler: %v", err), http.StatusInternalServerError)
 		return
