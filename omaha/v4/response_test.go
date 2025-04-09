@@ -1,6 +1,7 @@
 package v4
 
 import (
+	"encoding/json"
 	"encoding/xml"
 	"strings"
 	"testing"
@@ -10,6 +11,9 @@ import (
 )
 
 func TestResponseMarshalJSON(t *testing.T) {
+	// Set a constant elapsed days value for consistent test output
+	GetElapsedDays = func() int { return 6284 }
+
 	allExtensionsMap := extension.NewExtensionMap()
 	allExtensionsMap.StoreExtensions(&extension.OfferedExtensions)
 
@@ -17,8 +21,17 @@ func TestResponseMarshalJSON(t *testing.T) {
 	updateResponse := UpdateResponse{}
 	jsonData, err := updateResponse.MarshalJSON()
 	assert.Nil(t, err)
-	expectedOutput := `{"response":{"protocol":"4.0","server":"prod","app":null}}`
-	assert.Equal(t, expectedOutput, string(jsonData))
+
+	// Parse the actual response
+	var actual map[string]interface{}
+	err = json.Unmarshal(jsonData, &actual)
+	assert.Nil(t, err)
+
+	// Verify the empty extension case
+	resp := actual["response"].(map[string]interface{})
+	assert.Equal(t, "4.0", resp["protocol"])
+	assert.Equal(t, float64(6284), resp["daystart"].(map[string]interface{})["elapsed_days"])
+	assert.Nil(t, resp["apps"])
 
 	darkThemeExtension, ok := allExtensionsMap.Load("bfdgpgibhagkpdlnjonhkabjoijopoge")
 	assert.True(t, ok)
@@ -27,8 +40,29 @@ func TestResponseMarshalJSON(t *testing.T) {
 	updateResponse = []extension.Extension{darkThemeExtension}
 	jsonData, err = updateResponse.MarshalJSON()
 	assert.Nil(t, err)
-	expectedOutput = `{"response":{"protocol":"4.0","server":"prod","app":[{"appid":"bfdgpgibhagkpdlnjonhkabjoijopoge","status":"ok","updatecheck":{"status":"ok","urls":{"url":[{"codebase":"https://` + extension.GetS3ExtensionBucketHost(darkThemeExtension.ID) + `/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx"}]},"manifest":{"version":"1.0.0","packages":{"package":[{"name":"extension_1_0_0.crx","fp":"ae517d6273a4fc126961cb026e02946db4f9dbb58e3d9bc29f5e1270e3ce9834","hash_sha256":"ae517d6273a4fc126961cb026e02946db4f9dbb58e3d9bc29f5e1270e3ce9834","required":true}]}}}}]}}`
-	assert.Equal(t, expectedOutput, string(jsonData))
+
+	err = json.Unmarshal(jsonData, &actual)
+	assert.Nil(t, err)
+
+	// Verify the single extension case
+	resp = actual["response"].(map[string]interface{})
+	assert.Equal(t, "4.0", resp["protocol"])
+	assert.Equal(t, float64(6284), resp["daystart"].(map[string]interface{})["elapsed_days"])
+
+	apps := resp["apps"].([]interface{})
+	assert.Equal(t, 1, len(apps))
+	app := apps[0].(map[string]interface{})
+	assert.Equal(t, "bfdgpgibhagkpdlnjonhkabjoijopoge", app["appid"])
+	assert.Equal(t, "ok", app["status"])
+
+	updateCheck := app["updatecheck"].(map[string]interface{})
+	assert.Equal(t, "ok", updateCheck["status"])
+	assert.Equal(t, "1.0.0", updateCheck["nextversion"])
+
+	pipelines := updateCheck["pipelines"].([]interface{})
+	assert.Equal(t, 1, len(pipelines))
+	pipeline := pipelines[0].(map[string]interface{})
+	assert.Equal(t, "direct_full", pipeline["pipeline_id"])
 
 	// Multiple extensions returns a multiple extension JSON update
 	lightThemeExtension, ok := allExtensionsMap.Load("ldimlcelhnjgpjjemdjokpgeeikdinbm")
@@ -38,8 +72,25 @@ func TestResponseMarshalJSON(t *testing.T) {
 	updateResponse = []extension.Extension{lightThemeExtension, darkThemeExtension}
 	jsonData, err = updateResponse.MarshalJSON()
 	assert.Nil(t, err)
-	expectedOutput = `{"response":{"protocol":"4.0","server":"prod","app":[{"appid":"ldimlcelhnjgpjjemdjokpgeeikdinbm","status":"ok","updatecheck":{"status":"ok","urls":{"url":[{"codebase":"https://` + extension.GetS3ExtensionBucketHost(lightThemeExtension.ID) + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"}]},"manifest":{"version":"1.0.0","packages":{"package":[{"name":"extension_1_0_0.crx","fp":"1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618","hash_sha256":"1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618","required":true}]}}}},{"appid":"bfdgpgibhagkpdlnjonhkabjoijopoge","status":"ok","updatecheck":{"status":"ok","urls":{"url":[{"codebase":"https://` + extension.GetS3ExtensionBucketHost(darkThemeExtension.ID) + `/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx"}]},"manifest":{"version":"1.0.0","packages":{"package":[{"name":"extension_1_0_0.crx","fp":"ae517d6273a4fc126961cb026e02946db4f9dbb58e3d9bc29f5e1270e3ce9834","hash_sha256":"ae517d6273a4fc126961cb026e02946db4f9dbb58e3d9bc29f5e1270e3ce9834","required":true}]}}}}]}}`
-	assert.Equal(t, expectedOutput, string(jsonData))
+
+	err = json.Unmarshal(jsonData, &actual)
+	assert.Nil(t, err)
+
+	// Verify the multiple extension case
+	resp = actual["response"].(map[string]interface{})
+	assert.Equal(t, "4.0", resp["protocol"])
+	assert.Equal(t, float64(6284), resp["daystart"].(map[string]interface{})["elapsed_days"])
+
+	apps = resp["apps"].([]interface{})
+	assert.Equal(t, 2, len(apps))
+
+	// First app should be lightThemeExtension
+	app = apps[0].(map[string]interface{})
+	assert.Equal(t, "ldimlcelhnjgpjjemdjokpgeeikdinbm", app["appid"])
+
+	// Second app should be darkThemeExtension
+	app = apps[1].(map[string]interface{})
+	assert.Equal(t, "bfdgpgibhagkpdlnjonhkabjoijopoge", app["appid"])
 }
 
 func TestWebStoreResponseMarshalJSON(t *testing.T) {

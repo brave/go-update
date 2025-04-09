@@ -4,9 +4,16 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"strings"
+	"time"
 
 	"github.com/brave/go-update/extension"
 )
+
+// GetElapsedDays calculates elapsed days since Jan 1, 2007
+var GetElapsedDays = func() int {
+	startDate := time.Date(2007, 1, 1, 0, 0, 0, 0, time.UTC)
+	return int(time.Now().UTC().Sub(startDate).Hours() / 24)
+}
 
 // UpdateResponse represents an Omaha v4 update response
 type UpdateResponse []extension.Extension
@@ -22,32 +29,31 @@ func GetUpdateStatus(extension extension.Extension) string {
 // MarshalJSON encodes the extension list into response JSON
 func (r *UpdateResponse) MarshalJSON() ([]byte, error) {
 	type URL struct {
-		Codebase     string `json:"codebase,omitempty"`
-		CodebaseDiff string `json:"codebasediff,omitempty"`
+		URL string `json:"url"`
 	}
-	type URLs struct {
-		URLs []URL `json:"url"`
+	type Out struct {
+		SHA256 string `json:"sha256"`
 	}
-	type Package struct {
-		Name       string `json:"name"`
-		NameDiff   string `json:"namediff,omitempty"`
-		SizeDiff   int    `json:"sizediff,omitempty"`
-		FP         string `json:"fp"`
-		SHA256     string `json:"hash_sha256"`
-		DiffSHA256 string `json:"hashdiff_sha256,omitempty"`
-		Required   bool   `json:"required"`
+	type In struct {
+		SHA256 string `json:"sha256"`
 	}
-	type Packages struct {
-		Package []Package `json:"package"`
+	type Operation struct {
+		Type string `json:"type"`
+		Out  *Out   `json:"out,omitempty"`
+		In   *In    `json:"in,omitempty"`
+		URLs []URL  `json:"urls,omitempty"`
 	}
-	type Manifest struct {
-		Version  string   `json:"version"`
-		Packages Packages `json:"packages"`
+	type Pipeline struct {
+		PipelineID string      `json:"pipeline_id"`
+		Operations []Operation `json:"operations"`
 	}
 	type UpdateCheck struct {
-		Status   string    `json:"status"`
-		URLs     *URLs     `json:"urls,omitempty"`
-		Manifest *Manifest `json:"manifest,omitempty"`
+		Status      string     `json:"status"`
+		NextVersion string     `json:"nextversion,omitempty"`
+		Pipelines   []Pipeline `json:"pipelines,omitempty"`
+	}
+	type DayStart struct {
+		ElapsedDays int `json:"elapsed_days"`
 	}
 	type App struct {
 		AppID       string      `json:"appid"`
@@ -55,63 +61,61 @@ func (r *UpdateResponse) MarshalJSON() ([]byte, error) {
 		UpdateCheck UpdateCheck `json:"updatecheck"`
 	}
 	type ResponseWrapper struct {
-		Protocol string `json:"protocol"`
-		Server   string `json:"server"`
-		Apps     []App  `json:"app"`
+		Protocol string   `json:"protocol"`
+		DayStart DayStart `json:"daystart"`
+		Apps     []App    `json:"apps"`
 	}
 	type JSONResponse struct {
 		Response ResponseWrapper `json:"response"`
 	}
 
-	response := ResponseWrapper{}
-	response.Protocol = "4.0"
-	response.Server = "prod"
+	// Calculate elapsed days since Jan 1, 2007
+	elapsedDays := GetElapsedDays()
+
+	response := ResponseWrapper{
+		Protocol: "4.0",
+		DayStart: DayStart{
+			ElapsedDays: elapsedDays,
+		},
+	}
+
 	for _, ext := range *r {
 		app := App{AppID: ext.ID, Status: "ok"}
-		patchInfo, pInfoFound := ext.PatchList[ext.FP]
-		app.UpdateCheck = UpdateCheck{Status: GetUpdateStatus(ext)}
-		extensionName := "extension_" + strings.Replace(ext.Version, ".", "_", -1) + ".crx"
-		url := "https://" + extension.GetS3ExtensionBucketHost(ext.ID) + "/release/" + ext.ID + "/" + extensionName
-		diffURL := "https://" + extension.GetS3ExtensionBucketHost(ext.ID) + "/release/" + ext.ID + "/patches/" + ext.SHA256 + "/"
-		if app.UpdateCheck.Status == "ok" {
-			if app.UpdateCheck.URLs == nil {
-				app.UpdateCheck.URLs = &URLs{
-					URLs: []URL{},
-				}
-			}
-			app.UpdateCheck.URLs.URLs = append(app.UpdateCheck.URLs.URLs, URL{
-				Codebase: url,
-			})
+		updateStatus := GetUpdateStatus(ext)
+		app.UpdateCheck = UpdateCheck{Status: updateStatus}
 
-			app.UpdateCheck.Manifest = &Manifest{
-				Version: ext.Version,
-			}
+		if updateStatus == "ok" {
+			app.UpdateCheck.NextVersion = ext.Version
 
-			pkg := Package{
-				Name:     extensionName,
-				SHA256:   ext.SHA256,
-				FP:       ext.SHA256,
-				Required: true,
-			}
+			// Create pipeline with operations
+			extensionName := "extension_" + strings.Replace(ext.Version, ".", "_", -1) + ".crx"
+			url := "https://" + extension.GetS3ExtensionBucketHost(ext.ID) + "/release/" + ext.ID + "/" + extensionName
 
-			// Only v3.1 supports diffs
-			if pInfoFound {
-				app.UpdateCheck.URLs.URLs = append(app.UpdateCheck.URLs.URLs, URL{
-					CodebaseDiff: diffURL,
-				})
-				pkg.NameDiff = patchInfo.Namediff
-				pkg.DiffSHA256 = patchInfo.Hashdiff
-				pkg.SizeDiff = patchInfo.Sizediff
+			pipeline := Pipeline{
+				PipelineID: "direct_full",
+				Operations: []Operation{
+					{
+						Type: "download",
+						Out:  &Out{SHA256: ext.SHA256},
+						URLs: []URL{{URL: url}},
+					},
+					{
+						Type: "crx3",
+						In:   &In{SHA256: ext.SHA256},
+					},
+				},
 			}
 
-			app.UpdateCheck.Manifest.Packages.Package = append(app.UpdateCheck.Manifest.Packages.Package, pkg)
+			app.UpdateCheck.Pipelines = append(app.UpdateCheck.Pipelines, pipeline)
 		}
 
 		response.Apps = append(response.Apps, app)
 	}
 
-	jsonResponse := JSONResponse{}
-	jsonResponse.Response = response
+	jsonResponse := JSONResponse{
+		Response: response,
+	}
+
 	return json.Marshal(jsonResponse)
 }
 
