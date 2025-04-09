@@ -5,19 +5,8 @@ import (
 	"strings"
 
 	"github.com/brave/go-update/extension"
+	"github.com/brave/go-update/protocol"
 )
-
-// Protocol defines methods to support the Omaha v3 protocol
-type Protocol interface {
-	// GetVersion returns the protocol version
-	GetVersion() string
-	// ParseRequest parses a request in the appropriate format
-	ParseRequest([]byte, string) (extension.Extensions, error)
-	// FormatUpdateResponse formats a standard update response based on content type
-	FormatUpdateResponse(extension.Extensions, string) ([]byte, error)
-	// FormatWebStoreResponse formats a web store update response based on content type
-	FormatWebStoreResponse(extension.Extensions, string) ([]byte, error)
-}
 
 // VersionedHandler is a unified implementation of the Protocol interface
 // that handles both v3.0 and v3.1 requests
@@ -26,7 +15,7 @@ type VersionedHandler struct {
 }
 
 // NewProtocol returns a Protocol implementation for the specified version
-func NewProtocol(version string) (Protocol, error) {
+func NewProtocol(version string) (protocol.Protocol, error) {
 	return &VersionedHandler{
 		version: version,
 	}, nil
@@ -43,7 +32,6 @@ func (h *VersionedHandler) ParseRequest(data []byte, contentType string) (extens
 	var err error
 
 	if contentType == "application/json" {
-		// Unmarshal the JSON data
 		err = request.UnmarshalJSON(data)
 	} else {
 		// Set up XML decoder
@@ -60,7 +48,6 @@ func (h *VersionedHandler) ParseRequest(data []byte, contentType string) (extens
 			}
 		}
 
-		// Unmarshal the XML
 		err = request.UnmarshalXML(decoder, start)
 	}
 
