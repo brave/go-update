@@ -3,19 +3,12 @@ package v3
 import (
 	"encoding/json"
 	"encoding/xml"
-	"fmt"
 
 	"github.com/brave/go-update/extension"
 )
 
 // Request represents an Omaha v3 update request
 type Request []extension.Extension
-
-// ExtractedRequest stores the unmarshalled request and its protocol version
-type ExtractedRequest struct {
-	Request  Request
-	Protocol string
-}
 
 // UnmarshalJSON decodes the update server request JSON data
 func (r *Request) UnmarshalJSON(b []byte) error {
@@ -47,11 +40,6 @@ func (r *Request) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	// Verify that we have a proper request structure
-	if request.Request.Protocol == "" {
-		return fmt.Errorf("malformed JSON request, missing protocol field")
-	}
-
 	*r = Request{}
 	for _, app := range request.Request.App {
 		fp := app.FP
@@ -69,27 +57,6 @@ func (r *Request) UnmarshalJSON(b []byte) error {
 	}
 
 	return nil
-}
-
-// ExtractProtocolVersion extracts protocol version from JSON request without unmarshalling the entire request
-func ExtractProtocolVersion(b []byte) (string, error) {
-	var raw map[string]interface{}
-	err := json.Unmarshal(b, &raw)
-	if err != nil {
-		return "", err
-	}
-
-	requestObj, ok := raw["request"].(map[string]interface{})
-	if !ok {
-		return "", fmt.Errorf("malformed JSON request, missing 'request' object")
-	}
-
-	protocol, ok := requestObj["protocol"].(string)
-	if !ok {
-		return "", fmt.Errorf("malformed JSON request, missing 'protocol' field")
-	}
-
-	return protocol, nil
 }
 
 // UnmarshalXML decodes the update server request XML data
@@ -209,14 +176,4 @@ func (r *Request) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 
 	*r = apps
 	return nil
-}
-
-// ExtractXMLProtocolVersion extracts protocol version from XML start element
-func ExtractXMLProtocolVersion(start xml.StartElement) (string, error) {
-	for _, attr := range start.Attr {
-		if attr.Name.Local == "protocol" {
-			return attr.Value, nil
-		}
-	}
-	return "", fmt.Errorf("protocol attribute not found in request element")
 }

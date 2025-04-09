@@ -52,22 +52,6 @@ func TestRequestUnmarshalJSON(t *testing.T) {
 	assert.Equal(t, pdfJSVersion, request[1].Version)
 }
 
-func TestExtractProtocolVersion(t *testing.T) {
-	// Test protocol extraction from JSON
-	data := []byte(`{"request":{"protocol":"3.1"}}`)
-	protocol, err := ExtractProtocolVersion(data)
-	assert.Nil(t, err)
-	assert.Equal(t, "3.1", protocol)
-
-	// Test protocol extraction from malformed JSON
-	_, err = ExtractProtocolVersion([]byte("{"))
-	assert.NotNil(t, err)
-
-	// Test protocol extraction from wrong schema
-	_, err = ExtractProtocolVersion([]byte(`{"response":{"protocol":"3.1"}}`))
-	assert.NotNil(t, err)
-}
-
 func TestRequestUnmarshalXML(t *testing.T) {
 	// Empty data returns an error
 	request := Request{}
@@ -136,48 +120,4 @@ func TestRequestUnmarshalXML(t *testing.T) {
 	assert.Equal(t, "test-app-id", request[0].ID)
 	assert.Equal(t, "1.0.0", request[0].Version)
 	assert.Equal(t, "test-fingerprint", request[0].FP)
-}
-
-func TestExtractXMLProtocolVersion(t *testing.T) {
-	// Test protocol extraction from XML start element
-	data := []byte(`<?xml version="1.0" encoding="UTF-8"?>
-		<request protocol="3.0">
-		</request>`)
-
-	decoder := xml.NewDecoder(strings.NewReader(string(data)))
-	var start xml.StartElement
-	for {
-		token, err := decoder.Token()
-		if err != nil {
-			t.Fatalf("Failed to get XML token: %v", err)
-		}
-		if se, ok := token.(xml.StartElement); ok {
-			start = se
-			break
-		}
-	}
-
-	protocol, err := ExtractXMLProtocolVersion(start)
-	assert.Nil(t, err)
-	assert.Equal(t, "3.0", protocol)
-
-	// Test protocol extraction from start element without protocol attribute
-	data = []byte(`<?xml version="1.0" encoding="UTF-8"?>
-		<request>
-		</request>`)
-
-	decoder = xml.NewDecoder(strings.NewReader(string(data)))
-	for {
-		token, err := decoder.Token()
-		if err != nil {
-			t.Fatalf("Failed to get XML token: %v", err)
-		}
-		if se, ok := token.(xml.StartElement); ok {
-			start = se
-			break
-		}
-	}
-
-	_, err = ExtractXMLProtocolVersion(start)
-	assert.NotNil(t, err)
 }
