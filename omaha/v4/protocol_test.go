@@ -13,11 +13,15 @@ func TestRequestUnmarshalJSONV40(t *testing.T) {
 	jsonStr := `{
 		"request": {
 		  "protocol": "4.0",
-		  "app": [
+		  "acceptformat": "download,xz,zucc,puff,crx3,run",
+		  "apps": [
 			{
 			  "appid": "test-app-id",
 			  "version": "1.0.0",
-			  "fp": "test-fingerprint"
+			  "cached_items": [
+				{ "sha256": "test-sha256-hash" }
+			  ],
+			  "updatecheck": {}
 			}
 		  ]
 		}
@@ -40,16 +44,19 @@ func TestRequestUnmarshalJSONV40(t *testing.T) {
 		t.Errorf("Expected version '1.0.0', got '%s'", request[0].Version)
 	}
 
-	if request[0].FP != "test-fingerprint" {
-		t.Errorf("Expected fingerprint 'test-fingerprint', got '%s'", request[0].FP)
+	if request[0].FP != "test-sha256-hash" {
+		t.Errorf("Expected fingerprint 'test-sha256-hash', got '%s'", request[0].FP)
 	}
 }
 
 func TestRequestUnmarshalXMLV40(t *testing.T) {
 	xmlStr := `<?xml version="1.0" encoding="UTF-8"?>
-	<request protocol="4.0">
-	  <app appid="test-app-id" version="1.0.0" fp="test-fingerprint">
+	<request protocol="4.0" acceptformat="download,xz,zucc,puff,crx3,run">
+	  <app appid="test-app-id" version="1.0.0">
 		<updatecheck />
+		<cacheditems>
+		  <cacheditem sha256="test-sha256-hash" />
+		</cacheditems>
 	  </app>
 	</request>`
 
@@ -83,8 +90,8 @@ func TestRequestUnmarshalXMLV40(t *testing.T) {
 		t.Errorf("Expected version '1.0.0', got '%s'", request[0].Version)
 	}
 
-	if request[0].FP != "test-fingerprint" {
-		t.Errorf("Expected fingerprint 'test-fingerprint', got '%s'", request[0].FP)
+	if request[0].FP != "test-sha256-hash" {
+		t.Errorf("Expected fingerprint 'test-sha256-hash', got '%s'", request[0].FP)
 	}
 }
 
@@ -250,11 +257,15 @@ func TestProtocolHandler(t *testing.T) {
 	jsonStr40 := `{
 		"request": {
 			"protocol": "4.0",
-			"app": [
+			"acceptformat": "download,xz,zucc,puff,crx3,run",
+			"apps": [
 				{
 					"appid": "test-app-id",
 					"version": "1.0.0",
-					"fp": "test-fingerprint"
+					"cached_items": [
+						{ "sha256": "test-sha256-hash" }
+					],
+					"updatecheck": {}
 				}
 			]
 		}

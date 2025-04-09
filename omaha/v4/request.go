@@ -9,28 +9,25 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-// UpdateRequest represents an Omaha v3 update request
+// UpdateRequest represents an Omaha v4 update request
 type UpdateRequest []extension.Extension
 
 // UnmarshalJSON decodes the update server request JSON data
 func (r *UpdateRequest) UnmarshalJSON(b []byte) error {
-	type Package struct {
-		FP string `json:"fp"`
-	}
-	type Packages struct {
-		Package []Package `json:"package"`
+	type CachedItem struct {
+		SHA256 string `json:"sha256"`
 	}
 	type App struct {
-		AppID    string   `json:"appid"`
-		FP       string   `json:"fp"`
-		Version  string   `json:"version"`
-		Packages Packages `json:"packages"`
+		AppID       string       `json:"appid"`
+		Version     string       `json:"version"`
+		CachedItems []CachedItem `json:"cached_items"`
 	}
 	type RequestWrapper struct {
-		OS       string `json:"@os"`
-		Updater  string `json:"@updater"`
-		App      []App  `json:"app"`
-		Protocol string `json:"protocol" validate:"required"`
+		OS           string `json:"@os"`
+		Updater      string `json:"@updater"`
+		Apps         []App  `json:"apps"`
+		Protocol     string `json:"protocol" validate:"required"`
+		AcceptFormat string `json:"acceptformat"`
 	}
 	type JSONRequest struct {
 		Request RequestWrapper `json:"request" validate:"required"`
@@ -48,11 +45,10 @@ func (r *UpdateRequest) UnmarshalJSON(b []byte) error {
 	}
 
 	*r = UpdateRequest{}
-	for _, app := range request.Request.App {
-		fp := app.FP
-
-		if fp == "" && len(app.Packages.Package) > 0 {
-			fp = app.Packages.Package[0].FP
+	for _, app := range request.Request.Apps {
+		fp := ""
+		if len(app.CachedItems) > 0 {
+			fp = app.CachedItems[0].SHA256
 		}
 		*r = append(*r, extension.Extension{
 			ID:      app.AppID,
@@ -80,105 +76,51 @@ func (r *UpdateRequest) UnmarshalXML(d *xml.Decoder, start xml.StartElement) err
 		}
 	}
 
-	// Version-specific types
-	var apps []extension.Extension
-
-	if protocol == "3.0" {
-		type Package struct {
-			XMLName xml.Name `xml:"package"`
-			FP      string   `xml:"fp,attr"`
-		}
-		type Packages struct {
-			XMLName  xml.Name  `xml:"packages"`
-			Packages []Package `xml:"package"`
-		}
-		type App struct {
-			XMLName     xml.Name `xml:"app"`
-			AppID       string   `xml:"appid,attr"`
-			UpdateCheck UpdateCheck
-			Version     string   `xml:"version,attr"`
-			Packages    Packages `xml:"packages"`
-		}
-		type RequestWrapper struct {
-			XMLName  xml.Name `xml:"request"`
-			App      []App    `xml:"app"`
-			Protocol string   `xml:"protocol,attr"`
-		}
-
-		request := RequestWrapper{}
-		err := d.DecodeElement(&request, &start)
-		if err != nil {
-			return err
-		}
-
-		for _, app := range request.App {
-			fp := ""
-			if len(app.Packages.Packages) > 0 {
-				fp = app.Packages.Packages[0].FP
-			}
-			apps = append(apps, extension.Extension{
-				ID:      app.AppID,
-				FP:      fp,
-				Version: app.Version,
-			})
-		}
-	} else if protocol == "3.1" {
-		type App struct {
-			XMLName     xml.Name `xml:"app"`
-			AppID       string   `xml:"appid,attr"`
-			FP          string   `xml:"fp,attr"`
-			UpdateCheck UpdateCheck
-			Version     string `xml:"version,attr"`
-		}
-		type RequestWrapper struct {
-			XMLName  xml.Name `xml:"request"`
-			App      []App    `xml:"app"`
-			Protocol string   `xml:"protocol,attr"`
-		}
-
-		request := RequestWrapper{}
-		err := d.DecodeElement(&request, &start)
-		if err != nil {
-			return err
-		}
-
-		for _, app := range request.App {
-			apps = append(apps, extension.Extension{
-				ID:      app.AppID,
-				FP:      app.FP,
-				Version: app.Version,
-			})
-		}
-	} else {
-		// Default to the simplest structure
-		type App struct {
-			XMLName     xml.Name `xml:"app"`
-			AppID       string   `xml:"appid,attr"`
-			FP          string   `xml:"fp,attr"`
-			UpdateCheck UpdateCheck
-			Version     string `xml:"version,attr"`
-		}
-		type RequestWrapper struct {
-			XMLName  xml.Name `xml:"request"`
-			App      []App    `xml:"app"`
-			Protocol string   `xml:"protocol,attr"`
-		}
-
-		request := RequestWrapper{}
-		err := d.DecodeElement(&request, &start)
-		if err != nil {
-			return err
-		}
-
-		for _, app := range request.App {
-			apps = append(apps, extension.Extension{
-				ID:      app.AppID,
-				FP:      app.FP,
-				Version: app.Version,
-			})
-		}
+	// Only process protocol v4.0
+	if protocol != "4.0" {
+		return fmt.Errorf("unsupported protocol version: %s", protocol)
 	}
 
-	*r = apps
+	type CachedItem struct {
+		XMLName xml.Name `xml:"cacheditem"`
+		SHA256  string   `xml:"sha256,attr"`
+	}
+	type CachedItems struct {
+		XMLName     xml.Name     `xml:"cacheditems"`
+		CachedItems []CachedItem `xml:"cacheditem"`
+	}
+	type App struct {
+		XMLName     xml.Name `xml:"app"`
+		AppID       string   `xml:"appid,attr"`
+		Version     string   `xml:"version,attr"`
+		UpdateCheck UpdateCheck
+		CachedItems CachedItems `xml:"cacheditems"`
+	}
+	type RequestWrapper struct {
+		XMLName      xml.Name `xml:"request"`
+		Apps         []App    `xml:"app"`
+		Protocol     string   `xml:"protocol,attr"`
+		AcceptFormat string   `xml:"acceptformat,attr"`
+	}
+
+	request := RequestWrapper{}
+	err := d.DecodeElement(&request, &start)
+	if err != nil {
+		return err
+	}
+
+	*r = UpdateRequest{}
+	for _, app := range request.Apps {
+		fp := ""
+		if len(app.CachedItems.CachedItems) > 0 {
+			fp = app.CachedItems.CachedItems[0].SHA256
+		}
+		*r = append(*r, extension.Extension{
+			ID:      app.AppID,
+			FP:      fp,
+			Version: app.Version,
+		})
+	}
+
 	return nil
 }
