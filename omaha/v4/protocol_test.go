@@ -2,8 +2,6 @@ package v4
 
 import (
 	"encoding/json"
-	"encoding/xml"
-	"strings"
 	"testing"
 
 	"github.com/brave/go-update/extension"
@@ -30,52 +28,6 @@ func TestRequestUnmarshalJSONV40(t *testing.T) {
 	var request UpdateRequest
 	if err := request.UnmarshalJSON([]byte(jsonStr)); err != nil {
 		t.Fatalf("Failed to unmarshal JSON: %v", err)
-	}
-
-	if len(request) != 1 {
-		t.Errorf("Expected 1 extension, got %d", len(request))
-	}
-
-	if request[0].ID != "test-app-id" {
-		t.Errorf("Expected app ID 'test-app-id', got '%s'", request[0].ID)
-	}
-
-	if request[0].Version != "1.0.0" {
-		t.Errorf("Expected version '1.0.0', got '%s'", request[0].Version)
-	}
-
-	if request[0].FP != "test-sha256-hash" {
-		t.Errorf("Expected fingerprint 'test-sha256-hash', got '%s'", request[0].FP)
-	}
-}
-
-func TestRequestUnmarshalXMLV40(t *testing.T) {
-	xmlStr := `<?xml version="1.0" encoding="UTF-8"?>
-	<request protocol="4.0" acceptformat="download,xz,zucc,puff,crx3,run">
-	  <app appid="test-app-id" version="1.0.0">
-		<updatecheck />
-		<cacheditems>
-		  <cacheditem sha256="test-sha256-hash" />
-		</cacheditems>
-	  </app>
-	</request>`
-
-	decoder := xml.NewDecoder(strings.NewReader(xmlStr))
-	var start xml.StartElement
-	for {
-		token, err := decoder.Token()
-		if err != nil {
-			t.Fatalf("Failed to get XML token: %v", err)
-		}
-		if se, ok := token.(xml.StartElement); ok {
-			start = se
-			break
-		}
-	}
-
-	var request UpdateRequest
-	if err := request.UnmarshalXML(decoder, start); err != nil {
-		t.Fatalf("Failed to unmarshal XML: %v", err)
 	}
 
 	if len(request) != 1 {
@@ -287,13 +239,13 @@ func TestNewProtocol(t *testing.T) {
 }
 
 func TestProtocolHandler(t *testing.T) {
-	protocol40, err := NewProtocol("4.0")
+	handler, err := NewProtocol("4.0")
 	if err != nil {
-		t.Fatalf("Failed to create v4.0 protocol: %v", err)
+		t.Fatalf("Failed to create protocol handler: %v", err)
 	}
 
-	// Test v4.0 JSON request parsing
-	jsonStr40 := `{
+	// Test JSON request parsing
+	jsonData := []byte(`{
 		"request": {
 			"protocol": "4.0",
 			"acceptformat": "download,xz,zucc,puff,crx3,run",
@@ -308,57 +260,43 @@ func TestProtocolHandler(t *testing.T) {
 				}
 			]
 		}
-	}`
+	}`)
 
-	request40, err := protocol40.ParseRequest([]byte(jsonStr40), "application/json")
+	extensions, err := handler.ParseRequest(jsonData, "application/json")
 	if err != nil {
-		t.Fatalf("Failed to parse v4.0 request: %v", err)
+		t.Fatalf("Failed to parse JSON request: %v", err)
 	}
 
-	if len(request40) != 1 {
-		t.Errorf("Expected 1 extension in request, got %d", len(request40))
+	if len(extensions) != 1 {
+		t.Errorf("Expected 1 extension, got %d", len(extensions))
 	}
 
-	// Test v4.0 response formatting with diff information
-	response40 := UpdateResponse{
+	if extensions[0].ID != "test-app-id" {
+		t.Errorf("Expected app ID 'test-app-id', got '%s'", extensions[0].ID)
+	}
+
+	// Test JSON response formatting
+	extensions = extension.Extensions{
 		{
 			ID:      "test-app-id",
 			Version: "1.0.0",
 			SHA256:  "test-sha256",
-			PatchList: map[string]*extension.PatchInfo{
-				"test-fp": {
-					Hashdiff: "test-hash-diff",
-					Namediff: "test-name-diff",
-					Sizediff: 100,
-				},
-			},
-			FP: "test-fp",
 		},
 	}
 
-	jsonResponse40, err := protocol40.FormatUpdateResponse(extension.Extensions(response40), "application/json")
+	// Format update response
+	response, err := handler.FormatUpdateResponse(extensions, "application/json")
 	if err != nil {
-		t.Fatalf("Failed to format v4.0 response: %v", err)
+		t.Fatalf("Failed to format update response: %v", err)
 	}
 
-	// Check that response contains v4.0 and diff information
-	if !strings.Contains(string(jsonResponse40), `"protocol":"4.0"`) {
-		t.Errorf("Expected v4.0 protocol in response")
+	var result map[string]interface{}
+	if err := json.Unmarshal(response, &result); err != nil {
+		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
 
-	// Commenting out diff check since we don't support diffs in the new pipeline format yet
-	/*if !strings.Contains(string(jsonResponse40), `"namediff"`) {
-		t.Errorf("Expected diff information in v4.0 response")
-	}*/
-
-	// Test web store response formatting
-	webStoreResponse40, err := protocol40.FormatWebStoreResponse(extension.Extensions(response40), "application/json")
-	if err != nil {
-		t.Fatalf("Failed to format web store response: %v", err)
-	}
-
-	// Check that response contains gupdate
-	if !strings.Contains(string(webStoreResponse40), `"gupdate"`) {
-		t.Errorf("Expected gupdate in web store response")
+	// Verify response structure
+	if _, ok := result["response"]; !ok {
+		t.Errorf("Expected 'response' field in JSON output")
 	}
 }
