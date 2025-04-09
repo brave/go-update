@@ -2,11 +2,18 @@ package v3
 
 import (
 	"encoding/xml"
+	"fmt"
 	"strings"
 
 	"github.com/brave/go-update/extension"
-	"github.com/brave/go-update/protocol"
+	"github.com/brave/go-update/omaha/protocol"
 )
+
+// SupportedV3Versions is a list of v3.x protocol versions that are supported
+var SupportedV3Versions = map[string]bool{
+	"3.0": true,
+	"3.1": true,
+}
 
 // VersionedHandler is a unified implementation of the Protocol interface
 // that handles both v3.0 and v3.1 requests
@@ -16,6 +23,9 @@ type VersionedHandler struct {
 
 // NewProtocol returns a Protocol implementation for the specified version
 func NewProtocol(version string) (protocol.Protocol, error) {
+	if !SupportedV3Versions[version] {
+		return nil, fmt.Errorf("unsupported protocol version: %s", version)
+	}
 	return &VersionedHandler{
 		version: version,
 	}, nil

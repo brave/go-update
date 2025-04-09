@@ -137,7 +137,7 @@ func TestUpdateExtensionsXML(t *testing.T) {
 				<updatecheck codebase="https://` + extension.GetS3ExtensionBucketHost("aomjjhallfgjeglblehebfpbcfeobpgk") + `/release/aomjjhallfgjeglblehebfpbcfeobpgk/extension_4_5_9_90.crx" version="4.5.9.90"/>
 			</app>
 		</request>`
-	expectedResponse = "Error parsing request: request version: 2.0 not supported"
+	expectedResponse = "Error parsing request: unsupported protocol version: 2.0"
 	testCall(t, server, http.MethodPost, contentTypeXML, "", requestBody, http.StatusBadRequest, expectedResponse, "")
 
 	// Not XML
@@ -415,7 +415,7 @@ func TestUpdateExtensionsJSON(t *testing.T) {
 
 	// Unsupported protocol version
 	requestBody = `{"request":{"protocol":"2.0","version":"chrome-53.0.2785.116","prodversion":"53.0.2785.116","requestid":"{e821bacd-8dbf-4cc8-9e8c-bcbe8c1cfd3d}","lang":"","updaterchannel":"stable","prodchannel":"stable","os":"mac","arch":"x64","nacl_arch":"x86-64","hw":{"physmemory":16},"os":{"arch":"x86_64","platform":"Mac OS X","version":"10.14.3"}}}`
-	expectedResponse = "Error parsing request: request version: 2.0 not supported"
+	expectedResponse = "Error parsing request: unsupported protocol version: 2.0"
 	testCall(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusBadRequest, expectedResponse, "")
 
 	// Not JSON

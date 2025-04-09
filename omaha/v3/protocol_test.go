@@ -9,39 +9,6 @@ import (
 	"github.com/brave/go-update/extension"
 )
 
-// TestIsJSONRequest tests the content type check
-func TestIsJSONRequest(t *testing.T) {
-	tests := []struct {
-		name        string
-		contentType string
-		want        bool
-	}{
-		{
-			name:        "JSON content type",
-			contentType: "application/json",
-			want:        true,
-		},
-		{
-			name:        "XML content type",
-			contentType: "application/xml",
-			want:        false,
-		},
-		{
-			name:        "Empty content type",
-			contentType: "",
-			want:        false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.contentType == "application/json"; got != tt.want {
-				t.Errorf("Content type check = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestRequestUnmarshalJSONV30(t *testing.T) {
 	jsonStr := `{
 		"request": {

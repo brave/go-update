@@ -1,4 +1,4 @@
-package omaha
+package protocol
 
 import (
 	"encoding/json"
@@ -6,20 +6,28 @@ import (
 	"fmt"
 	"io"
 	"strings"
+
+	"github.com/brave/go-update/extension"
 )
 
-// SupportedProtocolVersions is a list of Omaha protocol versions that we support
-var SupportedProtocolVersions = map[string]bool{
-	"3.0": true,
-	"3.1": true,
-}
+// Protocol defines the interface for different Omaha protocol versions
+type Protocol interface {
+	// GetVersion returns the protocol version string
+	GetVersion() string
 
-// IsProtocolVersionSupported checks if the given protocol version is supported
-func IsProtocolVersionSupported(version string) bool {
-	return SupportedProtocolVersions[version]
+	// ParseRequest parses an update request according to this protocol version
+	// It returns a slice of Extension objects and any error encountered
+	ParseRequest([]byte, string) (extension.Extensions, error)
+
+	// FormatUpdateResponse formats a standard update response based on content type
+	FormatUpdateResponse(extension.Extensions, string) ([]byte, error)
+
+	// FormatWebStoreResponse formats a web store response based on content type
+	FormatWebStoreResponse(extension.Extensions, string) ([]byte, error)
 }
 
 // DetectProtocolVersion attempts to detect the protocol version from the request
+// Supported protocol versions are implemented in version-specific packages (e.g., v3)
 func DetectProtocolVersion(data []byte, contentType string) (string, error) {
 	if len(data) == 0 {
 		// No data provided, default to 3.1
@@ -70,4 +78,9 @@ func DetectProtocolVersion(data []byte, contentType string) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("request element not found in XML")
+}
+
+// IsJSONRequest determines if the request is in JSON format based on content type
+func IsJSONRequest(contentType string) bool {
+	return contentType == "application/json"
 }

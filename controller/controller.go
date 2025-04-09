@@ -16,6 +16,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/brave/go-update/extension"
 	"github.com/brave/go-update/omaha"
+	"github.com/brave/go-update/omaha/protocol"
 	"github.com/getsentry/sentry-go"
 	"github.com/go-chi/chi"
 	"github.com/pressly/lg"
@@ -213,7 +214,7 @@ func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Set content type
-	if omaha.IsJSONRequest(contentType) {
+	if protocol.IsJSONRequest(contentType) {
 		w.Header().Set("content-type", "application/json")
 	} else {
 		w.Header().Set("content-type", "application/xml")
@@ -256,18 +257,13 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Use protocol handler to format response
-	protocolVersion, err := omaha.DetectProtocolVersion(body, contentType)
+	protocolVersion, err := protocol.DetectProtocolVersion(body, contentType)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error parsing request: %v", err), http.StatusBadRequest)
 		return
 	}
 
-	// Check if the protocol version is supported
-	if !omaha.IsProtocolVersionSupported(protocolVersion) {
-		http.Error(w, fmt.Sprintf("Error parsing request: request version: %s not supported", protocolVersion), http.StatusBadRequest)
-		return
-	}
-
+	// The validation now happens inside CreateProtocol, so we don't need a separate check here
 	protocolHandler, err := ProtocolFactory.CreateProtocol(protocolVersion)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error parsing request: %v", err), http.StatusBadRequest)
@@ -294,7 +290,7 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 			if updateRequest[0].ID == WidivineExtensionID {
 				host = "update.googleapis.com"
 			}
-			if omaha.IsJSONRequest(contentType) {
+			if protocol.IsJSONRequest(contentType) {
 				http.Redirect(w, r, "https://"+host+"/service/update2/json"+queryString, http.StatusTemporaryRedirect)
 			} else {
 				http.Redirect(w, r, "https://"+host+"/service/update2"+queryString, http.StatusTemporaryRedirect)
@@ -304,7 +300,7 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Set content type header
-	if omaha.IsJSONRequest(contentType) {
+	if protocol.IsJSONRequest(contentType) {
 		w.Header().Set("content-type", "application/json")
 	} else {
 		w.Header().Set("content-type", "application/xml")
@@ -328,7 +324,7 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if omaha.IsJSONRequest(contentType) {
+	if protocol.IsJSONRequest(contentType) {
 		data = append(jsonPrefix, data...)
 	}
 
