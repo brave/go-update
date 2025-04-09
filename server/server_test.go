@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -115,7 +116,7 @@ func testCall(t *testing.T, server *httptest.Server, method string, contentType 
 	assert.Equal(t, expectedResponse, strings.TrimSpace(string(actual)))
 }
 
-func TestUpdateExtensionsXML(t *testing.T) {
+func TestUpdateExtensionsXMLV3(t *testing.T) {
 	server := httptest.NewServer(handler)
 	defer server.Close()
 
@@ -332,7 +333,7 @@ func getQueryParams(extension *extension.Extension) string {
 	return `x=id%3D` + extension.ID + `%26v%3D` + extension.Version
 }
 
-func TestWebStoreUpdateExtensionXML(t *testing.T) {
+func TestWebStoreUpdateExtensionV3XML(t *testing.T) {
 	server := httptest.NewServer(handler)
 	defer server.Close()
 
@@ -402,7 +403,7 @@ func TestWebStoreUpdateExtensionXML(t *testing.T) {
 	testCall(t, server, http.MethodGet, contentTypeXML, query, requestBody, http.StatusOK, expectedResponse, "")
 }
 
-func TestUpdateExtensionsJSON(t *testing.T) {
+func TestUpdateExtensionsV3JSON(t *testing.T) {
 	jsonPrefix := ")]}'\n"
 	server := httptest.NewServer(handler)
 	defer server.Close()
@@ -497,7 +498,7 @@ func TestUpdateExtensionsJSON(t *testing.T) {
 	testCall(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusOK, expectedResponse, "")
 }
 
-func TestWebStoreUpdateExtensionJSON(t *testing.T) {
+func TestWebStoreUpdateExtensionV3JSON(t *testing.T) {
 	server := httptest.NewServer(handler)
 	defer server.Close()
 
@@ -583,4 +584,275 @@ func TestPrintExtensions(t *testing.T) {
 	actual, err = ioutil.ReadAll(resp.Body)
 	assert.Nil(t, err)
 	assert.Equal(t, string(actual), "{}")
+}
+
+func testCallAndParseJSON(t *testing.T, server *httptest.Server, method string, contentType string, query string,
+	requestBody string, expectedResponseCode int, redirectLocation string) map[string]interface{} {
+
+	extensionsURL := fmt.Sprintf("%s/extensions%s", server.URL, query)
+	req, err := http.NewRequest(method, extensionsURL, bytes.NewBuffer([]byte(requestBody)))
+	assert.Nil(t, err)
+	req.Header.Add("Content-Type", contentType)
+
+	client := &http.Client{
+		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+
+	resp, err := client.Do(req)
+	assert.Nil(t, err)
+
+	assert.Equal(t, expectedResponseCode, resp.StatusCode)
+
+	// If this is a redirect, ensure the location is as expected
+	if resp.StatusCode >= 300 && resp.StatusCode < 400 {
+		location := resp.Header.Get("Location")
+		assert.Equal(t, redirectLocation, location)
+		return nil
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	assert.Nil(t, err)
+
+	// For JSON responses with our prefix, parse and return the object
+	if contentType == contentTypeJSON && len(body) > 6 && string(body[:5]) == ")]}'\n" {
+		var result map[string]interface{}
+		err = json.Unmarshal(body[5:], &result)
+		assert.Nil(t, err)
+
+		return result
+	}
+
+	// For non-JSON responses, return nil
+	return nil
+}
+
+// Extension represents an extension with ID and version for testing
+type AppVersionPair struct {
+	ID      string
+	Version string
+}
+
+// buildUpdateV4JSON creates a JSON request body for extension update protocol
+func buildUpdateV4JSON(protocol string, apps []AppVersionPair) string {
+	baseRequest := map[string]interface{}{
+		"request": map[string]interface{}{
+			"@os":            "mac",
+			"@updater":       "chromecrx",
+			"acceptformat":   "crx3,download,puff,run,xz,zucc",
+			"protocol":       protocol,
+			"version":        "chrome-53.0.2785.116",
+			"prodversion":    "137.0.7115.0",
+			"requestid":      "{2c047e22-fe09-44d0-883e-28c1d8db4762}",
+			"sessionid":      "{b3296be1-ffae-4833-bcf0-31a6c4603ec6}",
+			"lang":           "en-GB",
+			"updaterchannel": "canary",
+			"prodchannel":    "canary",
+			"updaterversion": "137.0.7115.0",
+			"arch":           "arm64",
+			"nacl_arch":      "arm",
+			"dedup":          "cr",
+			"domainjoined":   false,
+			"ismachine":      false,
+			"hw": map[string]interface{}{
+				"physmemory": 64,
+				"avx":        false,
+				"sse":        false,
+				"sse2":       false,
+				"sse3":       false,
+				"sse41":      false,
+				"sse42":      false,
+				"ssse3":      false,
+			},
+			"os": map[string]interface{}{
+				"arch":     "arm64",
+				"platform": "Mac OS X",
+				"version":  "15.4.0",
+			},
+		},
+	}
+
+	// Add apps if provided
+	if len(apps) > 0 {
+		appsList := make([]map[string]interface{}, len(apps))
+		for i, app := range apps {
+			appsList[i] = map[string]interface{}{
+				"appid":       app.ID,
+				"version":     app.Version,
+				"enabled":     true,
+				"installedby": "internal",
+				"lang":        "en-GB",
+				"ping": map[string]interface{}{
+					"r": -1,
+				},
+				"updatecheck": map[string]interface{}{},
+			}
+		}
+		baseRequest["request"].(map[string]interface{})["apps"] = appsList
+	}
+
+	jsonBytes, err := json.Marshal(baseRequest)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to marshal JSON: %v", err))
+	}
+	return string(jsonBytes)
+}
+
+func TestUpdateExtensionsV4JSON(t *testing.T) {
+	server := httptest.NewServer(handler)
+	defer server.Close()
+
+	// Reset the extensions map to start from a clean state
+	controller.AllExtensionsMap = extension.NewExtensionMap()
+	controller.AllExtensionsMap.StoreExtensions(&extension.OfferedExtensions)
+
+	// No extensions
+	requestBody := buildUpdateV4JSON("4.0", []AppVersionPair{})
+	result := testCallAndParseJSON(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusOK, "")
+
+	respObj := result["response"].(map[string]interface{})
+	assert.Equal(t, "4.0", respObj["protocol"])
+	daystart, ok := respObj["daystart"].(map[string]interface{})
+	assert.True(t, ok, "daystart should be present")
+	assert.NotNil(t, daystart["elapsed_days"], "elapsed_days should be present")
+	apps, ok := respObj["apps"]
+	assert.True(t, ok, "apps should be present")
+	assert.Nil(t, apps, "apps should be null for no extensions")
+
+	// Unsupported protocol version
+	requestBody = buildUpdateV4JSON("4.77", []AppVersionPair{})
+	expectedResponse := "Error parsing request: unsupported protocol version: 4.77"
+	testCall(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusBadRequest, expectedResponse, "")
+
+	// Single extension out of date
+	lightThemeExtensionID := "ldimlcelhnjgpjjemdjokpgeeikdinbm"
+	requestBody = buildUpdateV4JSON("4.0", []AppVersionPair{
+		{ID: lightThemeExtensionID, Version: "0.0.0"},
+	})
+	result = testCallAndParseJSON(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusOK, "")
+
+	respObj = result["response"].(map[string]interface{})
+	assert.Equal(t, "4.0", respObj["protocol"])
+
+	appsInterface, ok := respObj["apps"]
+	assert.True(t, ok, "apps should be present")
+	appsArray, ok := appsInterface.([]interface{})
+	assert.True(t, ok, "apps should be an array")
+	assert.Equal(t, 1, len(appsArray), "apps should contain 1 item")
+
+	appInterface := appsArray[0]
+	app, ok := appInterface.(map[string]interface{})
+	assert.True(t, ok, "app should be a map")
+	assert.Equal(t, lightThemeExtensionID, app["appid"])
+	assert.Equal(t, "ok", app["status"])
+
+	updatecheckInterface, ok := app["updatecheck"]
+	assert.True(t, ok, "updatecheck should be present")
+	updatecheck, ok := updatecheckInterface.(map[string]interface{})
+	assert.True(t, ok, "updatecheck should be a map")
+	assert.Equal(t, "ok", updatecheck["status"])
+
+	// Single extension same version
+	requestBody = buildUpdateV4JSON("4.0", []AppVersionPair{
+		{ID: lightThemeExtensionID, Version: "1.0.0"},
+	})
+	result = testCallAndParseJSON(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusOK, "")
+
+	respObj = result["response"].(map[string]interface{})
+	assert.Equal(t, "4.0", respObj["protocol"])
+
+	appsInterface, ok = respObj["apps"]
+	assert.True(t, ok, "apps should be present")
+	appsArray, ok = appsInterface.([]interface{})
+	assert.True(t, ok, "apps should be an array")
+	assert.Equal(t, 1, len(appsArray), "apps should contain 1 item")
+
+	appInterface = appsArray[0]
+	app, ok = appInterface.(map[string]interface{})
+	assert.True(t, ok, "app should be a map")
+	assert.Equal(t, lightThemeExtensionID, app["appid"])
+	assert.Equal(t, "ok", app["status"])
+
+	updatecheckInterface, ok = app["updatecheck"]
+	assert.True(t, ok, "updatecheck should be present")
+	updatecheck, ok = updatecheckInterface.(map[string]interface{})
+	assert.True(t, ok, "updatecheck should be a map")
+	assert.Equal(t, "noupdate", updatecheck["status"])
+
+	// Single extension greater version
+	requestBody = buildUpdateV4JSON("4.0", []AppVersionPair{
+		{ID: lightThemeExtensionID, Version: "2.0.0"},
+	})
+	result = testCallAndParseJSON(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusOK, "")
+
+	respObj = result["response"].(map[string]interface{})
+	assert.Equal(t, "4.0", respObj["protocol"])
+
+	appsInterface, ok = respObj["apps"]
+	assert.True(t, ok, "apps should be present")
+	assert.Nil(t, appsInterface, "apps should be null")
+
+	// Multiple extensions test - create a request with light and dark theme extensions
+	darkThemeExtensionID := "bfdgpgibhagkpdlnjonhkabjoijopoge"
+	requestBody = buildUpdateV4JSON("4.0", []AppVersionPair{
+		{ID: lightThemeExtensionID, Version: "0.0.0"},
+		{ID: darkThemeExtensionID, Version: "0.0.0"},
+	})
+	result = testCallAndParseJSON(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusOK, "")
+
+	respObj = result["response"].(map[string]interface{})
+	assert.Equal(t, "4.0", respObj["protocol"])
+
+	appsInterface, ok = respObj["apps"]
+	assert.True(t, ok, "apps should be present")
+	appsArray, ok = appsInterface.([]interface{})
+	assert.True(t, ok, "apps should be an array")
+	assert.Equal(t, 2, len(appsArray), "apps should contain 2 items")
+
+	extensionIDs := make(map[string]bool)
+	for _, appItem := range appsArray {
+		appMap, ok := appItem.(map[string]interface{})
+		assert.True(t, ok, "app item should be a map")
+		extensionIDs[appMap["appid"].(string)] = true
+	}
+	assert.True(t, extensionIDs[lightThemeExtensionID], "response should include light theme extension")
+	assert.True(t, extensionIDs[darkThemeExtensionID], "response should include dark theme extension")
+
+	// Only one extension out of date
+	requestBody = buildUpdateV4JSON("4.0", []AppVersionPair{
+		{ID: lightThemeExtensionID, Version: "0.0.0"},
+		{ID: darkThemeExtensionID, Version: "70.0.0"},
+	})
+	result = testCallAndParseJSON(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusOK, "")
+
+	respObj = result["response"].(map[string]interface{})
+	assert.Equal(t, "4.0", respObj["protocol"])
+
+	appsInterface, ok = respObj["apps"]
+	assert.True(t, ok, "apps should be present")
+	appsArray, ok = appsInterface.([]interface{})
+	assert.True(t, ok, "apps should be an array")
+	assert.Equal(t, 1, len(appsArray), "apps should contain 1 item")
+
+	appInterface = appsArray[0]
+	app, ok = appInterface.(map[string]interface{})
+	assert.True(t, ok, "app should be a map")
+	assert.Equal(t, lightThemeExtensionID, app["appid"])
+
+	extensionIDs = make(map[string]bool)
+	for _, appItem := range appsArray {
+		appMap, ok := appItem.(map[string]interface{})
+		assert.True(t, ok, "app item should be a map")
+		extensionIDs[appMap["appid"].(string)] = true
+	}
+	assert.True(t, extensionIDs[lightThemeExtensionID], "response should include light theme extension")
+	assert.False(t, extensionIDs[darkThemeExtensionID], "response should not include dark theme extension")
+
+	// Unknown extension ID goes to Google server via componentupdater proxy
+	requestBody = buildUpdateV4JSON("4.0", []AppVersionPair{
+		{ID: "aaaaaaaaaaaaaaaaaaaa", Version: "0.0.0"},
+	})
+	expectedResponse = ""
+	testCall(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusTemporaryRedirect, expectedResponse, "https://componentupdater.brave.com/service/update2/json")
 }
