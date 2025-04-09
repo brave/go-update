@@ -387,6 +387,48 @@ func TestWebStoreResponseMarshalJSONV31(t *testing.T) {
 	}
 }
 
+func TestNewProtocol(t *testing.T) {
+	tests := []struct {
+		name    string
+		version string
+		wantErr bool
+	}{
+		{
+			name:    "Valid version 3.0",
+			version: "3.0",
+			wantErr: false,
+		},
+		{
+			name:    "Valid version 3.1",
+			version: "3.1",
+			wantErr: false,
+		},
+		{
+			name:    "Invalid version",
+			version: "3.9",
+			wantErr: true,
+		},
+		{
+			name:    "Empty version",
+			version: "",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			protocol, err := NewProtocol(tt.version)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NewProtocol() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if err == nil && protocol.GetVersion() != tt.version {
+				t.Errorf("NewProtocol().GetVersion() = %v, want %v", protocol.GetVersion(), tt.version)
+			}
+		})
+	}
+}
+
 func TestProtocolHandler(t *testing.T) {
 	protocol30, err := NewProtocol("3.0")
 	if err != nil {
