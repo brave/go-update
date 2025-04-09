@@ -14,7 +14,7 @@ func TestResponseMarshalJSON(t *testing.T) {
 	allExtensionsMap.StoreExtensions(&extension.OfferedExtensions)
 
 	// Empty extension list returns a blank JSON update
-	updateResponse := Response{}
+	updateResponse := UpdateResponse{}
 	jsonData, err := updateResponse.MarshalJSON()
 	assert.Nil(t, err)
 	expectedOutput := `{"response":{"protocol":"3.1","server":"prod","app":null}}`
@@ -79,7 +79,7 @@ func TestResponseMarshalXML(t *testing.T) {
 	allExtensionsMap.StoreExtensions(&extension.OfferedExtensions)
 
 	// Empty extension list returns a blank XML update
-	updateResponse := Response{}
+	updateResponse := UpdateResponse{}
 	var buf strings.Builder
 	encoder := xml.NewEncoder(&buf)
 	err := updateResponse.MarshalXML(encoder, xml.StartElement{Name: xml.Name{Local: "response"}})

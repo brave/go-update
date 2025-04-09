@@ -11,7 +11,7 @@ import (
 
 func TestRequestUnmarshalJSON(t *testing.T) {
 	// Empty data returns an error
-	request := Request{}
+	request := UpdateRequest{}
 	err := request.UnmarshalJSON([]byte(""))
 	assert.NotNil(t, err, "UnmarshalJSON should return an error for empty content")
 
@@ -20,7 +20,7 @@ func TestRequestUnmarshalJSON(t *testing.T) {
 	assert.NotNil(t, err, "UnmarshalJSON should return an error for malformed JSON")
 
 	// Wrong schema returns an error
-	err = request.UnmarshalJSON([]byte(`{"response":"hello world!"}`))
+	err = request.UnmarshalJSON([]byte(`{"foo":"hello world!"}`))
 	assert.NotNil(t, err, "UnmarshalJSON should return an error for wrong JSON Schema")
 
 	// No extensions JSON with proper schema, no error with 0 extensions returned
@@ -54,7 +54,7 @@ func TestRequestUnmarshalJSON(t *testing.T) {
 
 func TestRequestUnmarshalXML(t *testing.T) {
 	// Empty data returns an error
-	request := Request{}
+	request := UpdateRequest{}
 	err := xml.Unmarshal([]byte(""), &request)
 	assert.NotNil(t, err, "UnmarshalXML should return an error for empty content")
 
@@ -113,7 +113,7 @@ func TestRequestUnmarshalXML(t *testing.T) {
 		}
 	}
 
-	request = Request{}
+	request = UpdateRequest{}
 	err = request.UnmarshalXML(decoder, start)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(request))

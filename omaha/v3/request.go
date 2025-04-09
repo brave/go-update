@@ -3,15 +3,17 @@ package v3
 import (
 	"encoding/json"
 	"encoding/xml"
+	"fmt"
 
 	"github.com/brave/go-update/extension"
+	"github.com/go-playground/validator/v10"
 )
 
-// Request represents an Omaha v3 update request
-type Request []extension.Extension
+// UpdateRequest represents an Omaha v3 update request
+type UpdateRequest []extension.Extension
 
 // UnmarshalJSON decodes the update server request JSON data
-func (r *Request) UnmarshalJSON(b []byte) error {
+func (r *UpdateRequest) UnmarshalJSON(b []byte) error {
 	type Package struct {
 		FP string `json:"fp"`
 	}
@@ -28,19 +30,24 @@ func (r *Request) UnmarshalJSON(b []byte) error {
 		OS       string `json:"@os"`
 		Updater  string `json:"@updater"`
 		App      []App  `json:"app"`
-		Protocol string `json:"protocol"`
+		Protocol string `json:"protocol" validate:"required"`
 	}
 	type JSONRequest struct {
-		Request RequestWrapper `json:"request"`
+		Request RequestWrapper `json:"request" validate:"required"`
 	}
 
 	request := JSONRequest{}
-	err := json.Unmarshal(b, &request)
-	if err != nil {
+	if err := json.Unmarshal(b, &request); err != nil {
 		return err
 	}
 
-	*r = Request{}
+	validate := validator.New()
+	if err := validate.Struct(request); err != nil {
+		validationErrors := err.(validator.ValidationErrors)
+		return fmt.Errorf("request validation failed: %v", validationErrors)
+	}
+
+	*r = UpdateRequest{}
 	for _, app := range request.Request.App {
 		fp := app.FP
 		// spec discrepancy: FP might be set within a "package" object (v3) instead of the "app" object (v3.1)
@@ -60,7 +67,7 @@ func (r *Request) UnmarshalJSON(b []byte) error {
 }
 
 // UnmarshalXML decodes the update server request XML data
-func (r *Request) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+func (r *UpdateRequest) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	// Common XML elements
 	type UpdateCheck struct {
 		XMLName xml.Name `xml:"updatecheck"`

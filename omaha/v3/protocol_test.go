@@ -29,7 +29,7 @@ func TestRequestUnmarshalJSONV30(t *testing.T) {
 		}
 	  }`
 
-	var request Request
+	var request UpdateRequest
 	if err := request.UnmarshalJSON([]byte(jsonStr)); err != nil {
 		t.Fatalf("Failed to unmarshal JSON: %v", err)
 	}
@@ -65,7 +65,7 @@ func TestRequestUnmarshalJSONV31(t *testing.T) {
 		}
 	  }`
 
-	var request Request
+	var request UpdateRequest
 	if err := request.UnmarshalJSON([]byte(jsonStr)); err != nil {
 		t.Fatalf("Failed to unmarshal JSON: %v", err)
 	}
@@ -111,7 +111,7 @@ func TestRequestUnmarshalXMLV30(t *testing.T) {
 		}
 	}
 
-	var request Request
+	var request UpdateRequest
 	if err := request.UnmarshalXML(decoder, start); err != nil {
 		t.Fatalf("Failed to unmarshal XML: %v", err)
 	}
@@ -154,7 +154,7 @@ func TestRequestUnmarshalXMLV31(t *testing.T) {
 		}
 	}
 
-	var request Request
+	var request UpdateRequest
 	if err := request.UnmarshalXML(decoder, start); err != nil {
 		t.Fatalf("Failed to unmarshal XML: %v", err)
 	}
@@ -177,7 +177,7 @@ func TestRequestUnmarshalXMLV31(t *testing.T) {
 }
 
 func TestResponseMarshalJSONV30(t *testing.T) {
-	response := Response{
+	response := UpdateResponse{
 		{
 			ID:      "test-app-id",
 			Version: "1.0.0",
@@ -225,7 +225,7 @@ func TestResponseMarshalJSONV30(t *testing.T) {
 }
 
 func TestResponseMarshalJSONV31(t *testing.T) {
-	response := Response{
+	response := UpdateResponse{
 		{
 			ID:      "test-app-id",
 			Version: "1.0.0",
@@ -492,7 +492,7 @@ func TestProtocolHandler(t *testing.T) {
 	}
 
 	// Test v3.0 response formatting
-	response30 := Response{
+	response30 := UpdateResponse{
 		{
 			ID:      "test-app-id",
 			Version: "1.0.0",
@@ -512,7 +512,7 @@ func TestProtocolHandler(t *testing.T) {
 	}
 
 	// Test v3.1 response formatting with diff information
-	response31 := Response{
+	response31 := UpdateResponse{
 		{
 			ID:      "test-app-id",
 			Version: "1.0.0",

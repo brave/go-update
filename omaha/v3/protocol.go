@@ -38,7 +38,7 @@ func (h *VersionedHandler) GetVersion() string {
 
 // ParseRequest parses a request in the appropriate format (JSON or XML)
 func (h *VersionedHandler) ParseRequest(data []byte, contentType string) (extension.Extensions, error) {
-	var request Request
+	var request UpdateRequest
 	var err error
 
 	if contentType == "application/json" {
@@ -70,7 +70,7 @@ func (h *VersionedHandler) ParseRequest(data []byte, contentType string) (extens
 
 // FormatUpdateResponse formats a standard update response in the appropriate format based on content type
 func (h *VersionedHandler) FormatUpdateResponse(extensions extension.Extensions, contentType string) ([]byte, error) {
-	response := Response(extensions)
+	response := UpdateResponse(extensions)
 
 	if contentType == "application/json" {
 		return response.MarshalJSON()
@@ -95,7 +95,7 @@ func (h *VersionedHandler) FormatUpdateResponse(extensions extension.Extensions,
 
 // FormatWebStoreResponse formats a web store response in the appropriate format based on content type
 func (h *VersionedHandler) FormatWebStoreResponse(extensions extension.Extensions, contentType string) ([]byte, error) {
-	response := Response(extensions)
+	response := UpdateResponse(extensions)
 	webStoreResponse := WebStoreResponse(response)
 
 	if contentType == "application/json" {

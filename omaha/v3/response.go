@@ -8,8 +8,8 @@ import (
 	"github.com/brave/go-update/extension"
 )
 
-// Response represents an Omaha v3 update response
-type Response []extension.Extension
+// UpdateResponse represents an Omaha v3 update response
+type UpdateResponse []extension.Extension
 
 // GetUpdateStatus determines the update status based on extension data
 func GetUpdateStatus(extension extension.Extension) string {
@@ -20,7 +20,7 @@ func GetUpdateStatus(extension extension.Extension) string {
 }
 
 // MarshalJSON encodes the extension list into response JSON
-func (r *Response) MarshalJSON() ([]byte, error) {
+func (r *UpdateResponse) MarshalJSON() ([]byte, error) {
 	type URL struct {
 		Codebase     string `json:"codebase,omitempty"`
 		CodebaseDiff string `json:"codebasediff,omitempty"`
@@ -116,7 +116,7 @@ func (r *Response) MarshalJSON() ([]byte, error) {
 }
 
 // MarshalXML encodes the extension list into response XML
-func (r *Response) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
+func (r *UpdateResponse) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
 	type URL struct {
 		XMLName  xml.Name `xml:"url"`
 		Codebase string   `xml:"codebase,attr"`
