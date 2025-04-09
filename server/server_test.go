@@ -812,8 +812,8 @@ func TestUpdateExtensionsV4JSON(t *testing.T) {
 
 	extensionIDs := make(map[string]bool)
 	for _, appItem := range appsArray {
-		appMap, ok := appItem.(map[string]interface{})
-		assert.True(t, ok, "app item should be a map")
+		appMap, isMap := appItem.(map[string]interface{})
+		assert.True(t, isMap, "app item should be a map")
 		extensionIDs[appMap["appid"].(string)] = true
 	}
 	assert.True(t, extensionIDs[lightThemeExtensionID], "response should include light theme extension")
@@ -842,8 +842,8 @@ func TestUpdateExtensionsV4JSON(t *testing.T) {
 
 	extensionIDs = make(map[string]bool)
 	for _, appItem := range appsArray {
-		appMap, ok := appItem.(map[string]interface{})
-		assert.True(t, ok, "app item should be a map")
+		appMap, isMap := appItem.(map[string]interface{})
+		assert.True(t, isMap, "app item should be a map")
 		extensionIDs[appMap["appid"].(string)] = true
 	}
 	assert.True(t, extensionIDs[lightThemeExtensionID], "response should include light theme extension")
