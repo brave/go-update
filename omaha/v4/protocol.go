@@ -34,11 +34,15 @@ func (h *VersionedHandler) GetVersion() string {
 }
 
 // ParseRequest parses a request in the appropriate format (JSON or XML)
-func (h *VersionedHandler) ParseRequest(data []byte, _ string) (extension.Extensions, error) {
+func (h *VersionedHandler) ParseRequest(data []byte, contentType string) (extension.Extensions, error) {
 	var request UpdateRequest
 	var err error
 
-	// Only support JSON format
+	// Only support JSON format for v4
+	if contentType != "application/json" {
+		return nil, fmt.Errorf("protocol v4 only supports JSON format")
+	}
+
 	err = request.UnmarshalJSON(data)
 	if err != nil {
 		return nil, err

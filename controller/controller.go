@@ -263,12 +263,6 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// For protocol v4, ensure JSON content type
-	if protocolVersion == "4.0" && !protocol.IsJSONRequest(contentType) {
-		http.Error(w, "Protocol v4 only supports JSON format", http.StatusBadRequest)
-		return
-	}
-
 	// The validation now happens inside CreateProtocol, so we don't need a separate check here
 	protocolHandler, err := ProtocolFactory.CreateProtocol(protocolVersion)
 	if err != nil {

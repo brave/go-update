@@ -244,8 +244,23 @@ func TestProtocolHandler(t *testing.T) {
 		t.Fatalf("Failed to create protocol handler: %v", err)
 	}
 
-	// Test JSON request parsing
+	// Test non-JSON content type rejection
 	jsonData := []byte(`{
+		"request": {
+			"protocol": "4.0",
+			"apps": [{"appid": "test-app-id"}]
+		}
+	}`)
+	_, err = handler.ParseRequest(jsonData, "application/xml")
+	if err == nil {
+		t.Errorf("Expected error for non-JSON content type, got nil")
+	}
+	if err != nil && err.Error() != "protocol v4 only supports JSON format" {
+		t.Errorf("Expected error message 'protocol v4 only supports JSON format', got '%s'", err.Error())
+	}
+
+	// Test JSON request parsing
+	jsonData = []byte(`{
 		"request": {
 			"protocol": "4.0",
 			"acceptformat": "download,xz,zucc,puff,crx3,run",
