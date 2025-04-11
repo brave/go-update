@@ -56,6 +56,6 @@ func (h *VersionedHandler) FormatUpdateResponse(extensions extension.Extensions,
 }
 
 // FormatWebStoreResponse formats a web store response in the appropriate format based on content type
-func (h *VersionedHandler) FormatWebStoreResponse(extensions extension.Extensions, contentType string) ([]byte, error) {
+func (h *VersionedHandler) FormatWebStoreResponse(_ extension.Extensions, _ string) ([]byte, error) {
 	return nil, fmt.Errorf("FormatWebStoreResponse not implemented for protocol v4: WebStore responses always use protocol v3.1")
 }
