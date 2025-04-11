@@ -10,7 +10,7 @@ require (
 	github.com/go-playground/validator/v10 v10.26.0
 	github.com/pressly/lg v1.1.1
 	github.com/sirupsen/logrus v1.9.3
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 )
 
 require (
