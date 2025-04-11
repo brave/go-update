@@ -5,7 +5,7 @@ go 1.24
 require (
 	github.com/aws/aws-sdk-go v1.55.6
 	github.com/brave-intl/bat-go v0.1.0
-	github.com/getsentry/sentry-go v0.29.1
+	github.com/getsentry/sentry-go v0.31.1
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/go-playground/validator/v10 v10.26.0
 	github.com/pressly/lg v1.1.1
