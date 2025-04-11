@@ -2,7 +2,6 @@ package v4
 
 import (
 	"encoding/json"
-	"encoding/xml"
 	"strings"
 	"time"
 
@@ -117,96 +116,4 @@ func (r *UpdateResponse) MarshalJSON() ([]byte, error) {
 	}
 
 	return json.Marshal(jsonResponse)
-}
-
-// WebStoreResponse represents a web store update response
-type WebStoreResponse []extension.Extension
-
-// MarshalJSON encodes the extension list into web store response JSON
-func (r *WebStoreResponse) MarshalJSON() ([]byte, error) {
-	type UpdateCheck struct {
-		Status   string `json:"status"`
-		Codebase string `json:"codebase"`
-		Version  string `json:"version"`
-		SHA256   string `json:"hash_sha256"`
-	}
-	type App struct {
-		AppID       string      `json:"appid"`
-		Status      string      `json:"status"`
-		UpdateCheck UpdateCheck `json:"updatecheck"`
-	}
-	type GUpdate struct {
-		Protocol string `json:"protocol"`
-		Server   string `json:"server"`
-		Apps     []App  `json:"app"`
-	}
-	type JSONGUpdate struct {
-		GUpdate GUpdate `json:"gupdate"`
-	}
-	response := GUpdate{}
-	response.Protocol = "4.0"
-	response.Server = "prod"
-
-	for _, ext := range *r {
-		extensionName := "extension_" + strings.Replace(ext.Version, ".", "_", -1) + ".crx"
-		app := App{
-			AppID:  ext.ID,
-			Status: "ok",
-			UpdateCheck: UpdateCheck{
-				Status:   "ok",
-				SHA256:   ext.SHA256,
-				Version:  ext.Version,
-				Codebase: "https://" + extension.GetS3ExtensionBucketHost(ext.ID) + "/release/" + ext.ID + "/" + extensionName,
-			},
-		}
-		response.Apps = append(response.Apps, app)
-	}
-	jsonGupdate := JSONGUpdate{}
-	jsonGupdate.GUpdate = response
-
-	return json.Marshal(jsonGupdate)
-}
-
-// MarshalXML encodes the extension list into web store response XML
-func (r *WebStoreResponse) MarshalXML(e *xml.Encoder, _ xml.StartElement) error {
-	type UpdateCheck struct {
-		XMLName  xml.Name `xml:"updatecheck"`
-		Status   string   `xml:"status,attr"`
-		Codebase string   `xml:"codebase,attr"`
-		Version  string   `xml:"version,attr"`
-		SHA256   string   `xml:"hash_sha256,attr"`
-	}
-	type App struct {
-		XMLName     xml.Name `xml:"app"`
-		AppID       string   `xml:"appid,attr"`
-		Status      string   `xml:"status,attr"`
-		UpdateCheck UpdateCheck
-	}
-	type GUpdate struct {
-		XMLName  xml.Name `xml:"gupdate"`
-		Protocol string   `xml:"protocol,attr"`
-		Server   string   `xml:"server,attr"`
-		Apps     []App
-	}
-	response := GUpdate{}
-	response.Protocol = "4.0"
-	response.Server = "prod"
-
-	for _, ext := range *r {
-		extensionName := "extension_" + strings.Replace(ext.Version, ".", "_", -1) + ".crx"
-		app := App{
-			AppID:  ext.ID,
-			Status: "ok",
-			UpdateCheck: UpdateCheck{
-				Status:   "ok",
-				SHA256:   ext.SHA256,
-				Version:  ext.Version,
-				Codebase: "https://" + extension.GetS3ExtensionBucketHost(ext.ID) + "/release/" + ext.ID + "/" + extensionName,
-			},
-		}
-		response.Apps = append(response.Apps, app)
-	}
-	e.Indent("", "    ")
-	err := e.EncodeElement(response, xml.StartElement{Name: xml.Name{Local: "gupdate"}})
-	return err
 }

@@ -153,54 +153,6 @@ func TestResponseMarshalJSONV40(t *testing.T) {
 	}
 }
 
-func TestWebStoreResponseMarshalJSONV40(t *testing.T) {
-	response := WebStoreResponse{
-		{
-			ID:      "test-app-id",
-			Version: "1.0.0",
-			SHA256:  "test-sha256",
-		},
-	}
-
-	data, err := response.MarshalJSON()
-	if err != nil {
-		t.Fatalf("Failed to marshal to JSON: %v", err)
-	}
-
-	var result map[string]interface{}
-	if err := json.Unmarshal(data, &result); err != nil {
-		t.Fatalf("Failed to unmarshal JSON result: %v", err)
-	}
-
-	gupdateObj, ok := result["gupdate"].(map[string]interface{})
-	if !ok {
-		t.Fatalf("Expected 'gupdate' field in JSON output")
-	}
-
-	if gupdateObj["protocol"] != "4.0" {
-		t.Errorf("Expected protocol '4.0', got '%v'", gupdateObj["protocol"])
-	}
-
-	apps, ok := gupdateObj["app"].([]interface{})
-	if !ok || len(apps) != 1 {
-		t.Fatalf("Expected 1 app in response")
-	}
-
-	app := apps[0].(map[string]interface{})
-	if app["appid"] != "test-app-id" {
-		t.Errorf("Expected app ID 'test-app-id', got '%v'", app["appid"])
-	}
-
-	updateCheck, ok := app["updatecheck"].(map[string]interface{})
-	if !ok {
-		t.Fatalf("Expected updatecheck in app")
-	}
-
-	if updateCheck["status"] != "ok" {
-		t.Errorf("Expected status 'ok', got '%v'", updateCheck["status"])
-	}
-}
-
 func TestNewProtocol(t *testing.T) {
 	tests := []struct {
 		name    string

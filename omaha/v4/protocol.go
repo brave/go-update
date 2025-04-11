@@ -1,9 +1,7 @@
 package v4
 
 import (
-	"encoding/xml"
 	"fmt"
-	"strings"
 
 	"github.com/brave/go-update/extension"
 	"github.com/brave/go-update/omaha/protocol"
@@ -59,26 +57,5 @@ func (h *VersionedHandler) FormatUpdateResponse(extensions extension.Extensions,
 
 // FormatWebStoreResponse formats a web store response in the appropriate format based on content type
 func (h *VersionedHandler) FormatWebStoreResponse(extensions extension.Extensions, contentType string) ([]byte, error) {
-	response := UpdateResponse(extensions)
-	webStoreResponse := WebStoreResponse(response)
-
-	if contentType == "application/json" {
-		return webStoreResponse.MarshalJSON()
-	}
-
-	// XML response
-	var buf strings.Builder
-	encoder := xml.NewEncoder(&buf)
-
-	err := webStoreResponse.MarshalXML(encoder, xml.StartElement{Name: xml.Name{Local: "gupdate"}})
-	if err != nil {
-		return nil, err
-	}
-
-	err = encoder.Flush()
-	if err != nil {
-		return nil, err
-	}
-
-	return []byte(buf.String()), nil
+	return nil, fmt.Errorf("FormatWebStoreResponse not implemented for protocol v4: WebStore responses always use protocol v3.1")
 }
