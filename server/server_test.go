@@ -137,27 +137,27 @@ func TestUpdateExtensionsXML(t *testing.T) {
 				<updatecheck codebase="https://` + extension.GetS3ExtensionBucketHost("aomjjhallfgjeglblehebfpbcfeobpgk") + `/release/aomjjhallfgjeglblehebfpbcfeobpgk/extension_4_5_9_90.crx" version="4.5.9.90"/>
 			</app>
 		</request>`
-	expectedResponse = "Error reading body request version: 2.0 not supported"
+	expectedResponse = "Error parsing request: unsupported protocol version: 2.0"
 	testCall(t, server, http.MethodPost, contentTypeXML, "", requestBody, http.StatusBadRequest, expectedResponse, "")
 
 	// Not XML
 	requestBody = "For the king!"
-	expectedResponse = "Error reading body EOF"
+	expectedResponse = "Error parsing request: request element not found in XML"
 	testCall(t, server, http.MethodPost, contentTypeXML, "", requestBody, http.StatusBadRequest, expectedResponse, "")
 
 	// Malformed XML
 	requestBody = "<This way! No, that way!"
-	expectedResponse = "Error reading body XML syntax error on line 1: attribute name without = in element"
+	expectedResponse = "Error parsing request: error parsing XML: XML syntax error on line 1: attribute name without = in element"
 	testCall(t, server, http.MethodPost, contentTypeXML, "", requestBody, http.StatusBadRequest, expectedResponse, "")
 
 	// Different XML schema
 	requestBody = "<text>For the alliance!</text>"
-	expectedResponse = "Error reading body expected element type <request> but have <text>"
+	expectedResponse = "Error parsing request: request element not found in XML"
 	testCall(t, server, http.MethodPost, contentTypeXML, "", requestBody, http.StatusBadRequest, expectedResponse, "")
 
 	// Empty body request
 	requestBody = ""
-	expectedResponse = "Error reading body EOF"
+	expectedResponse = "Error parsing request: EOF"
 	testCall(t, server, http.MethodPost, contentTypeXML, "", requestBody, http.StatusBadRequest, expectedResponse, "")
 
 	lightThemeExtension := extensiontest.ExtensionRequestFnForXML("ldimlcelhnjgpjjemdjokpgeeikdinbm")
@@ -409,22 +409,23 @@ func TestUpdateExtensionsJSON(t *testing.T) {
 
 	// No extensions
 	requestBody := `{"request":{"protocol":"3.1","version":"chrome-53.0.2785.116","prodversion":"53.0.2785.116","requestid":"{e821bacd-8dbf-4cc8-9e8c-bcbe8c1cfd3d}","lang":"","updaterchannel":"stable","prodchannel":"stable","os":"mac","arch":"x64","nacl_arch":"x86-64","hw":{"physmemory":16},"os":{"arch":"x86_64","platform":"Mac OS X","version":"10.14.3"}}}`
+	// The server responds with a different response than what's documented externally
 	expectedResponse := jsonPrefix + `{"response":{"protocol":"3.1","server":"prod","app":null}}`
 	testCall(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusOK, expectedResponse, "")
 
 	// Unsupported protocol version
 	requestBody = `{"request":{"protocol":"2.0","version":"chrome-53.0.2785.116","prodversion":"53.0.2785.116","requestid":"{e821bacd-8dbf-4cc8-9e8c-bcbe8c1cfd3d}","lang":"","updaterchannel":"stable","prodchannel":"stable","os":"mac","arch":"x64","nacl_arch":"x86-64","hw":{"physmemory":16},"os":{"arch":"x86_64","platform":"Mac OS X","version":"10.14.3"}}}`
-	expectedResponse = "Error reading body request version: 2.0 not supported"
+	expectedResponse = "Error parsing request: unsupported protocol version: 2.0"
 	testCall(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusBadRequest, expectedResponse, "")
 
 	// Not JSON
 	requestBody = "For the king!"
-	expectedResponse = "Error reading body invalid character 'F' looking for beginning of value"
+	expectedResponse = "Error parsing request: error parsing JSON request: invalid character 'F' looking for beginning of value"
 	testCall(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusBadRequest, expectedResponse, "")
 
 	// Malformed JSON
 	requestBody = "{request"
-	expectedResponse = "Error reading body invalid character 'r' looking for beginning of object key string"
+	expectedResponse = "Error parsing request: error parsing JSON request: invalid character 'r' looking for beginning of object key string"
 	testCall(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusBadRequest, expectedResponse, "")
 
 	lightThemeExtension := extensiontest.ExtensionRequestFnForJSON("ldimlcelhnjgpjjemdjokpgeeikdinbm")
