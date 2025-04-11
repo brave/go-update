@@ -4,8 +4,13 @@
   ],
   "packageRules": [
     {
-      "packageNames": ["github.com/aws/aws-sdk-go"],
-      "matchUpdateTypes": ["patch", "minor"],
+      "matchPackageNames": [
+        "github.com/aws/aws-sdk-go"
+      ],
+      "matchUpdateTypes": [
+        "patch",
+        "minor"
+      ],
       "autoApprove": true,
       "automerge": true
     }
