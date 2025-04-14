@@ -22,10 +22,6 @@ import (
 	"github.com/pressly/lg"
 )
 
-// PDFJSExtensionID will be used to add an exception to pass the request for
-// PDF viewer extension install from chrome web store to the extension updater proxy
-var PDFJSExtensionID = "oemmndcbldboiebfnladdacbdfmadadm"
-
 // WidivineExtensionID is used to add an exception to pass the request for widivine
 // directly to google servers
 var WidivineExtensionID = "oimompecagnajdejgnnjijobebaeigek"
@@ -183,7 +179,7 @@ func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
 		}
 
 		foundExtension, ok := AllExtensionsMap.Load(id)
-		if (!ok || id == PDFJSExtensionID) && len(xValues) == 1 {
+		if !ok && len(xValues) == 1 {
 			http.Redirect(w, r, "https://extensionupdater.brave.com/service/update2/crx?"+r.URL.RawQuery, http.StatusTemporaryRedirect)
 			return
 		}
