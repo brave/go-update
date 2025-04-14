@@ -37,10 +37,11 @@ func (r *UpdateResponse) MarshalJSON() ([]byte, error) {
 		SHA256 string `json:"sha256"`
 	}
 	type Operation struct {
-		Type string `json:"type"`
-		Out  *Out   `json:"out,omitempty"`
-		In   *In    `json:"in,omitempty"`
-		URLs []URL  `json:"urls,omitempty"`
+		Type     string `json:"type"`
+		Out      *Out   `json:"out,omitempty"`
+		In       *In    `json:"in,omitempty"`
+		URLs     []URL  `json:"urls,omitempty"`
+		Previous *In    `json:"previous,omitempty"`
 	}
 	type Pipeline struct {
 		PipelineID string      `json:"pipeline_id"`
@@ -89,6 +90,36 @@ func (r *UpdateResponse) MarshalJSON() ([]byte, error) {
 			// Create pipeline with operations
 			extensionName := "extension_" + strings.Replace(ext.Version, ".", "_", -1) + ".crx"
 			url := "https://" + extension.GetS3ExtensionBucketHost(ext.ID) + "/release/" + ext.ID + "/" + extensionName
+
+			// Add diff pipeline if patch is available
+			if ext.FP != "" && ext.PatchList != nil {
+				if patchInfo, ok := ext.PatchList[ext.FP]; ok {
+					diffPipelineID := "puff_diff_" + ext.FP[:8]
+					patchURL := "https://" + extension.GetS3ExtensionBucketHost(ext.ID) + "/release/" +
+						ext.ID + "/patches/" + ext.SHA256 + "/" + ext.FP + ".puff"
+
+					diffPipeline := Pipeline{
+						PipelineID: diffPipelineID,
+						Operations: []Operation{
+							{
+								Type: "download",
+								Out:  &Out{SHA256: patchInfo.Hashdiff},
+								URLs: []URL{{URL: patchURL}},
+							},
+							{
+								Type:     "puff",
+								Previous: &In{SHA256: ext.FP},
+							},
+							{
+								Type: "crx3",
+								In:   &In{SHA256: ext.SHA256},
+							},
+						},
+					}
+
+					app.UpdateCheck.Pipelines = append(app.UpdateCheck.Pipelines, diffPipeline)
+				}
+			}
 
 			pipeline := Pipeline{
 				PipelineID: "direct_full",
