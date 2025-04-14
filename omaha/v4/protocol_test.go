@@ -2,6 +2,7 @@ package v4
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/brave/go-update/extension"
@@ -130,26 +131,80 @@ func TestResponseMarshalJSONV40(t *testing.T) {
 		t.Fatalf("Expected at least 1 pipeline in updatecheck")
 	}
 
-	pipeline := pipelines[0].(map[string]interface{})
-	if pipeline["pipeline_id"] != "direct_full" {
-		t.Errorf("Expected pipeline_id 'direct_full', got '%v'", pipeline["pipeline_id"])
+	// First pipeline should be the diff pipeline (puff_diff)
+	if len(pipelines) > 1 {
+		diffPipeline := pipelines[0].(map[string]interface{})
+		expectedPipelinePrefix := "puff_diff_"
+		if pipelineID, pipelineOK := diffPipeline["pipeline_id"].(string); !pipelineOK || !strings.HasPrefix(pipelineID, expectedPipelinePrefix) {
+			t.Errorf("Expected pipeline_id to start with '%s', got '%v'", expectedPipelinePrefix, diffPipeline["pipeline_id"])
+		}
+
+		diffOperations, diffOpsOK := diffPipeline["operations"].([]interface{})
+		if !diffOpsOK || len(diffOperations) != 3 {
+			t.Fatalf("Expected 3 operations in diff pipeline, got %d", len(diffOperations))
+		}
+
+		// Check download operation in diff pipeline
+		downloadOp := diffOperations[0].(map[string]interface{})
+		if downloadOp["type"] != "download" {
+			t.Errorf("Expected operation type 'download', got '%v'", downloadOp["type"])
+		}
+		if outObj, outOK := downloadOp["out"].(map[string]interface{}); !outOK || outObj["sha256"] != "test-hash-diff" {
+			t.Errorf("Expected download operation to have out.sha256 'test-hash-diff'")
+		}
+		if urls, urlsOK := downloadOp["urls"].([]interface{}); !urlsOK || len(urls) == 0 {
+			t.Errorf("Expected download operation to have URLs")
+		}
+
+		// Check puff operation in diff pipeline
+		puffOp := diffOperations[1].(map[string]interface{})
+		if puffOp["type"] != "puff" {
+			t.Errorf("Expected operation type 'puff', got '%v'", puffOp["type"])
+		}
+		if prevObj, prevOK := puffOp["previous"].(map[string]interface{}); !prevOK || prevObj["sha256"] != "test-fp" {
+			t.Errorf("Expected puff operation to have previous.sha256 'test-fp'")
+		}
+
+		// Check crx3 operation in diff pipeline
+		crx3OpDiff := diffOperations[2].(map[string]interface{})
+		if crx3OpDiff["type"] != "crx3" {
+			t.Errorf("Expected operation type 'crx3', got '%v'", crx3OpDiff["type"])
+		}
+		if inObj, inOK := crx3OpDiff["in"].(map[string]interface{}); !inOK || inObj["sha256"] != "test-sha256" {
+			t.Errorf("Expected crx3 operation to have in.sha256 'test-sha256'")
+		}
 	}
 
-	operations, ok := pipeline["operations"].([]interface{})
-	if !ok || len(operations) != 2 {
-		t.Fatalf("Expected 2 operations in pipeline")
+	// Last pipeline should be direct_full
+	fullPipeline := pipelines[len(pipelines)-1].(map[string]interface{})
+	if fullPipeline["pipeline_id"] != "direct_full" {
+		t.Errorf("Expected last pipeline_id to be 'direct_full', got '%v'", fullPipeline["pipeline_id"])
 	}
 
-	// Check the download operation
+	operations, opsOK := fullPipeline["operations"].([]interface{})
+	if !opsOK || len(operations) != 2 {
+		t.Fatalf("Expected 2 operations in full pipeline, got %d", len(operations))
+	}
+
+	// Check download operation in full pipeline
 	downloadOp := operations[0].(map[string]interface{})
 	if downloadOp["type"] != "download" {
 		t.Errorf("Expected operation type 'download', got '%v'", downloadOp["type"])
 	}
+	if outObj, outOK := downloadOp["out"].(map[string]interface{}); !outOK || outObj["sha256"] != "test-sha256" {
+		t.Errorf("Expected download operation to have out.sha256 'test-sha256'")
+	}
+	if urls, urlsOK := downloadOp["urls"].([]interface{}); !urlsOK || len(urls) == 0 {
+		t.Errorf("Expected download operation to have URLs")
+	}
 
-	// Check the crx3 operation
+	// Check crx3 operation in full pipeline
 	crx3Op := operations[1].(map[string]interface{})
 	if crx3Op["type"] != "crx3" {
 		t.Errorf("Expected operation type 'crx3', got '%v'", crx3Op["type"])
+	}
+	if inObj, inOK := crx3Op["in"].(map[string]interface{}); !inOK || inObj["sha256"] != "test-sha256" {
+		t.Errorf("Expected crx3 operation to have in.sha256 'test-sha256'")
 	}
 }
 
