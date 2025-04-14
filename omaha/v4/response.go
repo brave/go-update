@@ -91,10 +91,17 @@ func (r *UpdateResponse) MarshalJSON() ([]byte, error) {
 			extensionName := "extension_" + strings.Replace(ext.Version, ".", "_", -1) + ".crx"
 			url := "https://" + extension.GetS3ExtensionBucketHost(ext.ID) + "/release/" + ext.ID + "/" + extensionName
 
-			// Add diff pipeline if patch is available
+			// Initialize pipelines array
+			app.UpdateCheck.Pipelines = []Pipeline{}
+
+			// Add diff pipeline if patch is available (diff pipeline should come first)
 			if ext.FP != "" && ext.PatchList != nil {
 				if patchInfo, ok := ext.PatchList[ext.FP]; ok {
-					diffPipelineID := "puff_diff_" + ext.FP[:8]
+					fpPrefix := ext.FP
+					if len(ext.FP) >= 8 {
+						fpPrefix = ext.FP[:8]
+					}
+					diffPipelineID := "puff_diff_" + fpPrefix
 					patchURL := "https://" + extension.GetS3ExtensionBucketHost(ext.ID) + "/release/" +
 						ext.ID + "/patches/" + ext.SHA256 + "/" + ext.FP + ".puff"
 
@@ -121,6 +128,7 @@ func (r *UpdateResponse) MarshalJSON() ([]byte, error) {
 				}
 			}
 
+			// Add full pipeline as fallback (always add as the last pipeline)
 			pipeline := Pipeline{
 				PipelineID: "direct_full",
 				Operations: []Operation{
