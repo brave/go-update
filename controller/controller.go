@@ -196,7 +196,9 @@ func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 
-	// Always use protocol 3.1 for responses
+	// It is impossible to determine the response protocol version for WebStoreUpdateExtension calls.
+	// The incoming request is GET and does not include any information about the protocol version,
+	// therefore 3.1 is always used for WebStoreUpdateExtension responses.
 	protocolHandler, err := ProtocolFactory.CreateProtocol("3.1")
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error creating protocol handler: %v", err), http.StatusInternalServerError)
@@ -307,8 +309,14 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 	// Use the generic FilterForUpdates function
 	updateResponse := extension.FilterForUpdates(updateRequest, AllExtensionsMap)
 
-	// Always use protocol 3.1 in responses regardless of input protocol
-	responseProtocolHandler, err := ProtocolFactory.CreateProtocol("3.1")
+	// Use the same protocol version for response as the request for v4
+	// Otherwise default to 3.1 for backward compatibility
+	responseProtocolVersion := "3.1"
+	if protocolVersion == "4.0" {
+		responseProtocolVersion = protocolVersion
+	}
+
+	responseProtocolHandler, err := ProtocolFactory.CreateProtocol(responseProtocolVersion)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error creating response protocol handler: %v", err), http.StatusInternalServerError)
 		return
