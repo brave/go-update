@@ -4,7 +4,10 @@
 *.dll
 *.so
 *.dylib
+
+# Build output
 main
+go-update
 
 # Test binary, build with `go test -c`
 *.test
