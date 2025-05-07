@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	_ "net/http/pprof" // pprof magic
 	"os"
@@ -15,8 +16,8 @@ import (
 	"github.com/brave/go-update/controller"
 	"github.com/brave/go-update/extension"
 	"github.com/getsentry/sentry-go"
-	"github.com/go-chi/chi"
-	chiware "github.com/go-chi/chi/middleware"
+	"github.com/go-chi/chi/v5"
+	chiware "github.com/go-chi/chi/v5/middleware"
 	"github.com/pressly/lg"
 	"github.com/sirupsen/logrus"
 )
@@ -76,7 +77,11 @@ func StartServer() {
 	serverCtx, r := setupRouter(serverCtx, logger, false)
 	port := ":8192"
 	fmt.Printf("Starting server: http://localhost%s", port)
-	srv := http.Server{Addr: port, Handler: chi.ServerBaseContext(serverCtx, r)}
+	srv := http.Server{
+		Addr:        port,
+		Handler:     r,
+		BaseContext: func(_ net.Listener) context.Context { return serverCtx },
+	}
 	err := srv.ListenAndServe()
 	if err != nil {
 		sentry.CaptureException(err)

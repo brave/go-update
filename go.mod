@@ -6,7 +6,7 @@ require (
 	github.com/aws/aws-sdk-go v1.55.7
 	github.com/brave-intl/bat-go v0.1.0
 	github.com/getsentry/sentry-go v0.32.0
-	github.com/go-chi/chi v4.1.2+incompatible
+	github.com/go-chi/chi/v5 v5.0.12
 	github.com/go-playground/validator/v10 v10.26.0
 	github.com/pressly/lg v1.1.1
 	github.com/sirupsen/logrus v1.9.3
@@ -20,6 +20,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
 	github.com/getsentry/raven-go v0.2.1-0.20190619092523-5c24d5110e0e // indirect
+	github.com/go-chi/chi v1.5.5 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect

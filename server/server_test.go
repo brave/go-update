@@ -17,7 +17,7 @@ import (
 	"github.com/brave/go-update/controller"
 	"github.com/brave/go-update/extension"
 	"github.com/brave/go-update/extension/extensiontest"
-	"github.com/go-chi/chi"
+	"github.com/pressly/lg"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -59,7 +59,15 @@ func init() {
 	controller.AllExtensionsMap.StoreExtensions(&extension.OfferedExtensions)
 	controller.ExtensionUpdaterTimeout = time.Millisecond * 1
 	testCtx, logger := setupLogger(context.Background())
-	handler = chi.ServerBaseContext(setupRouter(testCtx, logger, true))
+	_, router := setupRouter(testCtx, logger, true)
+
+	// Create a middleware that adds the context with logger to each request
+	handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Add the logger to the context
+		ctx := lg.WithLoggerContext(r.Context(), logger)
+		router.ServeHTTP(w, r.WithContext(ctx))
+	})
+
 	controller.RefreshExtensionsTicker(func() {
 		count++
 		if count == 1 {
