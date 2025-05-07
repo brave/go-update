@@ -6,7 +6,7 @@ require (
 	github.com/aws/aws-sdk-go v1.55.7
 	github.com/brave-intl/bat-go v0.1.0
 	github.com/getsentry/sentry-go v0.32.0
-	github.com/go-chi/chi v4.1.2+incompatible
+	github.com/go-chi/chi v4.1.3+incompatible
 	github.com/go-playground/validator/v10 v10.26.0
 	github.com/pressly/lg v1.1.1
 	github.com/sirupsen/logrus v1.9.3
