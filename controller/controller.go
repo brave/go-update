@@ -105,7 +105,6 @@ func initExtensionUpdatesFromDynamoDB() {
 		}
 
 		AllExtensionsMap.Store(id, ext)
-
 	}
 }
 
