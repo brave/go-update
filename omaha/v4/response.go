@@ -34,7 +34,6 @@ func (r *UpdateResponse) MarshalJSON() ([]byte, error) {
 	}
 	type Out struct {
 		SHA256 string `json:"sha256" validate:"required"`
-		Size   uint64 `json:"size,omitempty" validate:"gt=0"`
 	}
 	type In struct {
 		SHA256 string `json:"sha256" validate:"required"`
@@ -45,6 +44,7 @@ func (r *UpdateResponse) MarshalJSON() ([]byte, error) {
 		In       *In    `json:"in,omitempty" validate:"omitempty,required_if=Type crx3"`
 		URLs     []URL  `json:"urls,omitempty" validate:"omitempty,required_if=Type download,dive"`
 		Previous *In    `json:"previous,omitempty" validate:"omitempty,required_if=Type puff"`
+		Size     uint64 `json:"size,omitempty" validate:"omitempty,required_if=Type download,gt=0"`
 	}
 	type Pipeline struct {
 		PipelineID string      `json:"pipeline_id"`
@@ -124,7 +124,6 @@ func (r *UpdateResponse) MarshalJSON() ([]byte, error) {
 					// Create the Out struct for diff pipeline
 					diffOut := &Out{
 						SHA256: patchInfo.Hashdiff,
-						Size:   normalizeSize(uint64(patchInfo.Sizediff)),
 					}
 
 					// Create URLs for diff pipeline
@@ -139,6 +138,7 @@ func (r *UpdateResponse) MarshalJSON() ([]byte, error) {
 						Type: "download",
 						Out:  diffOut,
 						URLs: diffURLs,
+						Size: normalizeSize(uint64(patchInfo.Sizediff)),
 					}
 
 					puffOp := Operation{
@@ -174,7 +174,6 @@ func (r *UpdateResponse) MarshalJSON() ([]byte, error) {
 			// Add full pipeline as fallback (always add as the last pipeline)
 			out := &Out{
 				SHA256: ext.SHA256,
-				Size:   normalizeSize(ext.Size),
 			}
 
 			urls := []URL{{URL: url}}
@@ -185,6 +184,7 @@ func (r *UpdateResponse) MarshalJSON() ([]byte, error) {
 				Type: "download",
 				Out:  out,
 				URLs: urls,
+				Size: normalizeSize(ext.Size),
 			}
 
 			mainCrx3Op := Operation{

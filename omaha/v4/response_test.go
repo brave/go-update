@@ -152,7 +152,7 @@ func TestSizeValidation(t *testing.T) {
 
 		// Verify Size is present and greater than 0
 		out := downloadOp["out"].(map[string]interface{})
-		size, exists := out["size"]
+		size, exists := downloadOp["size"]
 		assert.True(t, exists, "Size field should be present in download operation")
 		assert.Greater(t, size, float64(0), "Size field should be greater than 0")
 
