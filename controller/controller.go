@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -76,6 +77,21 @@ func initExtensionUpdatesFromDynamoDB() {
 			SHA256:      *item["SHA256"].S,
 			Title:       *item["Title"].S,
 			Version:     *item["Version"].S,
+			Size:        1, // Required field as per Omaha v4 spec (must be >0); its correctness is NOT verified by the browser
+		}
+
+		// Add Size field if present in DynamoDB
+		if sizeItem := item["Size"]; sizeItem != nil && sizeItem.N != nil {
+			size, err := strconv.ParseUint(*sizeItem.N, 10, 64)
+			if err != nil {
+				log.Printf("failed to parse Size %v\n", err)
+				sentry.CaptureException(err)
+			} else {
+				if size == 0 {
+					size = 1
+				}
+				ext.Size = size
+			}
 		}
 
 		if plist := item["PatchList"]; plist != nil {

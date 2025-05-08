@@ -32,6 +32,7 @@ func (r *UpdateResponse) MarshalJSON() ([]byte, error) {
 	}
 	type Out struct {
 		SHA256 string `json:"sha256"`
+		Size   uint64 `json:"size,omitempty" validate:"gt=0"`
 	}
 	type In struct {
 		SHA256 string `json:"sha256"`
@@ -134,7 +135,7 @@ func (r *UpdateResponse) MarshalJSON() ([]byte, error) {
 				Operations: []Operation{
 					{
 						Type: "download",
-						Out:  &Out{SHA256: ext.SHA256},
+						Out:  &Out{SHA256: ext.SHA256, Size: normalizeSize(ext.Size)},
 						URLs: []URL{{URL: url}},
 					},
 					{
@@ -155,4 +156,12 @@ func (r *UpdateResponse) MarshalJSON() ([]byte, error) {
 	}
 
 	return json.Marshal(jsonResponse)
+}
+
+// normalizeSize ensures Size is greater than 0
+func normalizeSize(size uint64) uint64 {
+	if size == 0 {
+		return 1
+	}
+	return size
 }

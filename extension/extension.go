@@ -22,6 +22,7 @@ type Extension struct {
 	SHA256      string
 	Title       string
 	URL         string
+	Size        uint64 `validate:"gt=0"`
 	Blacklisted bool
 	Status      string
 	PatchList   map[string]*PatchInfo
