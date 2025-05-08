@@ -40,11 +40,11 @@ func (r *UpdateResponse) MarshalJSON() ([]byte, error) {
 		SHA256 string `json:"sha256" validate:"required"`
 	}
 	type Operation struct {
-		Type     string `json:"type"`
-		Out      *Out   `json:"out,omitempty"`
-		In       *In    `json:"in,omitempty"`
-		URLs     []URL  `json:"urls,omitempty"`
-		Previous *In    `json:"previous,omitempty"`
+		Type     string `json:"type" validate:"required,oneof=download puff crx3"`
+		Out      *Out   `json:"out,omitempty" validate:"omitempty,required_if=Type download"`
+		In       *In    `json:"in,omitempty" validate:"omitempty,required_if=Type crx3"`
+		URLs     []URL  `json:"urls,omitempty" validate:"omitempty,required_if=Type download,dive"`
+		Previous *In    `json:"previous,omitempty" validate:"omitempty,required_if=Type puff"`
 	}
 	type Pipeline struct {
 		PipelineID string      `json:"pipeline_id"`
@@ -124,49 +124,46 @@ func (r *UpdateResponse) MarshalJSON() ([]byte, error) {
 					// Create the Out struct for diff pipeline
 					diffOut := &Out{
 						SHA256: patchInfo.Hashdiff,
-						Size:   normalizeSize(uint64(patchInfo.Sizediff)), // Use Sizediff if available, normalize for validation
-					}
-					// Validate the Out struct
-					if err := validate.Struct(diffOut); err != nil {
-						return nil, fmt.Errorf("diff validation failed for extension %s: %v", ext.ID, err)
+						Size:   normalizeSize(uint64(patchInfo.Sizediff)),
 					}
 
-					// Create and validate URLs for diff pipeline
+					// Create URLs for diff pipeline
 					diffURLs := []URL{{URL: patchURL}}
-					for i, u := range diffURLs {
-						if err := validate.Struct(u); err != nil {
-							return nil, fmt.Errorf("diff URL validation failed for extension %s (URL %d): %v", ext.ID, i, err)
-						}
-					}
 
-					// Create and validate the In struct for the previous field
+					// Create In structs
 					previousIn := &In{SHA256: ext.FP}
-					if err := validate.Struct(previousIn); err != nil {
-						return nil, fmt.Errorf("previous validation failed for extension %s: %v", ext.ID, err)
+					crx3In := &In{SHA256: ext.SHA256}
+
+					// Create operations for diff pipeline
+					diffDownloadOp := Operation{
+						Type: "download",
+						Out:  diffOut,
+						URLs: diffURLs,
 					}
 
-					// Create and validate the In struct for crx3
-					crx3In := &In{SHA256: ext.SHA256}
-					if err := validate.Struct(crx3In); err != nil {
-						return nil, fmt.Errorf("crx3 In validation failed for extension %s: %v", ext.ID, err)
+					puffOp := Operation{
+						Type:     "puff",
+						Previous: previousIn,
+					}
+
+					crx3Op := Operation{
+						Type: "crx3",
+						In:   crx3In,
+					}
+
+					// Validate all operations
+					for _, op := range []Operation{diffDownloadOp, puffOp, crx3Op} {
+						if err := validate.Struct(op); err != nil {
+							return nil, fmt.Errorf("%s operation validation failed for extension %s: %v", op.Type, ext.ID, err)
+						}
 					}
 
 					diffPipeline := Pipeline{
 						PipelineID: diffPipelineID,
 						Operations: []Operation{
-							{
-								Type: "download",
-								Out:  diffOut,
-								URLs: diffURLs,
-							},
-							{
-								Type:     "puff",
-								Previous: previousIn,
-							},
-							{
-								Type: "crx3",
-								In:   crx3In,
-							},
+							diffDownloadOp,
+							puffOp,
+							crx3Op,
 						},
 					}
 
@@ -175,43 +172,38 @@ func (r *UpdateResponse) MarshalJSON() ([]byte, error) {
 			}
 
 			// Add full pipeline as fallback (always add as the last pipeline)
-			// Create Out struct with normalized size
 			out := &Out{
 				SHA256: ext.SHA256,
 				Size:   normalizeSize(ext.Size),
 			}
-			// Validate the Out struct
-			if err := validate.Struct(out); err != nil {
-				return nil, fmt.Errorf("validation failed for extension %s: %v", ext.ID, err)
-			}
 
-			// Create URLs array
 			urls := []URL{{URL: url}}
-			// Validate individual URL struct
-			for i, u := range urls {
-				if err := validate.Struct(u); err != nil {
-					return nil, fmt.Errorf("URL validation failed for extension %s (URL %d): %v", ext.ID, i, err)
-				}
+			mainCrx3In := &In{SHA256: ext.SHA256}
+
+			// Create operations for main pipeline
+			mainDownloadOp := Operation{
+				Type: "download",
+				Out:  out,
+				URLs: urls,
 			}
 
-			// Create and validate the In struct for crx3 in the main pipeline
-			mainCrx3In := &In{SHA256: ext.SHA256}
-			if err := validate.Struct(mainCrx3In); err != nil {
-				return nil, fmt.Errorf("main crx3 In validation failed for extension %s: %v", ext.ID, err)
+			mainCrx3Op := Operation{
+				Type: "crx3",
+				In:   mainCrx3In,
+			}
+
+			// Validate all operations in the main pipeline
+			for _, op := range []Operation{mainDownloadOp, mainCrx3Op} {
+				if err := validate.Struct(op); err != nil {
+					return nil, fmt.Errorf("%s operation validation failed for extension %s: %v", op.Type, ext.ID, err)
+				}
 			}
 
 			pipeline := Pipeline{
 				PipelineID: "direct_full",
 				Operations: []Operation{
-					{
-						Type: "download",
-						Out:  out,
-						URLs: urls,
-					},
-					{
-						Type: "crx3",
-						In:   mainCrx3In,
-					},
+					mainDownloadOp,
+					mainCrx3Op,
 				},
 			}
 
