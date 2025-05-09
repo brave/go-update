@@ -2,10 +2,12 @@ package v4
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 	"time"
 
 	"github.com/brave/go-update/extension"
+	"github.com/go-playground/validator/v10"
 )
 
 // GetElapsedDays calculates elapsed days since Jan 1, 2007
@@ -28,20 +30,21 @@ func GetUpdateStatus(extension extension.Extension) string {
 // MarshalJSON encodes the extension list into response JSON
 func (r *UpdateResponse) MarshalJSON() ([]byte, error) {
 	type URL struct {
-		URL string `json:"url"`
+		URL string `json:"url" validate:"required"`
 	}
 	type Out struct {
-		SHA256 string `json:"sha256"`
+		SHA256 string `json:"sha256" validate:"required"`
 	}
 	type In struct {
-		SHA256 string `json:"sha256"`
+		SHA256 string `json:"sha256" validate:"required"`
 	}
 	type Operation struct {
-		Type     string `json:"type"`
-		Out      *Out   `json:"out,omitempty"`
-		In       *In    `json:"in,omitempty"`
-		URLs     []URL  `json:"urls,omitempty"`
-		Previous *In    `json:"previous,omitempty"`
+		Type     string `json:"type" validate:"required,oneof=download puff crx3"`
+		Out      *Out   `json:"out,omitempty" validate:"omitempty,required_if=Type download"`
+		In       *In    `json:"in,omitempty" validate:"omitempty,required_if=Type crx3"`
+		URLs     []URL  `json:"urls,omitempty" validate:"omitempty,required_if=Type download,dive"`
+		Previous *In    `json:"previous,omitempty" validate:"omitempty,required_if=Type puff"`
+		Size     uint64 `json:"size,omitempty" validate:"omitempty,required_if=Type download,gt=0"`
 	}
 	type Pipeline struct {
 		PipelineID string      `json:"pipeline_id"`
@@ -79,7 +82,15 @@ func (r *UpdateResponse) MarshalJSON() ([]byte, error) {
 		},
 	}
 
+	// Create validator instance
+	validate := validator.New()
+
 	for _, ext := range *r {
+		// Check if SHA256 is empty
+		if ext.SHA256 == "" {
+			return nil, fmt.Errorf("extension %s has empty SHA256", ext.ID)
+		}
+
 		app := App{AppID: ext.ID, Status: "ok"}
 		updateStatus := GetUpdateStatus(ext)
 		app.UpdateCheck = UpdateCheck{Status: updateStatus}
@@ -97,6 +108,11 @@ func (r *UpdateResponse) MarshalJSON() ([]byte, error) {
 			// Add diff pipeline if patch is available (diff pipeline should come first)
 			if ext.FP != "" && ext.PatchList != nil {
 				if patchInfo, ok := ext.PatchList[ext.FP]; ok {
+					// Check if hashdiff is empty
+					if patchInfo.Hashdiff == "" {
+						return nil, fmt.Errorf("extension %s has empty Hashdiff", ext.ID)
+					}
+
 					fpPrefix := ext.FP
 					if len(ext.FP) >= 8 {
 						fpPrefix = ext.FP[:8]
@@ -105,22 +121,49 @@ func (r *UpdateResponse) MarshalJSON() ([]byte, error) {
 					patchURL := "https://" + extension.GetS3ExtensionBucketHost(ext.ID) + "/release/" +
 						ext.ID + "/patches/" + ext.SHA256 + "/" + ext.FP + ".puff"
 
+					// Create the Out struct for diff pipeline
+					diffOut := &Out{
+						SHA256: patchInfo.Hashdiff,
+					}
+
+					// Create URLs for diff pipeline
+					diffURLs := []URL{{URL: patchURL}}
+
+					// Create In structs
+					previousIn := &In{SHA256: ext.FP}
+					crx3In := &In{SHA256: ext.SHA256}
+
+					// Create operations for diff pipeline
+					diffDownloadOp := Operation{
+						Type: "download",
+						Out:  diffOut,
+						URLs: diffURLs,
+						Size: normalizeSize(uint64(patchInfo.Sizediff)),
+					}
+
+					puffOp := Operation{
+						Type:     "puff",
+						Previous: previousIn,
+					}
+
+					crx3Op := Operation{
+						Type: "crx3",
+						In:   crx3In,
+					}
+
+					// Validate all operations
+					for _, op := range []Operation{diffDownloadOp, puffOp, crx3Op} {
+						if err := validate.Struct(op); err != nil {
+							return nil, fmt.Errorf("%s operation validation failed for extension %s: %v", op.Type, ext.ID, err)
+						}
+					}
+
 					diffPipeline := Pipeline{
 						PipelineID: diffPipelineID,
 						Operations: []Operation{
-							{
-								Type: "download",
-								Out:  &Out{SHA256: patchInfo.Hashdiff},
-								URLs: []URL{{URL: patchURL}},
-							},
-							{
-								Type:     "puff",
-								Previous: &In{SHA256: ext.FP},
-							},
-							{
-								Type: "crx3",
-								In:   &In{SHA256: ext.SHA256},
-							},
+							diffDownloadOp,
+							puffOp,
+							crx3Op,
 						},
 					}
 
@@ -129,18 +172,38 @@ func (r *UpdateResponse) MarshalJSON() ([]byte, error) {
 			}
 
 			// Add full pipeline as fallback (always add as the last pipeline)
+			out := &Out{
+				SHA256: ext.SHA256,
+			}
+
+			urls := []URL{{URL: url}}
+			mainCrx3In := &In{SHA256: ext.SHA256}
+
+			// Create operations for main pipeline
+			mainDownloadOp := Operation{
+				Type: "download",
+				Out:  out,
+				URLs: urls,
+				Size: normalizeSize(ext.Size),
+			}
+
+			mainCrx3Op := Operation{
+				Type: "crx3",
+				In:   mainCrx3In,
+			}
+
+			// Validate all operations in the main pipeline
+			for _, op := range []Operation{mainDownloadOp, mainCrx3Op} {
+				if err := validate.Struct(op); err != nil {
+					return nil, fmt.Errorf("%s operation validation failed for extension %s: %v", op.Type, ext.ID, err)
+				}
+			}
+
 			pipeline := Pipeline{
 				PipelineID: "direct_full",
 				Operations: []Operation{
-					{
-						Type: "download",
-						Out:  &Out{SHA256: ext.SHA256},
-						URLs: []URL{{URL: url}},
-					},
-					{
-						Type: "crx3",
-						In:   &In{SHA256: ext.SHA256},
-					},
+					mainDownloadOp,
+					mainCrx3Op,
 				},
 			}
 
@@ -155,4 +218,11 @@ func (r *UpdateResponse) MarshalJSON() ([]byte, error) {
 	}
 
 	return json.Marshal(jsonResponse)
+}
+
+func normalizeSize(size uint64) uint64 {
+	if size == 0 {
+		return 1
+	}
+	return size
 }
