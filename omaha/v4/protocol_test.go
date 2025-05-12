@@ -57,6 +57,7 @@ func TestResponseMarshalJSONV40(t *testing.T) {
 			ID:      "test-app-id",
 			Version: "1.0.0",
 			SHA256:  "test-sha256",
+			Size:    100,
 			PatchList: map[string]*extension.PatchInfo{
 				"test-fp": {
 					Hashdiff: "test-hash-diff",
