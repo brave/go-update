@@ -91,7 +91,7 @@ func initExtensionUpdatesFromDynamoDB() {
 		if sizeItem := item["Size"]; sizeItem != nil && sizeItem.N != nil {
 			size, err := strconv.ParseUint(*sizeItem.N, 10, 64)
 			if err != nil {
-				log.Error("Failed to parse Size", "error", err)
+				log.Error("Failed to parse Size property", "extension_id", id, "error", err)
 				sentry.CaptureException(err)
 			} else {
 				if size == 0 {
@@ -104,11 +104,7 @@ func initExtensionUpdatesFromDynamoDB() {
 		if plist := item["PatchList"]; plist != nil {
 			var pinfo map[string]*extension.PatchInfo
 			if err := dynamodbattribute.UnmarshalMap(plist.M, &pinfo); err != nil {
-				log.Error("Extension refresh: Failed to parse extension data",
-					"operation", "extension_refresh",
-					"extension_id", id,
-					"field", "PatchList",
-					"error", err)
+				log.Error("Failed to parse PatchList property", "extension_id", id, "error", err)
 				sentry.CaptureException(err)
 			} else {
 				ext.PatchList = pinfo
