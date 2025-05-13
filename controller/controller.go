@@ -49,7 +49,6 @@ func initExtensionUpdatesFromDynamoDB() {
 	sess, err := session.NewSession(awsConfig)
 	if err != nil {
 		log.Error("Failed to create AWS session",
-			"operation", "extension_refresh",
 			"error", err)
 		sentry.CaptureException(err)
 		return
@@ -67,7 +66,6 @@ func initExtensionUpdatesFromDynamoDB() {
 	result, err := svc.Scan(params)
 	if err != nil {
 		log.Error("Failed to scan DynamoDB table",
-			"operation", "extension_refresh",
 			"table", "Extensions",
 			"error", err)
 		sentry.CaptureException(err)
@@ -114,9 +112,7 @@ func initExtensionUpdatesFromDynamoDB() {
 		AllExtensionsMap.Store(id, ext)
 	}
 
-	log.Info("Extension refresh completed",
-		"operation", "extension_refresh",
-		"item_count", len(result.Items))
+	log.Info("Extension refresh completed", "item_count", len(result.Items))
 }
 
 // RefreshExtensionsTicker updates the list of extensions by
