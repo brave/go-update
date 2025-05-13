@@ -54,13 +54,12 @@ func Setup(ctx context.Context) (context.Context, *slog.Logger) {
 	return WithContext(ctx, logger), logger
 }
 
-// Panic logs a message at panic level and then calls panic
-func Panic(log *slog.Logger, msg string, args ...any) {
+// Panic logs a message at error level and then panics with the provided error
+func Panic(log *slog.Logger, msg string, err error) {
 	if log != nil {
-		log.Error(msg, args...)
+		log.Error(msg, "error", err)
 	}
-	// Still call panic after logging
-	panic(msg)
+	panic(err)
 }
 
 // RequestLoggerMiddleware is a middleware that logs HTTP requests using httplog

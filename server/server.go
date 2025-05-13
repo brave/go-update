@@ -49,7 +49,7 @@ func StartServer() {
 		err := http.ListenAndServe(":9090", middleware.Metrics())
 		if err != nil {
 			sentry.CaptureException(err)
-			logger.Panic(log, "Metrics HTTP server failed to start", "error", err)
+			logger.Panic(log, "Metrics HTTP server failed to start", err)
 		}
 	}()
 
@@ -76,7 +76,6 @@ func StartServer() {
 	err := srv.ListenAndServe()
 	if err != nil {
 		sentry.CaptureException(err)
-		logger.Panic(log, "Server failed to start", "error", err)
-		panic(err)
+		logger.Panic(log, "Server failed to start", err)
 	}
 }
