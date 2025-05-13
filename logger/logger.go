@@ -1,14 +1,12 @@
-// Package logger provides logging utilities using Go's standard log/slog package
+// Package logger provides logging utilities using the go-chi/httplog package
 package logger
 
 import (
 	"context"
 	"log/slog"
 	"net/http"
-	"os"
-	"time"
 
-	chiware "github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/httplog/v2"
 )
 
 // ContextKey type for storing logger in context
@@ -17,17 +15,26 @@ type contextKeyType struct{}
 // Key is the context key used to store the logger
 var Key = contextKeyType{}
 
-// New creates a new slog.Logger with the default text handler
+// New creates a new logger with httplog's default configuration
 func New() *slog.Logger {
-	return slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelInfo,
-	}))
+	logger := httplog.NewLogger("go-update", httplog.Options{
+		LogLevel:         slog.LevelInfo,
+		Concise:          true,
+		RequestHeaders:   true,
+		MessageFieldName: "message",
+		Tags: map[string]string{
+			"service": "go-update",
+		},
+	})
+
+	// Return the slog.Logger that httplog is built upon
+	return logger.Logger
 }
 
 // FromContext retrieves the logger from the context
 // If no logger is found, it returns the default logger
 func FromContext(ctx context.Context) *slog.Logger {
-	if logger, ok := ctx.Value(Key).(*slog.Logger); ok {
+	if logger := httplog.LogEntry(ctx); logger != nil {
 		return logger
 	}
 	return slog.Default()
@@ -35,6 +42,7 @@ func FromContext(ctx context.Context) *slog.Logger {
 
 // WithContext adds a logger to the context and returns the new context
 func WithContext(ctx context.Context, logger *slog.Logger) context.Context {
+	// httplog provides its own context management, but we'll keep this for compatibility
 	return context.WithValue(ctx, Key, logger)
 }
 
@@ -55,37 +63,23 @@ func Panic(log *slog.Logger, msg string, args ...any) {
 	panic(msg)
 }
 
-// RequestLoggerMiddleware is a middleware that logs HTTP requests
-// It adds a request-specific logger to the context and logs request completion
+// RequestLoggerMiddleware is a middleware that logs HTTP requests using httplog
 func RequestLoggerMiddleware(log *slog.Logger) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			start := time.Now()
+	// Create a new httplog logger from the provided slog logger
+	httpLogger := httplog.NewLogger("go-update", httplog.Options{
+		LogLevel:         slog.LevelInfo,
+		Concise:          true,
+		RequestHeaders:   true,
+		MessageFieldName: "message",
+		Tags: map[string]string{
+			"service": "go-update",
+		},
+	})
 
-			// Create a request-specific logger with request ID
-			requestID := chiware.GetReqID(r.Context())
-			reqLogger := log.With(
-				"request_id", requestID,
-				"method", r.Method,
-				"path", r.URL.Path,
-				"remote_addr", r.RemoteAddr,
-			)
+	return httplog.RequestLogger(httpLogger)
+}
 
-			// Add the logger to the request context
-			r = r.WithContext(WithContext(r.Context(), reqLogger))
-
-			// Use chi middleware to track response
-			ww := chiware.NewWrapResponseWriter(w, r.ProtoMajor)
-
-			// Call the next handler
-			next.ServeHTTP(ww, r)
-
-			// Log the response
-			reqLogger.Info("Request completed",
-				"status", ww.Status(),
-				"bytes", ww.BytesWritten(),
-				"duration", time.Since(start).String(),
-			)
-		})
-	}
+// LogEntrySetField adds a field to the current request's log entry
+func LogEntrySetField(ctx context.Context, key string, value slog.Value) {
+	httplog.LogEntrySetField(ctx, key, value)
 }

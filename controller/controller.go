@@ -92,7 +92,7 @@ func initExtensionUpdatesFromDynamoDB() {
 		if sizeItem := item["Size"]; sizeItem != nil && sizeItem.N != nil {
 			size, err := strconv.ParseUint(*sizeItem.N, 10, 64)
 			if err != nil {
-				log.Printf("failed to parse Size %v\n", err)
+				log.Error("Failed to parse Size", "error", err)
 				sentry.CaptureException(err)
 			} else {
 				if size == 0 {
