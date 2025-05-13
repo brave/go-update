@@ -19,7 +19,7 @@ import (
 	"github.com/brave/go-update/omaha"
 	"github.com/brave/go-update/omaha/protocol"
 	"github.com/getsentry/sentry-go"
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"github.com/pressly/lg"
 )
 
