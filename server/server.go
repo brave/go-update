@@ -4,7 +4,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"net"
 	"net/http"
 	_ "net/http/pprof" // pprof magic
@@ -21,7 +20,7 @@ import (
 	chiware "github.com/go-chi/chi/v5/middleware"
 )
 
-func setupRouter(ctx context.Context, log *slog.Logger, testRouter bool) (context.Context, *chi.Mux) {
+func setupRouter(ctx context.Context, testRouter bool) (context.Context, *chi.Mux) {
 	r := chi.NewRouter()
 	r.Use(chiware.RequestID)
 	r.Use(chiware.RealIP)
@@ -30,9 +29,9 @@ func setupRouter(ctx context.Context, log *slog.Logger, testRouter bool) (contex
 	r.Use(chiware.Timeout(60 * time.Second))
 	r.Use(middleware.BearerToken)
 	shouldLog, ok := os.LookupEnv("LOG_REQUEST")
-	if ok && shouldLog == "true" && log != nil {
+	if ok && shouldLog == "true" {
 		// Use our custom slog-based request logger
-		r.Use(logger.RequestLoggerMiddleware(log))
+		r.Use(logger.RequestLoggerMiddleware())
 	}
 	extensions := extension.OfferedExtensions
 	r.Mount("/extensions", controller.ExtensionsRouter(extensions, testRouter))
@@ -64,7 +63,7 @@ func StartServer() {
 		}()
 	}
 
-	serverCtx, r := setupRouter(serverCtx, log, false)
+	serverCtx, r := setupRouter(serverCtx, false)
 	port := ":8192"
 	log.Info("Starting HTTP server", "url", fmt.Sprintf("http://localhost%s", port))
 

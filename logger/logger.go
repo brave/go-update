@@ -63,8 +63,8 @@ func Panic(log *slog.Logger, msg string, err error) {
 }
 
 // RequestLoggerMiddleware is a middleware that logs HTTP requests using httplog
-func RequestLoggerMiddleware(log *slog.Logger) func(http.Handler) http.Handler {
-	// Create a new httplog logger from the provided slog logger
+func RequestLoggerMiddleware() func(http.Handler) http.Handler {
+	// Create a httplog logger for request logging
 	httpLogger := httplog.NewLogger("go-update", httplog.Options{
 		LogLevel:         slog.LevelInfo,
 		Concise:          true,
@@ -76,9 +76,4 @@ func RequestLoggerMiddleware(log *slog.Logger) func(http.Handler) http.Handler {
 	})
 
 	return httplog.RequestLogger(httpLogger)
-}
-
-// LogEntrySetField adds a field to the current request's log entry
-func LogEntrySetField(ctx context.Context, key string, value slog.Value) {
-	httplog.LogEntrySetField(ctx, key, value)
 }
