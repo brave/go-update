@@ -3,7 +3,6 @@ package controller
 import (
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
@@ -40,7 +39,7 @@ var ExtensionUpdaterTimeout = time.Minute * 10
 var ProtocolFactory = &omaha.DefaultFactory{}
 
 func initExtensionUpdatesFromDynamoDB() {
-	log := slog.Default()
+	log := logger.New()
 	log.Info("Refreshing extensions from DynamoDB")
 
 	awsConfig := &aws.Config{}

@@ -22,9 +22,6 @@ func New() *slog.Logger {
 		Concise:          true,
 		RequestHeaders:   true,
 		MessageFieldName: "message",
-		Tags: map[string]string{
-			"service": "go-update",
-		},
 	})
 
 	// Return the slog.Logger that httplog is built upon
