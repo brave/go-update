@@ -118,7 +118,9 @@ func initExtensionUpdatesFromDynamoDB() {
 		AllExtensionsMap.Store(id, ext)
 	}
 
-	log.Info("Extension refresh completed", "operation", "extension_refresh")
+	log.Info("Extension refresh completed",
+		"operation", "extension_refresh",
+		"item_count", len(result.Items))
 }
 
 // RefreshExtensionsTicker updates the list of extensions by
