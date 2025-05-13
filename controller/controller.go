@@ -48,7 +48,7 @@ func initExtensionUpdatesFromDynamoDB() {
 	}
 	sess, err := session.NewSession(awsConfig)
 	if err != nil {
-		log.Error("Extension refresh: Failed to create AWS session",
+		log.Error("Failed to create AWS session",
 			"operation", "extension_refresh",
 			"error", err)
 		sentry.CaptureException(err)
@@ -66,7 +66,7 @@ func initExtensionUpdatesFromDynamoDB() {
 	// updated, usually less than daily by an external tool, and very often queried.
 	result, err := svc.Scan(params)
 	if err != nil {
-		log.Error("Extension refresh: Failed to scan DynamoDB table",
+		log.Error("Failed to scan DynamoDB table",
 			"operation", "extension_refresh",
 			"table", "Extensions",
 			"error", err)
