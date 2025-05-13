@@ -70,9 +70,6 @@ func RequestLoggerMiddleware() func(http.Handler) http.Handler {
 		Concise:          true,
 		RequestHeaders:   true,
 		MessageFieldName: "message",
-		Tags: map[string]string{
-			"service": "go-update",
-		},
 	})
 
 	return httplog.RequestLogger(httpLogger)
