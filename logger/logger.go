@@ -15,16 +15,16 @@ type contextKeyType struct{}
 // Key is the context key used to store the logger
 var Key = contextKeyType{}
 
-// New creates a new logger with httplog's default configuration
+// New creates a new logger with generic configuration
 func New() *slog.Logger {
+	// Use httplog (built on log/slog) but configured for generic logging (not HTTP-specific)
 	logger := httplog.NewLogger("go-update", httplog.Options{
 		LogLevel:         slog.LevelInfo,
 		Concise:          true,
-		RequestHeaders:   true,
+		RequestHeaders:   false, // No HTTP request headers in generic logger
 		MessageFieldName: "message",
 	})
 
-	// Return the slog.Logger that httplog is built upon
 	return logger.Logger
 }
 
