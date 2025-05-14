@@ -3,7 +3,6 @@ package controller
 import (
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -16,11 +15,11 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/brave/go-update/extension"
+	"github.com/brave/go-update/logger"
 	"github.com/brave/go-update/omaha"
 	"github.com/brave/go-update/omaha/protocol"
 	"github.com/getsentry/sentry-go"
 	"github.com/go-chi/chi/v5"
-	"github.com/pressly/lg"
 )
 
 // WidivineExtensionID is used to add an exception to pass the request for widivine
@@ -40,13 +39,17 @@ var ExtensionUpdaterTimeout = time.Minute * 10
 var ProtocolFactory = &omaha.DefaultFactory{}
 
 func initExtensionUpdatesFromDynamoDB() {
+	log := logger.New()
+	log.Info("Refreshing extensions from DynamoDB")
+
 	awsConfig := &aws.Config{}
 	if endpoint := os.Getenv("DYNAMODB_ENDPOINT"); endpoint != "" {
 		awsConfig.Endpoint = aws.String(endpoint)
 	}
 	sess, err := session.NewSession(awsConfig)
 	if err != nil {
-		log.Printf("failed to connect to new session %v\n", err)
+		log.Error("Failed to create AWS session",
+			"error", err)
 		sentry.CaptureException(err)
 		return
 	}
@@ -62,7 +65,9 @@ func initExtensionUpdatesFromDynamoDB() {
 	// updated, usually less than daily by an external tool, and very often queried.
 	result, err := svc.Scan(params)
 	if err != nil {
-		log.Printf("failed to make Scan API call %v\n", err)
+		log.Error("Failed to scan DynamoDB table",
+			"table", "Extensions",
+			"error", err)
 		sentry.CaptureException(err)
 		return
 	}
@@ -84,7 +89,7 @@ func initExtensionUpdatesFromDynamoDB() {
 		if sizeItem := item["Size"]; sizeItem != nil && sizeItem.N != nil {
 			size, err := strconv.ParseUint(*sizeItem.N, 10, 64)
 			if err != nil {
-				log.Printf("failed to parse Size %v\n", err)
+				log.Error("Failed to parse Size property", "extension_id", id, "error", err)
 				sentry.CaptureException(err)
 			} else {
 				if size == 0 {
@@ -97,7 +102,7 @@ func initExtensionUpdatesFromDynamoDB() {
 		if plist := item["PatchList"]; plist != nil {
 			var pinfo map[string]*extension.PatchInfo
 			if err := dynamodbattribute.UnmarshalMap(plist.M, &pinfo); err != nil {
-				log.Printf("failed to parse PatchList %v\n", err)
+				log.Error("Failed to parse PatchList property", "extension_id", id, "error", err)
 				sentry.CaptureException(err)
 			} else {
 				ext.PatchList = pinfo
@@ -106,6 +111,8 @@ func initExtensionUpdatesFromDynamoDB() {
 
 		AllExtensionsMap.Store(id, ext)
 	}
+
+	log.Info("Extension refresh completed", "item_count", len(result.Items))
 }
 
 // RefreshExtensionsTicker updates the list of extensions by
@@ -137,7 +144,7 @@ func ExtensionsRouter(_ extension.Extensions, testRouter bool) chi.Router {
 // It simply prints out text for all extensions when visiting /extensions/test.
 // Since our internally maintained list is always small by design, this is not a big deal for performance.
 func PrintExtensions(w http.ResponseWriter, r *http.Request) {
-	log := lg.Log(r.Context())
+	logger := logger.FromContext(r.Context())
 	w.Header().Set("content-type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
@@ -149,7 +156,7 @@ func PrintExtensions(w http.ResponseWriter, r *http.Request) {
 
 	_, err = w.Write(data)
 	if err != nil {
-		log.Errorf("Error writing response for printing extensions: %v", err)
+		logger.Error("Error writing response for printing extensions", "error", err)
 	}
 }
 
@@ -160,11 +167,11 @@ func PrintExtensions(w http.ResponseWriter, r *http.Request) {
 func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
 	contentType := r.Header.Get("content-type")
 
-	log := lg.Log(r.Context())
+	logger := logger.FromContext(r.Context())
 	defer func() {
 		err := r.Body.Close()
 		if err != nil {
-			log.Errorf("Error closing body stream: %v", err)
+			logger.Error("Error closing body stream", "error", err)
 		}
 	}()
 
@@ -235,7 +242,7 @@ func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
 
 	_, err = w.Write(data)
 	if err != nil {
-		log.Errorf("Error writing response: %v", err)
+		logger.Error("Error writing response", "error", err)
 	}
 }
 
@@ -244,11 +251,11 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 	contentType := r.Header.Get("content-type")
 	jsonPrefix := []byte(")]}'\n")
 
-	log := lg.Log(r.Context())
+	logger := logger.FromContext(r.Context())
 	defer func() {
 		err := r.Body.Close()
 		if err != nil {
-			log.Errorf("Error closing body stream: %v", err)
+			logger.Error("Error closing body stream", "error", err)
 		}
 	}()
 
@@ -349,6 +356,6 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 
 	_, err = w.Write(data)
 	if err != nil {
-		log.Errorf("Error writing response: %v", err)
+		logger.Error("Error writing response", "error", err)
 	}
 }

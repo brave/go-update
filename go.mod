@@ -7,9 +7,8 @@ require (
 	github.com/brave-intl/bat-go v0.1.0
 	github.com/getsentry/sentry-go v0.32.0
 	github.com/go-chi/chi/v5 v5.2.1
+	github.com/go-chi/httplog/v2 v2.1.1
 	github.com/go-playground/validator/v10 v10.26.0
-	github.com/pressly/lg v1.1.1
-	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.10.0
 )
 
@@ -29,10 +28,12 @@ require (
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/pressly/lg v1.1.1 // indirect
 	github.com/prometheus/client_golang v1.16.0 // indirect
 	github.com/prometheus/client_model v0.4.0 // indirect
 	github.com/prometheus/common v0.44.0 // indirect
 	github.com/prometheus/procfs v0.11.0 // indirect
+	github.com/sirupsen/logrus v1.9.3 // indirect
 	golang.org/x/crypto v0.36.0 // indirect
 	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
