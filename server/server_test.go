@@ -21,18 +21,26 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var newExtension1 = extension.Extension{}
-var newExtension2 = extension.Extension{}
-var handler http.Handler
+var (
+	newExtension1 = extension.Extension{}
+	newExtension2 = extension.Extension{}
+	handler       http.Handler
+)
 
-var contentTypeXML = "application/xml"
-var contentTypeJSON = "application/json"
+var (
+	contentTypeXML  = "application/xml"
+	contentTypeJSON = "application/json"
+)
 
-var lightThemeExtensionID = "ldimlcelhnjgpjjemdjokpgeeikdinbm"
-var darkThemeExtensionID = "bfdgpgibhagkpdlnjonhkabjoijopoge"
+var (
+	lightThemeExtensionID = "ldimlcelhnjgpjjemdjokpgeeikdinbm"
+	darkThemeExtensionID  = "bfdgpgibhagkpdlnjonhkabjoijopoge"
+)
 
-var newExtensionID1 = "newext1eplbcioakkpcpgfkobkghlhen"
-var newExtensionID2 = "newext2eplbcioakkpcpgfkobkghlhen"
+var (
+	newExtensionID1 = "newext1eplbcioakkpcpgfkobkghlhen"
+	newExtensionID2 = "newext2eplbcioakkpcpgfkobkghlhen"
+)
 
 func init() {
 	newExtension1 = extension.Extension{
@@ -95,7 +103,8 @@ func TestPing(t *testing.T) {
 }
 
 func testCall(t *testing.T, server *httptest.Server, method string, contentType string, query string,
-	requestBody string, expectedResponseCode int, expectedResponse string, redirectLocation string) {
+	requestBody string, expectedResponseCode int, expectedResponse string, redirectLocation string,
+) {
 	extensionsURL := fmt.Sprintf("%s/extensions%s", server.URL, query)
 	req, err := http.NewRequest(method, extensionsURL, bytes.NewBuffer([]byte(requestBody)))
 	assert.Nil(t, err)
@@ -139,8 +148,8 @@ func TestUpdateExtensionsXMLV3(t *testing.T) {
 	testCall(t, server, http.MethodPost, contentTypeXML, "", requestBody, http.StatusOK, expectedResponse, "")
 
 	// Unsupported protocol version
-	requestBody =
-		`<?xml version="1.0" encoding="UTF-8"?>
+	requestBody = `
+		<?xml version="1.0" encoding="UTF-8"?>
 		<request protocol="2.0" version="chrome-53.0.2785.116" prodversion="53.0.2785.116" requestid="{b4f77b70-af29-462b-a637-8a3e4be5ecd9}" lang="" updaterchannel="stable" prodchannel="stable" os="mac" arch="x64" nacl_arch="x86-64">
 			<app appid="aomjjhallfgjeglblehebfpbcfeobpgk">
 				<updatecheck codebase="https://` + extension.GetS3ExtensionBucketHost("aomjjhallfgjeglblehebfpbcfeobpgk") + `/release/aomjjhallfgjeglblehebfpbcfeobpgk/extension_4_5_9_90.crx" version="4.5.9.90"/>
@@ -151,7 +160,7 @@ func TestUpdateExtensionsXMLV3(t *testing.T) {
 
 	// Not XML
 	requestBody = "For the king!"
-	expectedResponse = "Error parsing request: request element not found in XML"
+	expectedResponse = "Error parsing request: error parsing XML: EOF"
 	testCall(t, server, http.MethodPost, contentTypeXML, "", requestBody, http.StatusBadRequest, expectedResponse, "")
 
 	// Malformed XML
@@ -161,7 +170,7 @@ func TestUpdateExtensionsXMLV3(t *testing.T) {
 
 	// Different XML schema
 	requestBody = "<text>For the alliance!</text>"
-	expectedResponse = "Error parsing request: request element not found in XML"
+	expectedResponse = "Error parsing request: error parsing XML: expected element type <request> but have <text>"
 	testCall(t, server, http.MethodPost, contentTypeXML, "", requestBody, http.StatusBadRequest, expectedResponse, "")
 
 	// Empty body request
@@ -595,8 +604,8 @@ func TestPrintExtensions(t *testing.T) {
 }
 
 func testCallAndParseJSON(t *testing.T, server *httptest.Server, method string, contentType string, query string,
-	requestBody string, expectedResponseCode int, redirectLocation string) map[string]interface{} {
-
+	requestBody string, expectedResponseCode int, redirectLocation string,
+) map[string]interface{} {
 	extensionsURL := fmt.Sprintf("%s/extensions%s", server.URL, query)
 	req, err := http.NewRequest(method, extensionsURL, bytes.NewBuffer([]byte(requestBody)))
 	assert.Nil(t, err)
