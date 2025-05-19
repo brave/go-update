@@ -14,5 +14,9 @@
       "autoApprove": true,
       "automerge": true
     }
+  ],
+  "ignorePaths": [
+    "**/go.mod",
+    "**/go.sum"
   ]
 }
