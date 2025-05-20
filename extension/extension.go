@@ -8,24 +8,24 @@ import (
 )
 
 type PatchInfo struct {
-	Hashdiff string `json:"hashdiff"`
-	Namediff string `json:"namediff"`
-	Sizediff int    `json:"sizediff"`
+	Hashdiff string `json:"hashdiff" dynamodbav:"Hashdiff"`
+	Namediff string `json:"namediff" dynamodbav:"Namediff"`
+	Sizediff int    `json:"sizediff" dynamodbav:"Sizediff"`
 }
 
 // Extension represents an extension which is both used in update checks
 // and responses.
 type Extension struct {
-	ID          string
-	FP          string
-	Version     string
-	SHA256      string
-	Title       string
-	URL         string
-	Size        uint64
-	Blacklisted bool
-	Status      string
-	PatchList   map[string]*PatchInfo
+	ID          string                `json:"ID" dynamodbav:"ID"`
+	FP          string                `json:"FP"`
+	Version     string                `json:"Version" dynamodbav:"Version"`
+	SHA256      string                `json:"SHA256" dynamodbav:"SHA256"`
+	Title       string                `json:"Title" dynamodbav:"Title"`
+	URL         string                `json:"URL"`
+	Size        uint64                `json:"Size" dynamodbav:"Size,omitempty"`
+	Blacklisted bool                  `json:"Blacklisted" dynamodbav:"Disabled"`
+	Status      string                `json:"Status" dynamodbav:"Status,omitempty"`
+	PatchList   map[string]*PatchInfo `json:"PatchList" dynamodbav:"PatchList,omitempty"`
 }
 
 // Extensions is type for a slice of Extension.
