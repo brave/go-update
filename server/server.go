@@ -11,10 +11,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/brave-intl/bat-go/middleware"
+	batware "github.com/brave-intl/bat-go/middleware"
 	"github.com/brave/go-update/controller"
 	"github.com/brave/go-update/extension"
 	"github.com/brave/go-update/logger"
+	"github.com/brave/go-update/server/middleware"
 	"github.com/getsentry/sentry-go"
 	"github.com/go-chi/chi/v5"
 	chiware "github.com/go-chi/chi/v5/middleware"
@@ -24,15 +25,16 @@ func setupRouter(ctx context.Context, testRouter bool) (context.Context, *chi.Mu
 	r := chi.NewRouter()
 	r.Use(chiware.RequestID)
 	r.Use(chiware.RealIP)
-	r.Use(chiware.Compress(5, "application/*", "text/*"))
+	r.Use(middleware.OptimizedCompress(5, 512, "application/json", "application/xml"))
 	r.Use(chiware.Heartbeat("/"))
 	r.Use(chiware.Timeout(60 * time.Second))
-	r.Use(middleware.BearerToken)
+	r.Use(batware.BearerToken)
+
 	shouldLog, ok := os.LookupEnv("LOG_REQUEST")
 	if ok && shouldLog == "true" {
-		// Use our custom slog-based request logger
 		r.Use(logger.RequestLoggerMiddleware())
 	}
+
 	extensions := extension.OfferedExtensions
 	r.Mount("/extensions", controller.ExtensionsRouter(extensions, testRouter))
 	return ctx, r
@@ -45,7 +47,7 @@ func StartServer() {
 
 	go func() {
 		// setup metrics on another non-public port 9090
-		err := http.ListenAndServe(":9090", middleware.Metrics())
+		err := http.ListenAndServe(":9090", batware.Metrics())
 		if err != nil {
 			sentry.CaptureException(err)
 			logger.Panic(log, "Metrics HTTP server failed to start", err)
