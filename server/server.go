@@ -23,12 +23,9 @@ import (
 
 func setupRouter(ctx context.Context, testRouter bool) (context.Context, *chi.Mux) {
 	r := chi.NewRouter()
-	r.Use(chiware.RequestID)
-	r.Use(chiware.RealIP)
 	r.Use(middleware.OptimizedCompress(5, 512, "application/json", "application/xml"))
 	r.Use(chiware.Heartbeat("/"))
 	r.Use(chiware.Timeout(60 * time.Second))
-	r.Use(batware.BearerToken)
 
 	shouldLog, ok := os.LookupEnv("LOG_REQUEST")
 	if ok && shouldLog == "true" {
