@@ -578,7 +578,7 @@ func TestPrintExtensions(t *testing.T) {
 	server := httptest.NewServer(handler)
 	defer server.Close()
 
-	testURL := fmt.Sprintf("%s/extensions/test", server.URL)
+	testURL := fmt.Sprintf("%s/extensions/all", server.URL)
 	req, err := http.NewRequest(http.MethodGet, testURL, bytes.NewBuffer([]byte("")))
 	assert.Nil(t, err)
 	client := &http.Client{
@@ -595,6 +595,7 @@ func TestPrintExtensions(t *testing.T) {
 
 	// Clear out the extensions map.
 	controller.AllExtensionsMap = extension.NewExtensionMap()
+	controller.ExtensionsCache.Invalidate() // Invalidate cache after clearing extensions
 	resp, err = client.Do(req)
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
