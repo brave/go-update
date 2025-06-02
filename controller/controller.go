@@ -148,9 +148,10 @@ func ExtensionsRouter(_ extension.Extensions, testRouter bool) chi.Router {
 	return r
 }
 
-// PrintExtensions is just used for troubleshooting to see what the internal list of extensions DB holds
-// It simply prints out text for all extensions when visiting /extensions/all.
-// Since our internally maintained list is always small by design, this is not a big deal for performance.
+// PrintExtensions handles requests to /extensions/all by returning a JSON representation of all
+// extensions in the database. This endpoint serves two purposes:
+// 1. Troubleshooting - allows inspection of the current extension database state
+// 2. Dashboard integration - provides data to populate the extensions dashboard (/dashboard)
 func PrintExtensions(w http.ResponseWriter, r *http.Request) {
 	logger := logger.FromContext(r.Context())
 	w.Header().Set("content-type", "application/json")
