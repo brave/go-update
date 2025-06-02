@@ -40,8 +40,8 @@ var ExtensionUpdaterTimeout = time.Minute * 10
 // ProtocolFactory is the factory used to create protocol handlers
 var ProtocolFactory = &omaha.DefaultFactory{}
 
-// ExtensionsCache is the global cache instance
-var ExtensionsCache = middleware.NewJSONCache()
+// AllExtensionsCache is the global cache instance for all extensions JSON data
+var AllExtensionsCache = middleware.NewJSONCache()
 
 func initExtensionUpdatesFromDynamoDB() {
 	log := logger.New()
@@ -120,7 +120,7 @@ func initExtensionUpdatesFromDynamoDB() {
 	log.Info("Extension refresh completed", "item_count", len(result.Items))
 
 	// Invalidate cache to force fresh data generation on next request
-	ExtensionsCache.Invalidate()
+	AllExtensionsCache.Invalidate()
 }
 
 // RefreshExtensionsTicker updates the list of extensions by
@@ -144,7 +144,7 @@ func ExtensionsRouter(_ extension.Extensions, testRouter bool) chi.Router {
 	r := chi.NewRouter()
 	r.Post("/", UpdateExtensions)
 	r.Get("/", WebStoreUpdateExtension)
-	r.With(middleware.JSONCacheMiddleware(ExtensionsCache)).Get("/all", PrintExtensions)
+	r.With(middleware.JSONCacheMiddleware(AllExtensionsCache)).Get("/all", PrintExtensions)
 	return r
 }
 
@@ -164,7 +164,7 @@ func PrintExtensions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Cache the fresh data for future requests
-	ExtensionsCache.Set(data)
+	AllExtensionsCache.Set(data)
 
 	w.WriteHeader(http.StatusOK)
 

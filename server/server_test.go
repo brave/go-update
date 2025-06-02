@@ -595,7 +595,7 @@ func TestPrintExtensions(t *testing.T) {
 
 	// Clear out the extensions map.
 	controller.AllExtensionsMap = extension.NewExtensionMap()
-	controller.ExtensionsCache.Invalidate() // Invalidate cache after clearing extensions
+	controller.AllExtensionsCache.Invalidate() // Invalidate cache after clearing extensions
 	resp, err = client.Do(req)
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
