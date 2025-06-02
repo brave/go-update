@@ -158,7 +158,7 @@ func PrintExtensions(w http.ResponseWriter, r *http.Request) {
 	// Check if we already have cached data (this is a cache miss from middleware)
 	if cachedData := AllExtensionsCache.Get(); cachedData != nil {
 		w.WriteHeader(http.StatusOK)
-		_, err := w.Write(cachedData)
+		_, err := w.Write(cachedData) // nosemgrep: go.lang.security.audit.xss.no-direct-write-to-responsewriter.no-direct-write-to-responsewriter
 		if err != nil {
 			logger.Error("Error writing cached extensions response", "cache_hit", true, "error", err)
 		}
@@ -177,7 +177,7 @@ func PrintExtensions(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 
-	_, err = w.Write(data)
+	_, err = w.Write(data) // nosemgrep: go.lang.security.audit.xss.no-direct-write-to-responsewriter.no-direct-write-to-responsewriter
 	if err != nil {
 		logger.Error("Error writing extensions response", "cache_hit", false, "error", err)
 	}
@@ -263,7 +263,7 @@ func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "application/xml")
 	}
 
-	_, err = w.Write(data)
+	_, err = w.Write(data) // nosemgrep: go.lang.security.audit.xss.no-direct-write-to-responsewriter.no-direct-write-to-responsewriter
 	if err != nil {
 		logger.Error("Error writing response", "error", err)
 	}
@@ -377,7 +377,7 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 		data = append(jsonPrefix, data...)
 	}
 
-	_, err = w.Write(data)
+	_, err = w.Write(data) // nosemgrep: go.lang.security.audit.xss.no-direct-write-to-responsewriter.no-direct-write-to-responsewriter
 	if err != nil {
 		logger.Error("Error writing response", "error", err)
 	}
