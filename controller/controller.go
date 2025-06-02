@@ -18,6 +18,7 @@ import (
 	"github.com/brave/go-update/logger"
 	"github.com/brave/go-update/omaha"
 	"github.com/brave/go-update/omaha/protocol"
+	"github.com/brave/go-update/server/middleware"
 	"github.com/getsentry/sentry-go"
 	"github.com/go-chi/chi/v5"
 )
@@ -37,6 +38,9 @@ var ExtensionUpdaterTimeout = time.Minute * 10
 
 // ProtocolFactory is the factory used to create protocol handlers
 var ProtocolFactory = &omaha.DefaultFactory{}
+
+// ExtensionsCache is the global cache instance
+var ExtensionsCache = middleware.NewJSONCache()
 
 func initExtensionUpdatesFromDynamoDB() {
 	log := logger.New()
@@ -113,6 +117,9 @@ func initExtensionUpdatesFromDynamoDB() {
 	}
 
 	log.Info("Extension refresh completed", "item_count", len(result.Items))
+
+	// Invalidate cache to force fresh data generation on next request
+	ExtensionsCache.Invalidate()
 }
 
 // RefreshExtensionsTicker updates the list of extensions by
@@ -136,7 +143,7 @@ func ExtensionsRouter(_ extension.Extensions, testRouter bool) chi.Router {
 	r := chi.NewRouter()
 	r.Post("/", UpdateExtensions)
 	r.Get("/", WebStoreUpdateExtension)
-	r.Get("/all", PrintExtensions)
+	r.With(middleware.JSONCacheMiddleware(ExtensionsCache)).Get("/all", PrintExtensions)
 	return r
 }
 
@@ -146,13 +153,18 @@ func ExtensionsRouter(_ extension.Extensions, testRouter bool) chi.Router {
 func PrintExtensions(w http.ResponseWriter, r *http.Request) {
 	logger := logger.FromContext(r.Context())
 	w.Header().Set("content-type", "application/json")
-	w.WriteHeader(http.StatusOK)
 
+	// This should only be called on cache miss - generate fresh data
 	data, err := AllExtensionsMap.MarshalJSON()
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error in marshal %v", err), http.StatusInternalServerError)
 		return
 	}
+
+	// Cache the fresh data for future requests
+	ExtensionsCache.Set(data)
+
+	w.WriteHeader(http.StatusOK)
 
 	_, err = w.Write(data)
 	if err != nil {
