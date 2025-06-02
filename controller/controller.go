@@ -136,12 +136,12 @@ func ExtensionsRouter(_ extension.Extensions, testRouter bool) chi.Router {
 	r := chi.NewRouter()
 	r.Post("/", UpdateExtensions)
 	r.Get("/", WebStoreUpdateExtension)
-	r.Get("/test", PrintExtensions)
+	r.Get("/all", PrintExtensions)
 	return r
 }
 
 // PrintExtensions is just used for troubleshooting to see what the internal list of extensions DB holds
-// It simply prints out text for all extensions when visiting /extensions/test.
+// It simply prints out text for all extensions when visiting /extensions/all.
 // Since our internally maintained list is always small by design, this is not a big deal for performance.
 func PrintExtensions(w http.ResponseWriter, r *http.Request) {
 	logger := logger.FromContext(r.Context())
