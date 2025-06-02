@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"sync"
@@ -94,8 +93,8 @@ func JSONCacheMiddleware(cache *JSONCache, config ...JSONCacheConfig) func(next 
 
 				w.WriteHeader(http.StatusOK)
 
-				// Use json.RawMessage for safer JSON handling
-				err := json.NewEncoder(w).Encode(json.RawMessage(data))
+				// Write cached JSON data directly
+				_, err := w.Write(data)
 				if err != nil {
 					logger.Error("Error writing cached response", "error", err)
 				}

@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -168,8 +167,7 @@ func PrintExtensions(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 
-	// Use json.RawMessage for safer JSON handling
-	err = json.NewEncoder(w).Encode(json.RawMessage(data))
+	_, err = w.Write(data)
 	if err != nil {
 		logger.Error("Error writing response for printing extensions", "error", err)
 	}
