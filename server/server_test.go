@@ -601,7 +601,7 @@ func TestPrintExtensions(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	actual, err = ioutil.ReadAll(resp.Body)
 	assert.Nil(t, err)
-	assert.Equal(t, string(actual), "{}\n")
+	assert.Equal(t, string(actual), "{}")
 }
 
 func testCallAndParseJSON(t *testing.T, server *httptest.Server, method string, contentType string, query string,

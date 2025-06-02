@@ -155,7 +155,17 @@ func PrintExtensions(w http.ResponseWriter, r *http.Request) {
 	logger := logger.FromContext(r.Context())
 	w.Header().Set("content-type", "application/json")
 
-	// This should only be called on cache miss - generate fresh data
+	// Check if we already have cached data (this is a cache miss from middleware)
+	if cachedData := AllExtensionsCache.Get(); cachedData != nil {
+		w.WriteHeader(http.StatusOK)
+		_, err := w.Write(cachedData)
+		if err != nil {
+			logger.Error("Error writing cached extensions response", "cache_hit", true, "error", err)
+		}
+		return
+	}
+
+	// Generate fresh data only on cache miss
 	data, err := AllExtensionsMap.MarshalJSON()
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error in marshal %v", err), http.StatusInternalServerError)
@@ -169,7 +179,7 @@ func PrintExtensions(w http.ResponseWriter, r *http.Request) {
 
 	_, err = w.Write(data)
 	if err != nil {
-		logger.Error("Error writing response for printing extensions", "error", err)
+		logger.Error("Error writing extensions response", "cache_hit", false, "error", err)
 	}
 }
 

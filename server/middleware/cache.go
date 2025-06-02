@@ -15,22 +15,43 @@ import (
 //
 //	cache := middleware.NewJSONCache()
 //	r.With(middleware.JSONCacheMiddleware(cache)).Get("/api/data", handler)
+
+type CacheEntry struct {
+	Data         []byte
+	LastModified time.Time
+	IsValid      bool
+}
+
 type JSONCache struct {
-	mu           sync.RWMutex
-	cachedJSON   []byte
-	lastModified time.Time
-	isValid      bool
+	mu    sync.RWMutex
+	entry *CacheEntry
 }
 
 func NewJSONCache() *JSONCache {
-	return &JSONCache{}
+	return &JSONCache{
+		entry: &CacheEntry{},
+	}
+}
+
+func (c *JSONCache) GetEntry() *CacheEntry {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	if c.entry.IsValid {
+		// Return a copy to avoid race conditions
+		return &CacheEntry{
+			Data:         c.entry.Data,
+			LastModified: c.entry.LastModified,
+			IsValid:      c.entry.IsValid,
+		}
+	}
+	return nil
 }
 
 func (c *JSONCache) Get() []byte {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	if c.isValid {
-		return c.cachedJSON
+	if c.entry.IsValid {
+		return c.entry.Data
 	}
 	return nil
 }
@@ -38,21 +59,21 @@ func (c *JSONCache) Get() []byte {
 func (c *JSONCache) Set(data []byte) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.cachedJSON = data
-	c.lastModified = time.Now()
-	c.isValid = true
+	c.entry.Data = data
+	c.entry.LastModified = time.Now()
+	c.entry.IsValid = true
 }
 
 func (c *JSONCache) Invalidate() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.isValid = false
+	c.entry.IsValid = false
 }
 
 func (c *JSONCache) GetLastModified() time.Time {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	return c.lastModified
+	return c.entry.LastModified
 }
 
 type JSONCacheConfig struct {
@@ -75,16 +96,16 @@ func JSONCacheMiddleware(cache *JSONCache, config ...JSONCacheConfig) func(next 
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			logger := logger.FromContext(r.Context())
 
-			data := cache.Get()
-			if data != nil {
+			// Single lock operation to get cache entry with metadata
+			entry := cache.GetEntry()
+			if entry != nil {
 				w.Header().Set("content-type", "application/json")
 				w.Header().Set("cache-control", fmt.Sprintf("public, max-age=%d", int(cfg.MaxAge.Seconds())))
-				lastModified := cache.GetLastModified()
-				w.Header().Set("last-modified", lastModified.UTC().Format(http.TimeFormat))
+				w.Header().Set("last-modified", entry.LastModified.UTC().Format(http.TimeFormat))
 
 				if ifModSince := r.Header.Get("if-modified-since"); ifModSince != "" {
 					if t, err := time.Parse(http.TimeFormat, ifModSince); err == nil {
-						if !lastModified.After(t) {
+						if !entry.LastModified.After(t) {
 							w.WriteHeader(http.StatusNotModified)
 							return
 						}
@@ -94,7 +115,7 @@ func JSONCacheMiddleware(cache *JSONCache, config ...JSONCacheConfig) func(next 
 				w.WriteHeader(http.StatusOK)
 
 				// Write cached JSON data directly
-				_, err := w.Write(data)
+				_, err := w.Write(entry.Data)
 				if err != nil {
 					logger.Error("Error writing cached response", "error", err)
 				}
