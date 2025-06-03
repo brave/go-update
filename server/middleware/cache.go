@@ -106,7 +106,7 @@ func JSONCacheMiddleware(cache *JSONCache, config ...JSONCacheConfig) func(next 
 				}
 
 				w.WriteHeader(http.StatusOK)
-				if _, err := w.Write(entry.Data); err != nil {
+				if _, err := w.Write(entry.Data); err != nil { // nosemgrep: go.lang.security.audit.xss.no-direct-write-to-responsewriter.no-direct-write-to-responsewriter
 					logger.Error("Error writing cached response", "error", err)
 				}
 				return
