@@ -180,7 +180,8 @@ func PrintExtensions(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	_, err = w.Write(data) // nosemgrep: go.lang.security.audit.xss.no-direct-write-to-responsewriter.no-direct-write-to-responsewriter
+	// nosemgrep: go.lang.security.audit.xss.no-direct-write-to-responsewriter.no-direct-write-to-responsewriter
+	_, err = w.Write(data)
 	if err != nil {
 		logger.Error("Error writing extensions response", "error", err)
 	}
@@ -266,7 +267,8 @@ func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "application/xml")
 	}
 
-	_, err = w.Write(data) // nosemgrep: go.lang.security.audit.xss.no-direct-write-to-responsewriter.no-direct-write-to-responsewriter
+	// nosemgrep: go.lang.security.audit.xss.no-direct-write-to-responsewriter.no-direct-write-to-responsewriter
+	_, err = w.Write(data)
 	if err != nil {
 		logger.Error("Error writing response", "error", err)
 	}
@@ -380,7 +382,8 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 		data = append(jsonPrefix, data...)
 	}
 
-	_, err = w.Write(data) // nosemgrep: go.lang.security.audit.xss.no-direct-write-to-responsewriter.no-direct-write-to-responsewriter
+	// nosemgrep: go.lang.security.audit.xss.no-direct-write-to-responsewriter.no-direct-write-to-responsewriter
+	_, err = w.Write(data)
 	if err != nil {
 		logger.Error("Error writing response", "error", err)
 	}
