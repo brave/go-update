@@ -128,7 +128,7 @@ func initExtensionUpdatesFromDynamoDB() {
 	}
 
 	AllExtensionsCache.Set(data)
-	log.Debug("Extensions cache refreshed successfully", "data_size", len(data))
+	log.Info("Extensions cache refreshed successfully", "data_size", len(data))
 }
 
 // RefreshExtensionsTicker updates the list of extensions by
