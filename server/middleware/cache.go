@@ -20,32 +20,30 @@ import (
 type CacheEntry struct {
 	Data         []byte
 	LastModified time.Time
-	IsFresh      bool
 }
 
 // JSONCache uses atomic.Value for safe lock-free reads, optimized for single-entry caching
 // with high read concurrency
 type JSONCache struct {
-	entry atomic.Value // stores *CacheEntry
+	entry atomic.Value // stores *CacheEntry or nil
 }
 
 func NewJSONCache() *JSONCache {
 	cache := &JSONCache{}
-	cache.entry.Store(&CacheEntry{})
+	// Start with nil (no cached data)
+	cache.entry.Store((*CacheEntry)(nil))
 	return cache
 }
 
 func (c *JSONCache) GetEntry() *CacheEntry {
-	entry := c.entry.Load().(*CacheEntry)
-	if entry.IsFresh {
+	if entry := c.entry.Load().(*CacheEntry); entry != nil {
 		return entry
 	}
 	return nil
 }
 
 func (c *JSONCache) Get() []byte {
-	entry := c.entry.Load().(*CacheEntry)
-	if entry.IsFresh {
+	if entry := c.GetEntry(); entry != nil {
 		return entry.Data
 	}
 	return nil
@@ -55,24 +53,19 @@ func (c *JSONCache) Set(data []byte) {
 	newEntry := &CacheEntry{
 		Data:         data,
 		LastModified: time.Now(),
-		IsFresh:      true,
 	}
 	c.entry.Store(newEntry)
 }
 
 func (c *JSONCache) Invalidate() {
-	currentEntry := c.entry.Load().(*CacheEntry)
-	newEntry := &CacheEntry{
-		Data:         currentEntry.Data,
-		LastModified: currentEntry.LastModified,
-		IsFresh:      false,
-	}
-	c.entry.Store(newEntry)
+	c.entry.Store((*CacheEntry)(nil))
 }
 
 func (c *JSONCache) GetLastModified() time.Time {
-	entry := c.entry.Load().(*CacheEntry)
-	return entry.LastModified
+	if entry := c.GetEntry(); entry != nil {
+		return entry.LastModified
+	}
+	return time.Time{}
 }
 
 type JSONCacheConfig struct {
