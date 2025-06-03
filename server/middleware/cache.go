@@ -3,7 +3,7 @@ package middleware
 import (
 	"fmt"
 	"net/http"
-	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/brave/go-update/logger"
@@ -16,64 +16,56 @@ import (
 //	cache := middleware.NewJSONCache()
 //	r.With(middleware.JSONCacheMiddleware(cache)).Get("/api/data", handler)
 
+// CacheEntry represents a cached response
 type CacheEntry struct {
 	Data         []byte
 	LastModified time.Time
-	IsValid      bool
 }
 
+// JSONCache uses atomic.Value for safe lock-free reads, optimized for single-entry caching
+// with high read concurrency
 type JSONCache struct {
-	mu    sync.RWMutex
-	entry *CacheEntry
+	entry atomic.Value // stores *CacheEntry or nil
 }
 
 func NewJSONCache() *JSONCache {
-	return &JSONCache{
-		entry: &CacheEntry{},
-	}
+	cache := &JSONCache{}
+	// Start with nil (no cached data)
+	cache.entry.Store((*CacheEntry)(nil))
+	return cache
 }
 
 func (c *JSONCache) GetEntry() *CacheEntry {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	if c.entry.IsValid {
-		// Return a copy to avoid race conditions
-		return &CacheEntry{
-			Data:         c.entry.Data,
-			LastModified: c.entry.LastModified,
-			IsValid:      c.entry.IsValid,
-		}
+	if entry := c.entry.Load().(*CacheEntry); entry != nil {
+		return entry
 	}
 	return nil
 }
 
 func (c *JSONCache) Get() []byte {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	if c.entry.IsValid {
-		return c.entry.Data
+	if entry := c.GetEntry(); entry != nil {
+		return entry.Data
 	}
 	return nil
 }
 
 func (c *JSONCache) Set(data []byte) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.entry.Data = data
-	c.entry.LastModified = time.Now()
-	c.entry.IsValid = true
+	newEntry := &CacheEntry{
+		Data:         data,
+		LastModified: time.Now(),
+	}
+	c.entry.Store(newEntry)
 }
 
 func (c *JSONCache) Invalidate() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.entry.IsValid = false
+	c.entry.Store((*CacheEntry)(nil))
 }
 
 func (c *JSONCache) GetLastModified() time.Time {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.entry.LastModified
+	if entry := c.GetEntry(); entry != nil {
+		return entry.LastModified
+	}
+	return time.Time{}
 }
 
 type JSONCacheConfig struct {
@@ -96,13 +88,14 @@ func JSONCacheMiddleware(cache *JSONCache, config ...JSONCacheConfig) func(next 
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			logger := logger.FromContext(r.Context())
 
-			// Single lock operation to get cache entry with metadata
-			entry := cache.GetEntry()
-			if entry != nil {
+			// Check cache with atomic load - lock-free operation
+			if entry := cache.GetEntry(); entry != nil {
+				// Set response headers
 				w.Header().Set("content-type", "application/json")
 				w.Header().Set("cache-control", fmt.Sprintf("public, max-age=%d", int(cfg.MaxAge.Seconds())))
 				w.Header().Set("last-modified", entry.LastModified.UTC().Format(http.TimeFormat))
 
+				// Handle conditional requests
 				if ifModSince := r.Header.Get("if-modified-since"); ifModSince != "" {
 					if t, err := time.Parse(http.TimeFormat, ifModSince); err == nil {
 						if !entry.LastModified.After(t) {
@@ -113,10 +106,7 @@ func JSONCacheMiddleware(cache *JSONCache, config ...JSONCacheConfig) func(next 
 				}
 
 				w.WriteHeader(http.StatusOK)
-
-				// Write cached JSON data directly
-				_, err := w.Write(entry.Data) // nosemgrep: go.lang.security.audit.xss.no-direct-write-to-responsewriter.no-direct-write-to-responsewriter
-				if err != nil {
+				if _, err := w.Write(entry.Data); err != nil {
 					logger.Error("Error writing cached response", "error", err)
 				}
 				return

@@ -118,14 +118,24 @@ func initExtensionUpdatesFromDynamoDB() {
 
 	log.Info("Extension refresh completed", "item_count", len(result.Items))
 
-	// Invalidate cache to force fresh data generation on next request
-	AllExtensionsCache.Invalidate()
+	// Proactively refresh extension cache
+	data, err := AllExtensionsMap.MarshalJSON()
+	if err != nil {
+		log.Error("Failed to marshal extensions for cache refresh", "error", err)
+		// On error, invalidate to force fresh generation on next request
+		AllExtensionsCache.Invalidate()
+		return
+	}
+
+	AllExtensionsCache.Set(data)
+	log.Debug("Extensions cache refreshed successfully", "data_size", len(data))
 }
 
 // RefreshExtensionsTicker updates the list of extensions by
 // calling the specified extensionMapUpdater function
 func RefreshExtensionsTicker(extensionMapUpdater func()) {
 	extensionMapUpdater()
+
 	ticker := time.NewTicker(ExtensionUpdaterTimeout)
 	go func() {
 		for range ticker.C {
@@ -151,21 +161,12 @@ func ExtensionsRouter(_ extension.Extensions, testRouter bool) chi.Router {
 // extensions in the database. This endpoint serves two purposes:
 // 1. Troubleshooting - allows inspection of the current extension database state
 // 2. Dashboard integration - provides data to populate the extensions dashboard (/dashboard)
+//
+// Note: This function is only called on cache misses since the middleware handles cache hits.
 func PrintExtensions(w http.ResponseWriter, r *http.Request) {
 	logger := logger.FromContext(r.Context())
-	w.Header().Set("content-type", "application/json")
 
-	// Check if we already have cached data (this is a cache miss from middleware)
-	if cachedData := AllExtensionsCache.Get(); cachedData != nil {
-		w.WriteHeader(http.StatusOK)
-		_, err := w.Write(cachedData) // nosemgrep: go.lang.security.audit.xss.no-direct-write-to-responsewriter.no-direct-write-to-responsewriter
-		if err != nil {
-			logger.Error("Error writing cached extensions response", "cache_hit", true, "error", err)
-		}
-		return
-	}
-
-	// Generate fresh data only on cache miss
+	// Generate fresh data (only called on cache miss)
 	data, err := AllExtensionsMap.MarshalJSON()
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error in marshal %v", err), http.StatusInternalServerError)
@@ -175,11 +176,13 @@ func PrintExtensions(w http.ResponseWriter, r *http.Request) {
 	// Cache the fresh data for future requests
 	AllExtensionsCache.Set(data)
 
+	// Set headers and write response
+	w.Header().Set("content-type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
 	_, err = w.Write(data) // nosemgrep: go.lang.security.audit.xss.no-direct-write-to-responsewriter.no-direct-write-to-responsewriter
 	if err != nil {
-		logger.Error("Error writing extensions response", "cache_hit", false, "error", err)
+		logger.Error("Error writing extensions response", "error", err)
 	}
 }
 
