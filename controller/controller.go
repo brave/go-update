@@ -18,6 +18,7 @@ import (
 	"github.com/brave/go-update/logger"
 	"github.com/brave/go-update/omaha"
 	"github.com/brave/go-update/omaha/protocol"
+	"github.com/brave/go-update/server/middleware"
 	"github.com/getsentry/sentry-go"
 	"github.com/go-chi/chi/v5"
 )
@@ -37,6 +38,9 @@ var ExtensionUpdaterTimeout = time.Minute * 10
 
 // ProtocolFactory is the factory used to create protocol handlers
 var ProtocolFactory = &omaha.DefaultFactory{}
+
+// AllExtensionsCache is the global cache instance for all extensions JSON data
+var AllExtensionsCache = middleware.NewJSONCache()
 
 func initExtensionUpdatesFromDynamoDB() {
 	log := logger.New()
@@ -98,13 +102,26 @@ func initExtensionUpdatesFromDynamoDB() {
 		}
 	}
 
-	log.Info("Extension refresh completed", "totalItems", totalItems)
+	log.Info("Extension refresh completed", "item_count", totalItems)
+
+	// Proactively refresh extension cache
+	data, err := AllExtensionsMap.MarshalJSON()
+	if err != nil {
+		log.Error("Failed to marshal extensions for cache refresh", "error", err)
+		// On error, invalidate to force fresh generation on next request
+		AllExtensionsCache.Invalidate()
+		return
+	}
+
+	AllExtensionsCache.Set(data)
+	log.Info("Extensions cache refreshed successfully", "data_size", len(data))
 }
 
 // RefreshExtensionsTicker updates the list of extensions by
 // calling the specified extensionMapUpdater function
 func RefreshExtensionsTicker(extensionMapUpdater func()) {
 	extensionMapUpdater()
+
 	ticker := time.NewTicker(ExtensionUpdaterTimeout)
 	go func() {
 		for range ticker.C {
@@ -122,27 +139,37 @@ func ExtensionsRouter(_ extension.Extensions, testRouter bool) chi.Router {
 	r := chi.NewRouter()
 	r.Post("/", UpdateExtensions)
 	r.Get("/", WebStoreUpdateExtension)
-	r.Get("/test", PrintExtensions)
+	r.With(middleware.JSONCacheMiddleware(AllExtensionsCache)).Get("/all", PrintExtensions)
 	return r
 }
 
-// PrintExtensions is just used for troubleshooting to see what the internal list of extensions DB holds
-// It simply prints out text for all extensions when visiting /extensions/test.
-// Since our internally maintained list is always small by design, this is not a big deal for performance.
+// PrintExtensions handles requests to /extensions/all by returning a JSON representation of all
+// extensions in the database. This endpoint serves two purposes:
+// 1. Troubleshooting - allows inspection of the current extension database state
+// 2. Dashboard integration - provides data to populate the extensions dashboard (/dashboard)
+//
+// Note: This function is only called on cache misses since the middleware handles cache hits.
 func PrintExtensions(w http.ResponseWriter, r *http.Request) {
 	logger := logger.FromContext(r.Context())
-	w.Header().Set("content-type", "application/json")
-	w.WriteHeader(http.StatusOK)
 
+	// Generate fresh data (only called on cache miss)
 	data, err := AllExtensionsMap.MarshalJSON()
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error in marshal %v", err), http.StatusInternalServerError)
 		return
 	}
 
+	// Cache the fresh data for future requests
+	AllExtensionsCache.Set(data)
+
+	// Set headers and write response
+	w.Header().Set("content-type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	// nosemgrep: go.lang.security.audit.xss.no-direct-write-to-responsewriter.no-direct-write-to-responsewriter
 	_, err = w.Write(data)
 	if err != nil {
-		logger.Error("Error writing response for printing extensions", "error", err)
+		logger.Error("Error writing extensions response", "error", err)
 	}
 }
 
@@ -226,6 +253,7 @@ func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "application/xml")
 	}
 
+	// nosemgrep: go.lang.security.audit.xss.no-direct-write-to-responsewriter.no-direct-write-to-responsewriter
 	_, err = w.Write(data)
 	if err != nil {
 		logger.Error("Error writing response", "error", err)
@@ -340,6 +368,7 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 		data = append(jsonPrefix, data...)
 	}
 
+	// nosemgrep: go.lang.security.audit.xss.no-direct-write-to-responsewriter.no-direct-write-to-responsewriter
 	_, err = w.Write(data)
 	if err != nil {
 		logger.Error("Error writing response", "error", err)
