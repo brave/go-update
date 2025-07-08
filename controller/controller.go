@@ -82,8 +82,8 @@ func initExtensionUpdatesFromDynamoDB() {
 		}
 
 		// Update the extensions map
+		totalItems += len(page.Items)
 		for _, item := range page.Items {
-			totalItems += len(page.Items)
 			var ext extension.Extension
 			err := attributevalue.UnmarshalMap(item, &ext)
 			if err != nil {
