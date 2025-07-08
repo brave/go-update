@@ -165,6 +165,9 @@ func TestResponseMarshalJSONV40(t *testing.T) {
 		if prevObj, prevOK := puffOp["previous"].(map[string]interface{}); !prevOK || prevObj["sha256"] != "test-fp" {
 			t.Errorf("Expected puff operation to have previous.sha256 'test-fp'")
 		}
+		if outObj, outOK := puffOp["out"].(map[string]interface{}); !outOK || outObj["sha256"] != "test-sha256" {
+			t.Errorf("Expected puff operation to have out.sha256 'test-sha256'")
+		}
 
 		// Check crx3 operation in diff pipeline
 		crx3OpDiff := diffOperations[2].(map[string]interface{})
