@@ -107,6 +107,13 @@ func (m *ExtensionsMap) Load(key string) (extension Extension, ok bool) {
 	return
 }
 
+// Len returns the number of extensions stored in the map
+func (m *ExtensionsMap) Len() int {
+	m.RLock()
+	defer m.RUnlock()
+	return len(m.data)
+}
+
 // StoreExtensions converts a slice of extensions into a map from ID to extension.Extension
 func (m *ExtensionsMap) StoreExtensions(extensions *Extensions) {
 	m.Lock()

@@ -45,7 +45,6 @@ var AllExtensionsCache = middleware.NewJSONCache()
 func initExtensionUpdatesFromDynamoDB() {
 	log := logger.New()
 	log.Info("Refreshing extensions from DynamoDB")
-	var totalItems int
 	// Load AWS configuration
 	cfg, err := config.LoadDefaultConfig(context.Background())
 	if err != nil {
@@ -82,7 +81,6 @@ func initExtensionUpdatesFromDynamoDB() {
 		}
 
 		// Update the extensions map
-		totalItems += len(page.Items)
 		for _, item := range page.Items {
 			var ext extension.Extension
 			err := attributevalue.UnmarshalMap(item, &ext)
@@ -102,7 +100,7 @@ func initExtensionUpdatesFromDynamoDB() {
 		}
 	}
 
-	log.Info("Extension refresh completed", "item_count", totalItems)
+	log.Info("Extension refresh completed", "item_count", AllExtensionsMap.Len())
 
 	// Proactively refresh extension cache
 	data, err := AllExtensionsMap.MarshalJSON()
