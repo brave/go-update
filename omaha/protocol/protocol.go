@@ -72,3 +72,31 @@ func DetectProtocolVersion(data []byte, contentType string) (string, error) {
 func IsJSONRequest(contentType string) bool {
 	return contentType == "application/json"
 }
+
+// IsPingbackRequest checks if the request body is a pingback.
+// For now, it only checks JSON requests for an "events" field.
+func IsPingbackRequest(body []byte, contentType string) bool {
+	if !IsJSONRequest(contentType) {
+		return false
+	}
+
+	var pingbackCheck struct {
+		Request struct {
+			Apps []struct {
+				Events *json.RawMessage `json:"events,omitempty"`
+			} `json:"apps"`
+		} `json:"request"`
+	}
+
+	if err := json.Unmarshal(body, &pingbackCheck); err == nil {
+		if pingbackCheck.Request.Apps != nil {
+			for _, app := range pingbackCheck.Request.Apps {
+				if app.Events != nil {
+					return true
+				}
+			}
+		}
+	}
+
+	return false
+}
