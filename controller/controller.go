@@ -1,19 +1,19 @@
 package controller
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/brave/go-update/extension"
 	"github.com/brave/go-update/logger"
 	"github.com/brave/go-update/omaha"
@@ -45,78 +45,62 @@ var AllExtensionsCache = middleware.NewJSONCache()
 func initExtensionUpdatesFromDynamoDB() {
 	log := logger.New()
 	log.Info("Refreshing extensions from DynamoDB")
-
-	awsConfig := &aws.Config{}
-	if endpoint := os.Getenv("DYNAMODB_ENDPOINT"); endpoint != "" {
-		awsConfig.Endpoint = aws.String(endpoint)
-	}
-	sess, err := session.NewSession(awsConfig)
+	// Load AWS configuration
+	cfg, err := config.LoadDefaultConfig(context.Background())
 	if err != nil {
-		log.Error("Failed to create AWS session",
+		log.Error("Failed to load AWS config",
 			"error", err)
 		sentry.CaptureException(err)
 		return
 	}
 
-	// Create DynamoDB client
-	svc := dynamodb.New(sess)
-	params := &dynamodb.ScanInput{
-		TableName: aws.String("Extensions"),
+	// Create DynamoDB client with optional custom endpoint
+	clientOpts := func(o *dynamodb.Options) {
+		if endpoint := os.Getenv("DYNAMODB_ENDPOINT"); endpoint != "" {
+			o.BaseEndpoint = aws.String(endpoint)
+		}
 	}
+	svc := dynamodb.NewFromConfig(cfg, clientOpts)
 
 	// For most use cases, you probably wouldn't want to scan all entries; however,
 	// for our use case we have a read only small number of items, that are infrequently
 	// updated, usually less than daily by an external tool, and very often queried.
-	result, err := svc.Scan(params)
-	if err != nil {
-		log.Error("Failed to scan DynamoDB table",
-			"table", "Extensions",
-			"error", err)
-		sentry.CaptureException(err)
-		return
-	}
+	paginator := dynamodb.NewScanPaginator(svc, &dynamodb.ScanInput{
+		TableName: aws.String("Extensions"),
+	})
 
-	// Update the extensions map
-	for _, item := range result.Items {
-		id := *item["ID"].S
-
-		ext := extension.Extension{
-			ID:          id,
-			Blacklisted: *item["Disabled"].BOOL,
-			SHA256:      *item["SHA256"].S,
-			Title:       *item["Title"].S,
-			Version:     *item["Version"].S,
-			Size:        1, // Required field as per Omaha v4 spec (must be >0); its correctness is NOT verified by the browser
+	// Process all pages
+	for paginator.HasMorePages() {
+		page, err := paginator.NextPage(context.Background())
+		if err != nil {
+			log.Error("Failed to scan DynamoDB table",
+				"table", "Extensions",
+				"error", err)
+			sentry.CaptureException(err)
+			return
 		}
 
-		// Add Size field if present in DynamoDB
-		if sizeItem := item["Size"]; sizeItem != nil && sizeItem.N != nil {
-			size, err := strconv.ParseUint(*sizeItem.N, 10, 64)
+		// Update the extensions map
+		for _, item := range page.Items {
+			var ext extension.Extension
+			err := attributevalue.UnmarshalMap(item, &ext)
 			if err != nil {
-				log.Error("Failed to parse Size property", "extension_id", id, "error", err)
+				log.Error("Failed to unmarshal DynamoDB item",
+					"error", err)
 				sentry.CaptureException(err)
-			} else {
-				if size == 0 {
-					size = 1
-				}
-				ext.Size = size
+				continue
 			}
-		}
 
-		if plist := item["PatchList"]; plist != nil {
-			var pinfo map[string]*extension.PatchInfo
-			if err := dynamodbattribute.UnmarshalMap(plist.M, &pinfo); err != nil {
-				log.Error("Failed to parse PatchList property", "extension_id", id, "error", err)
-				sentry.CaptureException(err)
-			} else {
-				ext.PatchList = pinfo
+			// Ensure Size is at least 1 as per Omaha v4 spec
+			if ext.Size == 0 {
+				ext.Size = 1
 			}
-		}
 
-		AllExtensionsMap.Store(id, ext)
+			AllExtensionsMap.Store(ext.ID, ext)
+		}
 	}
 
-	log.Info("Extension refresh completed", "item_count", len(result.Items))
+	log.Info("Extension refresh completed", "item_count", AllExtensionsMap.Len())
 
 	// Proactively refresh extension cache
 	data, err := AllExtensionsMap.MarshalJSON()
