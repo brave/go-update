@@ -284,7 +284,7 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 
 	// Check if the request is a pingback and ignore it if so.
 	if protocol.IsPingbackRequest(body, contentType) {
-		w.WriteHeader(http.StatusOK)
+		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 
