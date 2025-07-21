@@ -1,23 +1,24 @@
 package controller
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/brave/go-update/extension"
 	"github.com/brave/go-update/logger"
 	"github.com/brave/go-update/omaha"
 	"github.com/brave/go-update/omaha/protocol"
+	"github.com/brave/go-update/server/middleware"
 	"github.com/getsentry/sentry-go"
 	"github.com/go-chi/chi/v5"
 )
@@ -38,87 +39,87 @@ var ExtensionUpdaterTimeout = time.Minute * 10
 // ProtocolFactory is the factory used to create protocol handlers
 var ProtocolFactory = &omaha.DefaultFactory{}
 
+// AllExtensionsCache is the global cache instance for all extensions JSON data
+var AllExtensionsCache = middleware.NewJSONCache()
+
 func initExtensionUpdatesFromDynamoDB() {
 	log := logger.New()
 	log.Info("Refreshing extensions from DynamoDB")
-
-	awsConfig := &aws.Config{}
-	if endpoint := os.Getenv("DYNAMODB_ENDPOINT"); endpoint != "" {
-		awsConfig.Endpoint = aws.String(endpoint)
-	}
-	sess, err := session.NewSession(awsConfig)
+	// Load AWS configuration
+	cfg, err := config.LoadDefaultConfig(context.Background())
 	if err != nil {
-		log.Error("Failed to create AWS session",
+		log.Error("Failed to load AWS config",
 			"error", err)
 		sentry.CaptureException(err)
 		return
 	}
 
-	// Create DynamoDB client
-	svc := dynamodb.New(sess)
-	params := &dynamodb.ScanInput{
-		TableName: aws.String("Extensions"),
+	// Create DynamoDB client with optional custom endpoint
+	clientOpts := func(o *dynamodb.Options) {
+		if endpoint := os.Getenv("DYNAMODB_ENDPOINT"); endpoint != "" {
+			o.BaseEndpoint = aws.String(endpoint)
+		}
 	}
+	svc := dynamodb.NewFromConfig(cfg, clientOpts)
 
 	// For most use cases, you probably wouldn't want to scan all entries; however,
 	// for our use case we have a read only small number of items, that are infrequently
 	// updated, usually less than daily by an external tool, and very often queried.
-	result, err := svc.Scan(params)
+	paginator := dynamodb.NewScanPaginator(svc, &dynamodb.ScanInput{
+		TableName: aws.String("Extensions"),
+	})
+
+	// Process all pages
+	for paginator.HasMorePages() {
+		page, err := paginator.NextPage(context.Background())
+		if err != nil {
+			log.Error("Failed to scan DynamoDB table",
+				"table", "Extensions",
+				"error", err)
+			sentry.CaptureException(err)
+			return
+		}
+
+		// Update the extensions map
+		for _, item := range page.Items {
+			var ext extension.Extension
+			err := attributevalue.UnmarshalMap(item, &ext)
+			if err != nil {
+				log.Error("Failed to unmarshal DynamoDB item",
+					"error", err)
+				sentry.CaptureException(err)
+				continue
+			}
+
+			// Ensure Size is at least 1 as per Omaha v4 spec
+			if ext.Size == 0 {
+				ext.Size = 1
+			}
+
+			AllExtensionsMap.Store(ext.ID, ext)
+		}
+	}
+
+	log.Info("Extension refresh completed", "item_count", AllExtensionsMap.Len())
+
+	// Proactively refresh extension cache
+	data, err := AllExtensionsMap.MarshalJSON()
 	if err != nil {
-		log.Error("Failed to scan DynamoDB table",
-			"table", "Extensions",
-			"error", err)
-		sentry.CaptureException(err)
+		log.Error("Failed to marshal extensions for cache refresh", "error", err)
+		// On error, invalidate to force fresh generation on next request
+		AllExtensionsCache.Invalidate()
 		return
 	}
 
-	// Update the extensions map
-	for _, item := range result.Items {
-		id := *item["ID"].S
-
-		ext := extension.Extension{
-			ID:          id,
-			Blacklisted: *item["Disabled"].BOOL,
-			SHA256:      *item["SHA256"].S,
-			Title:       *item["Title"].S,
-			Version:     *item["Version"].S,
-			Size:        1, // Required field as per Omaha v4 spec (must be >0); its correctness is NOT verified by the browser
-		}
-
-		// Add Size field if present in DynamoDB
-		if sizeItem := item["Size"]; sizeItem != nil && sizeItem.N != nil {
-			size, err := strconv.ParseUint(*sizeItem.N, 10, 64)
-			if err != nil {
-				log.Error("Failed to parse Size property", "extension_id", id, "error", err)
-				sentry.CaptureException(err)
-			} else {
-				if size == 0 {
-					size = 1
-				}
-				ext.Size = size
-			}
-		}
-
-		if plist := item["PatchList"]; plist != nil {
-			var pinfo map[string]*extension.PatchInfo
-			if err := dynamodbattribute.UnmarshalMap(plist.M, &pinfo); err != nil {
-				log.Error("Failed to parse PatchList property", "extension_id", id, "error", err)
-				sentry.CaptureException(err)
-			} else {
-				ext.PatchList = pinfo
-			}
-		}
-
-		AllExtensionsMap.Store(id, ext)
-	}
-
-	log.Info("Extension refresh completed", "item_count", len(result.Items))
+	AllExtensionsCache.Set(data)
+	log.Info("Extensions cache refreshed successfully", "data_size", len(data))
 }
 
 // RefreshExtensionsTicker updates the list of extensions by
 // calling the specified extensionMapUpdater function
 func RefreshExtensionsTicker(extensionMapUpdater func()) {
 	extensionMapUpdater()
+
 	ticker := time.NewTicker(ExtensionUpdaterTimeout)
 	go func() {
 		for range ticker.C {
@@ -136,27 +137,37 @@ func ExtensionsRouter(_ extension.Extensions, testRouter bool) chi.Router {
 	r := chi.NewRouter()
 	r.Post("/", UpdateExtensions)
 	r.Get("/", WebStoreUpdateExtension)
-	r.Get("/test", PrintExtensions)
+	r.With(middleware.JSONCacheMiddleware(AllExtensionsCache)).Get("/all", PrintExtensions)
 	return r
 }
 
-// PrintExtensions is just used for troubleshooting to see what the internal list of extensions DB holds
-// It simply prints out text for all extensions when visiting /extensions/test.
-// Since our internally maintained list is always small by design, this is not a big deal for performance.
+// PrintExtensions handles requests to /extensions/all by returning a JSON representation of all
+// extensions in the database. This endpoint serves two purposes:
+// 1. Troubleshooting - allows inspection of the current extension database state
+// 2. Dashboard integration - provides data to populate the extensions dashboard (/dashboard)
+//
+// Note: This function is only called on cache misses since the middleware handles cache hits.
 func PrintExtensions(w http.ResponseWriter, r *http.Request) {
 	logger := logger.FromContext(r.Context())
-	w.Header().Set("content-type", "application/json")
-	w.WriteHeader(http.StatusOK)
 
+	// Generate fresh data (only called on cache miss)
 	data, err := AllExtensionsMap.MarshalJSON()
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error in marshal %v", err), http.StatusInternalServerError)
 		return
 	}
 
+	// Cache the fresh data for future requests
+	AllExtensionsCache.Set(data)
+
+	// Set headers and write response
+	w.Header().Set("content-type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	// nosemgrep: go.lang.security.audit.xss.no-direct-write-to-responsewriter.no-direct-write-to-responsewriter
 	_, err = w.Write(data)
 	if err != nil {
-		logger.Error("Error writing response for printing extensions", "error", err)
+		logger.Error("Error writing extensions response", "error", err)
 	}
 }
 
@@ -240,6 +251,7 @@ func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "application/xml")
 	}
 
+	// nosemgrep: go.lang.security.audit.xss.no-direct-write-to-responsewriter.no-direct-write-to-responsewriter
 	_, err = w.Write(data)
 	if err != nil {
 		logger.Error("Error writing response", "error", err)
@@ -267,6 +279,12 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 	}
 	if len(body) == int(limit) {
 		http.Error(w, "Request too large", http.StatusBadRequest)
+		return
+	}
+
+	// Check if the request is a pingback and ignore it if so.
+	if protocol.IsPingbackRequest(body, contentType) {
+		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 
@@ -354,6 +372,7 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 		data = append(jsonPrefix, data...)
 	}
 
+	// nosemgrep: go.lang.security.audit.xss.no-direct-write-to-responsewriter.no-direct-write-to-responsewriter
 	_, err = w.Write(data)
 	if err != nil {
 		logger.Error("Error writing response", "error", err)
