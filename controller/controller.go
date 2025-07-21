@@ -282,6 +282,12 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check if the request is a pingback and ignore it if so.
+	if protocol.IsPingbackRequest(body, contentType) {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
 	// Special case for empty body
 	if len(body) == 0 {
 		http.Error(w, "Error parsing request: EOF", http.StatusBadRequest)
