@@ -44,6 +44,7 @@ func StartServer() {
 
 	go func() {
 		// setup metrics on another non-public port 9090
+		// nosemgrep: go.lang.security.audit.net.pprof.pprof-debug-exposure
 		err := http.ListenAndServe(":9090", batware.Metrics())
 		if err != nil {
 			sentry.CaptureException(err)
