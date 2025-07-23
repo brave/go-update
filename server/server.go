@@ -23,7 +23,10 @@ import (
 
 func setupRouter(ctx context.Context, testRouter bool) (context.Context, *chi.Mux) {
 	r := chi.NewRouter()
-	r.Use(middleware.OptimizedCompress(5, 512, "application/json", "application/xml"))
+	// It's not efficient to compress objects smaller than 1KB
+	//
+	// Ref: https://github.com/klauspost/compress/blob/1a8c0e48e1fa4245694103fc47721c83a9135588/gzhttp/compress.go#L50-L55
+	r.Use(middleware.OptimizedCompress(5, 1024, "application/json", "application/xml"))
 	r.Use(chiware.Heartbeat("/"))
 	r.Use(chiware.Timeout(60 * time.Second))
 
