@@ -5,6 +5,8 @@ import (
 
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/klauspost/compress/gzhttp"
+
+	"github.com/brave/go-update/logger"
 )
 
 // OptimizedCompress is a middleware that provides HTTP compression using klauspost's optimized
@@ -25,6 +27,8 @@ func OptimizedCompress(level, minSize int, types ...string) func(next http.Handl
 			return gzWrapper(next)
 		}
 	}
+
+	logger.New().Warn("Failed to use optimized compression, falling back to standard implementation", "error", err)
 
 	compressor := middleware.NewCompressor(level, types...)
 	return compressor.Handler
