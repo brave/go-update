@@ -11,10 +11,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/brave-intl/bat-go/middleware"
+	batware "github.com/brave-intl/bat-go/middleware"
 	"github.com/brave/go-update/controller"
 	"github.com/brave/go-update/extension"
 	"github.com/brave/go-update/logger"
+	"github.com/brave/go-update/server/middleware"
 	"github.com/getsentry/sentry-go"
 	"github.com/go-chi/chi/v5"
 	chiware "github.com/go-chi/chi/v5/middleware"
@@ -22,17 +23,18 @@ import (
 
 func setupRouter(ctx context.Context, testRouter bool) (context.Context, *chi.Mux) {
 	r := chi.NewRouter()
-	r.Use(chiware.RequestID)
-	r.Use(chiware.RealIP)
-	r.Use(chiware.Compress(5, "application/*", "text/*"))
+	// It's not efficient to compress objects smaller than 1KB
+	//
+	// Ref: https://github.com/klauspost/compress/blob/1a8c0e48e1fa4245694103fc47721c83a9135588/gzhttp/compress.go#L50-L55
+	r.Use(middleware.OptimizedCompress(5, 1024, "application/json", "application/xml"))
 	r.Use(chiware.Heartbeat("/"))
 	r.Use(chiware.Timeout(60 * time.Second))
-	r.Use(middleware.BearerToken)
+
 	shouldLog, ok := os.LookupEnv("LOG_REQUEST")
 	if ok && shouldLog == "true" {
-		// Use our custom slog-based request logger
 		r.Use(logger.RequestLoggerMiddleware())
 	}
+
 	extensions := extension.OfferedExtensions
 	r.Mount("/extensions", controller.ExtensionsRouter(extensions, testRouter))
 	return ctx, r
@@ -45,7 +47,8 @@ func StartServer() {
 
 	go func() {
 		// setup metrics on another non-public port 9090
-		err := http.ListenAndServe(":9090", middleware.Metrics())
+		// nosemgrep: go.lang.security.audit.net.pprof.pprof-debug-exposure
+		err := http.ListenAndServe(":9090", batware.Metrics())
 		if err != nil {
 			sentry.CaptureException(err)
 			logger.Panic(log, "Metrics HTTP server failed to start", err)
