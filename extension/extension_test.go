@@ -57,12 +57,13 @@ func TestFilterForUpdates(t *testing.T) {
 	// Check that even if a URL is provided, we use the server's URL
 	assert.Equal(t, lightThemeExtension.URL, check[0].URL)
 
-	// Newer extensions have no items returned
+	// Newer extensions are returned with noupdate status
 	newerExtensionCheck := lightThemeExtension
 	newerExtensionCheck.Version = "2.1.0"
 	extensions := Extensions{newerExtensionCheck}
 	check = FilterForUpdates(extensions, testExtensionsMap)
-	assert.Equal(t, 0, len(check))
+	assert.Equal(t, 1, len(check))
+	assert.Equal(t, "noupdate", check[0].Status)
 
 	// 2 outdated extensions both get returned from 1 check
 	olderExtensionCheck2 := darkThemeExtension

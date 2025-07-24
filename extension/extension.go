@@ -76,17 +76,15 @@ func FilterForUpdates(extensions Extensions, allExtensionsMap *ExtensionsMap) Ex
 	defer allExtensionsMap.RUnlock()
 	for _, extensionBeingChecked := range extensions {
 		foundExtension, ok := allExtensionsMap.data[extensionBeingChecked.ID]
-		if ok {
+		if ok && !foundExtension.Blacklisted {
 			status := CompareVersions(extensionBeingChecked.Version, foundExtension.Version)
-			if !foundExtension.Blacklisted && status <= 0 {
-				if status == 0 {
-					foundExtension.Status = "noupdate"
-				}
-
-				foundExtension.FP = extensionBeingChecked.FP
-
-				filteredExtensions = append(filteredExtensions, foundExtension)
+			// Skip update if client version is equal to or newer than server version
+			if status >= 0 {
+				foundExtension.Status = "noupdate"
 			}
+
+			foundExtension.FP = extensionBeingChecked.FP
+			filteredExtensions = append(filteredExtensions, foundExtension)
 		}
 	}
 	return filteredExtensions
