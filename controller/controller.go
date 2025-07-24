@@ -346,8 +346,7 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 
-	// Use the generic FilterForUpdates function
-	updateResponse := extension.FilterForUpdates(updateRequest, AllExtensionsMap)
+	updateResponse := extension.ProcessExtensionRequests(updateRequest, AllExtensionsMap)
 
 	// Use the same protocol version for response as the request for v4
 	// Otherwise default to 3.1 for backward compatibility

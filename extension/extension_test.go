@@ -25,7 +25,7 @@ func TestCompareVersions(t *testing.T) {
 	assert.Equal(t, -1, CompareVersions("zugzug.1.1", "1.1.daboo"))
 }
 
-func TestFilterForUpdates(t *testing.T) {
+func TestProcessExtensionRequests(t *testing.T) {
 	allExtensionsMap := NewExtensionMap()
 	allExtensionsMap.StoreExtensions(&OfferedExtensions)
 	lightThemeExtension, ok := allExtensionsMap.Load("ldimlcelhnjgpjjemdjokpgeeikdinbm")
@@ -39,14 +39,14 @@ func TestFilterForUpdates(t *testing.T) {
 
 	// No updates when nothing to check
 	emptyExtensions := Extensions{}
-	check := FilterForUpdates(emptyExtensions, testExtensionsMap)
+	check := ProcessExtensionRequests(emptyExtensions, testExtensionsMap)
 	assert.Equal(t, 0, len(check))
 
 	olderExtensionCheck1 := lightThemeExtension
 	olderExtensionCheck1.Version = "0.1.0"
 	outdatedExtensionCheck := Extensions{olderExtensionCheck1}
 
-	check = FilterForUpdates(outdatedExtensionCheck, testExtensionsMap)
+	check = ProcessExtensionRequests(outdatedExtensionCheck, testExtensionsMap)
 	assert.Equal(t, 1, len(check))
 
 	assert.Equal(t, lightThemeExtension.ID, check[0].ID)
@@ -61,7 +61,7 @@ func TestFilterForUpdates(t *testing.T) {
 	newerExtensionCheck := lightThemeExtension
 	newerExtensionCheck.Version = "2.1.0"
 	extensions := Extensions{newerExtensionCheck}
-	check = FilterForUpdates(extensions, testExtensionsMap)
+	check = ProcessExtensionRequests(extensions, testExtensionsMap)
 	assert.Equal(t, 1, len(check))
 	assert.Equal(t, "noupdate", check[0].Status)
 
@@ -69,7 +69,7 @@ func TestFilterForUpdates(t *testing.T) {
 	olderExtensionCheck2 := darkThemeExtension
 	olderExtensionCheck2.Version = "0.1.0"
 	extensions = Extensions{olderExtensionCheck1, olderExtensionCheck2}
-	check = FilterForUpdates(extensions, testExtensionsMap)
+	check = ProcessExtensionRequests(extensions, testExtensionsMap)
 	assert.Equal(t, 2, len(check))
 	assert.Equal(t, olderExtensionCheck1.ID, check[0].ID)
 	assert.Equal(t, olderExtensionCheck2.ID, check[1].ID)
@@ -81,7 +81,7 @@ func TestFilterForUpdates(t *testing.T) {
 		elem.Blacklisted = true
 		allExtensionsBlacklistedMap.data[k] = elem
 	}
-	check = FilterForUpdates(outdatedExtensionCheck, allExtensionsBlacklistedMap)
+	check = ProcessExtensionRequests(outdatedExtensionCheck, allExtensionsBlacklistedMap)
 	assert.Equal(t, 0, len(check))
 }
 

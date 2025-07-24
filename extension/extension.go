@@ -68,9 +68,9 @@ func CompareVersions(version1 string, version2 string) int {
 	return 0
 }
 
-// FilterForUpdates filters extensions down to only the extensions that are being checked,
-// and only the ones that we have updates for.
-func FilterForUpdates(extensions Extensions, allExtensionsMap *ExtensionsMap) Extensions {
+// ProcessExtensionRequests processes extension update requests and returns all requested extensions
+// with their appropriate update status (either available update or "noupdate").
+func ProcessExtensionRequests(extensions Extensions, allExtensionsMap *ExtensionsMap) Extensions {
 	filteredExtensions := Extensions{}
 	allExtensionsMap.RLock()
 	defer allExtensionsMap.RUnlock()
