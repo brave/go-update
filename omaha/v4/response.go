@@ -21,9 +21,11 @@ type UpdateResponse []extension.Extension
 
 // GetUpdateStatus determines the update status based on extension data
 func GetUpdateStatus(extension extension.Extension) string {
-	if extension.Status == "noupdate" {
-		return "noupdate"
+	// Return the existing status if already set (indicates no update available or an error)
+	if extension.Status != "" {
+		return extension.Status
 	}
+	// Unassigned status implies an available update
 	return "ok"
 }
 

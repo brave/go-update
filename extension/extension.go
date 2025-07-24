@@ -69,25 +69,41 @@ func CompareVersions(version1 string, version2 string) int {
 }
 
 // ProcessExtensionRequests processes extension update requests and returns all requested extensions
-// with their appropriate update status (either available update or "noupdate").
+// with their appropriate update status (either available update, "noupdate", or error status).
 func ProcessExtensionRequests(extensions Extensions, allExtensionsMap *ExtensionsMap) Extensions {
-	filteredExtensions := Extensions{}
+	processedExtensions := Extensions{}
 	allExtensionsMap.RLock()
 	defer allExtensionsMap.RUnlock()
 	for _, extensionBeingChecked := range extensions {
 		foundExtension, ok := allExtensionsMap.data[extensionBeingChecked.ID]
-		if ok && !foundExtension.Blacklisted {
+		if !ok {
+			// Extension not found
+			unknownExtension := Extension{
+				ID:     extensionBeingChecked.ID,
+				FP:     extensionBeingChecked.FP,
+				Status: "error-unknownApplication",
+			}
+			processedExtensions = append(processedExtensions, unknownExtension)
+		} else if foundExtension.Blacklisted {
+			// Blacklisted extension
+			blacklistedExtension := foundExtension
+			blacklistedExtension.Status = "restricted"
+			blacklistedExtension.FP = extensionBeingChecked.FP
+			processedExtensions = append(processedExtensions, blacklistedExtension)
+		} else {
+			// Extension found and not blacklisted
 			status := CompareVersions(extensionBeingChecked.Version, foundExtension.Version)
-			// Skip update if client version is equal to or newer than server version
+			// Set status to "noupdate" if client has equal or newer version than server
 			if status >= 0 {
 				foundExtension.Status = "noupdate"
 			}
+			// Status remains empty when client version is older (status < 0), indicating an update is available
 
 			foundExtension.FP = extensionBeingChecked.FP
-			filteredExtensions = append(filteredExtensions, foundExtension)
+			processedExtensions = append(processedExtensions, foundExtension)
 		}
 	}
-	return filteredExtensions
+	return processedExtensions
 }
 
 // Store adds or overwrites the key in the map with the Extension

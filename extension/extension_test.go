@@ -74,7 +74,7 @@ func TestProcessExtensionRequests(t *testing.T) {
 	assert.Equal(t, olderExtensionCheck1.ID, check[0].ID)
 	assert.Equal(t, olderExtensionCheck2.ID, check[1].ID)
 
-	// Outdated extension that's blacklisted doesn't get updates
+	// Outdated extension that's blacklisted returns error status
 	allExtensionsBlacklistedMap := allExtensionsMap
 	for k := range allExtensionsBlacklistedMap.data {
 		elem := allExtensionsBlacklistedMap.data[k]
@@ -82,7 +82,39 @@ func TestProcessExtensionRequests(t *testing.T) {
 		allExtensionsBlacklistedMap.data[k] = elem
 	}
 	check = ProcessExtensionRequests(outdatedExtensionCheck, allExtensionsBlacklistedMap)
-	assert.Equal(t, 0, len(check))
+	assert.Equal(t, 1, len(check))
+	assert.Equal(t, "restricted", check[0].Status)
+
+	// Unknown extension returns error status
+	unknownExtension := Extension{
+		ID:      "unknown-extension-id",
+		Version: "1.0.0",
+		FP:      "fingerprint123",
+	}
+	unknownExtensionCheck := Extensions{unknownExtension}
+	check = ProcessExtensionRequests(unknownExtensionCheck, testExtensionsMap)
+	assert.Equal(t, 1, len(check))
+	assert.Equal(t, "unknown-extension-id", check[0].ID)
+	assert.Equal(t, "error-unknownApplication", check[0].Status)
+	assert.Equal(t, "fingerprint123", check[0].FP)
+
+	// Restricted extension returns restricted status
+	restrictedExtensionsMap := NewExtensionMap()
+	restrictedExtension := lightThemeExtension
+	restrictedExtension.Blacklisted = true
+	restrictedExtensions := Extensions{restrictedExtension}
+	restrictedExtensionsMap.StoreExtensions(&restrictedExtensions)
+
+	restrictedExtensionCheck := lightThemeExtension
+	restrictedExtensionCheck.Version = "0.1.0"
+	restrictedExtensionCheck.FP = "restricted-fingerprint"
+	restrictedCheck := Extensions{restrictedExtensionCheck}
+
+	check = ProcessExtensionRequests(restrictedCheck, restrictedExtensionsMap)
+	assert.Equal(t, 1, len(check))
+	assert.Equal(t, lightThemeExtension.ID, check[0].ID)
+	assert.Equal(t, "restricted", check[0].Status)
+	assert.Equal(t, "restricted-fingerprint", check[0].FP)
 }
 
 func TestS3BucketForExtension(t *testing.T) {
