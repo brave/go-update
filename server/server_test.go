@@ -209,14 +209,25 @@ func TestUpdateExtensionsXMLV3(t *testing.T) {
 
 	// Single extension greater version
 	requestBody = lightThemeExtension("2.0.0")
-	expectedResponse = "<response protocol=\"3.1\" server=\"prod\"></response>"
+	expectedResponse = `<response protocol="3.1" server="prod">
+    <app appid="ldimlcelhnjgpjjemdjokpgeeikdinbm">
+        <updatecheck status="noupdate"></updatecheck>
+    </app>
+</response>`
 	testCall(t, server, http.MethodPost, contentTypeXML, "", requestBody, http.StatusOK, expectedResponse, "")
 
 	lightAndDarkThemeRequest := extensiontest.ExtensionRequestFnForTwoXML("ldimlcelhnjgpjjemdjokpgeeikdinbm", "bfdgpgibhagkpdlnjonhkabjoijopoge")
 
 	// Multiple components with none out of date
 	requestBody = lightAndDarkThemeRequest("70.0.0", "70.0.0")
-	expectedResponse = "<response protocol=\"3.1\" server=\"prod\"></response>"
+	expectedResponse = `<response protocol="3.1" server="prod">
+    <app appid="ldimlcelhnjgpjjemdjokpgeeikdinbm">
+        <updatecheck status="noupdate"></updatecheck>
+    </app>
+    <app appid="bfdgpgibhagkpdlnjonhkabjoijopoge">
+        <updatecheck status="noupdate"></updatecheck>
+    </app>
+</response>`
 	testCall(t, server, http.MethodPost, contentTypeXML, "", requestBody, http.StatusOK, expectedResponse, "")
 
 	// Only one components out of date
@@ -234,12 +245,18 @@ func TestUpdateExtensionsXMLV3(t *testing.T) {
             </manifest>
         </updatecheck>
     </app>
+    <app appid="bfdgpgibhagkpdlnjonhkabjoijopoge">
+        <updatecheck status="noupdate"></updatecheck>
+    </app>
 </response>`
 	testCall(t, server, http.MethodPost, contentTypeXML, "", requestBody, http.StatusOK, expectedResponse, "")
 
 	// Other component of 2 out of date
 	requestBody = lightAndDarkThemeRequest("70.0.0", "0.0.0")
 	expectedResponse = `<response protocol="3.1" server="prod">
+    <app appid="ldimlcelhnjgpjjemdjokpgeeikdinbm">
+        <updatecheck status="noupdate"></updatecheck>
+    </app>
     <app appid="bfdgpgibhagkpdlnjonhkabjoijopoge">
         <updatecheck status="ok">
             <urls>
@@ -460,24 +477,24 @@ func TestUpdateExtensionsV3JSON(t *testing.T) {
 
 	// Single extension greater version
 	requestBody = lightThemeExtension("2.0.0")
-	expectedResponse = jsonPrefix + `{"response":{"protocol":"3.1","server":"prod","app":null}}`
+	expectedResponse = jsonPrefix + `{"response":{"protocol":"3.1","server":"prod","app":[{"appid":"ldimlcelhnjgpjjemdjokpgeeikdinbm","status":"ok","updatecheck":{"status":"noupdate"}}]}}`
 	testCall(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusOK, expectedResponse, "")
 
 	lightAndDarkThemeRequest := extensiontest.ExtensionRequestFnForTwoJSON("ldimlcelhnjgpjjemdjokpgeeikdinbm", "bfdgpgibhagkpdlnjonhkabjoijopoge")
 
 	// Multiple components with none out of date
 	requestBody = lightAndDarkThemeRequest("70.0.0", "70.0.0")
-	expectedResponse = jsonPrefix + `{"response":{"protocol":"3.1","server":"prod","app":null}}`
+	expectedResponse = jsonPrefix + `{"response":{"protocol":"3.1","server":"prod","app":[{"appid":"ldimlcelhnjgpjjemdjokpgeeikdinbm","status":"ok","updatecheck":{"status":"noupdate"}},{"appid":"bfdgpgibhagkpdlnjonhkabjoijopoge","status":"ok","updatecheck":{"status":"noupdate"}}]}}`
 	testCall(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusOK, expectedResponse, "")
 
 	// Only one components out of date
 	requestBody = lightAndDarkThemeRequest("0.0.0", "70.0.0")
-	expectedResponse = jsonPrefix + `{"response":{"protocol":"3.1","server":"prod","app":[{"appid":"ldimlcelhnjgpjjemdjokpgeeikdinbm","status":"ok","updatecheck":{"status":"ok","urls":{"url":[{"codebase":"https://` + extension.GetS3ExtensionBucketHost(lightThemeExtensionID) + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"}]},"manifest":{"version":"1.0.0","packages":{"package":[{"name":"extension_1_0_0.crx","fp":"1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618","hash_sha256":"1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618","required":true}]}}}}]}}`
+	expectedResponse = jsonPrefix + `{"response":{"protocol":"3.1","server":"prod","app":[{"appid":"ldimlcelhnjgpjjemdjokpgeeikdinbm","status":"ok","updatecheck":{"status":"ok","urls":{"url":[{"codebase":"https://` + extension.GetS3ExtensionBucketHost(lightThemeExtensionID) + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"}]},"manifest":{"version":"1.0.0","packages":{"package":[{"name":"extension_1_0_0.crx","fp":"1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618","hash_sha256":"1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618","required":true}]}}}},{"appid":"bfdgpgibhagkpdlnjonhkabjoijopoge","status":"ok","updatecheck":{"status":"noupdate"}}]}}`
 	testCall(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusOK, expectedResponse, "")
 
 	// Other component of 2 out of date
 	requestBody = lightAndDarkThemeRequest("70.0.0", "0.0.0")
-	expectedResponse = jsonPrefix + `{"response":{"protocol":"3.1","server":"prod","app":[{"appid":"bfdgpgibhagkpdlnjonhkabjoijopoge","status":"ok","updatecheck":{"status":"ok","urls":{"url":[{"codebase":"https://` + extension.GetS3ExtensionBucketHost(darkThemeExtensionID) + `/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx"}]},"manifest":{"version":"1.0.0","packages":{"package":[{"name":"extension_1_0_0.crx","fp":"ae517d6273a4fc126961cb026e02946db4f9dbb58e3d9bc29f5e1270e3ce9834","hash_sha256":"ae517d6273a4fc126961cb026e02946db4f9dbb58e3d9bc29f5e1270e3ce9834","required":true}]}}}}]}}`
+	expectedResponse = jsonPrefix + `{"response":{"protocol":"3.1","server":"prod","app":[{"appid":"ldimlcelhnjgpjjemdjokpgeeikdinbm","status":"ok","updatecheck":{"status":"noupdate"}},{"appid":"bfdgpgibhagkpdlnjonhkabjoijopoge","status":"ok","updatecheck":{"status":"ok","urls":{"url":[{"codebase":"https://` + extension.GetS3ExtensionBucketHost(darkThemeExtensionID) + `/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx"}]},"manifest":{"version":"1.0.0","packages":{"package":[{"name":"extension_1_0_0.crx","fp":"ae517d6273a4fc126961cb026e02946db4f9dbb58e3d9bc29f5e1270e3ce9834","hash_sha256":"ae517d6273a4fc126961cb026e02946db4f9dbb58e3d9bc29f5e1270e3ce9834","required":true}]}}}}]}}`
 	testCall(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusOK, expectedResponse, "")
 
 	// Both components need updates
@@ -809,7 +826,21 @@ func TestUpdateExtensionsV4JSON(t *testing.T) {
 
 	appsInterface, ok = respObj["apps"]
 	assert.True(t, ok, "apps should be present")
-	assert.Nil(t, appsInterface, "apps should be null")
+	appsArray, ok = appsInterface.([]interface{})
+	assert.True(t, ok, "apps should be an array")
+	assert.Equal(t, 1, len(appsArray), "apps should contain 1 item")
+
+	appInterface = appsArray[0]
+	app, ok = appInterface.(map[string]interface{})
+	assert.True(t, ok, "app should be a map")
+	assert.Equal(t, lightThemeExtensionID, app["appid"])
+	assert.Equal(t, "ok", app["status"])
+
+	updatecheckInterface, ok = app["updatecheck"]
+	assert.True(t, ok, "updatecheck should be present")
+	updatecheck, ok = updatecheckInterface.(map[string]interface{})
+	assert.True(t, ok, "updatecheck should be a map")
+	assert.Equal(t, "noupdate", updatecheck["status"])
 
 	// Multiple extensions test - create a request with light and dark theme extensions
 	darkThemeExtensionID := "bfdgpgibhagkpdlnjonhkabjoijopoge"
@@ -851,12 +882,17 @@ func TestUpdateExtensionsV4JSON(t *testing.T) {
 	assert.True(t, ok, "apps should be present")
 	appsArray, ok = appsInterface.([]interface{})
 	assert.True(t, ok, "apps should be an array")
-	assert.Equal(t, 1, len(appsArray), "apps should contain 1 item")
+	assert.Equal(t, 2, len(appsArray), "apps should contain 2 items")
 
-	appInterface = appsArray[0]
-	app, ok = appInterface.(map[string]interface{})
+	app1Object := appsArray[0]
+	app1, ok := app1Object.(map[string]interface{})
 	assert.True(t, ok, "app should be a map")
-	assert.Equal(t, lightThemeExtensionID, app["appid"])
+	assert.Equal(t, lightThemeExtensionID, app1["appid"])
+
+	app2Object := appsArray[1]
+	app2, ok := app2Object.(map[string]interface{})
+	assert.True(t, ok, "app should be a map")
+	assert.Equal(t, darkThemeExtensionID, app2["appid"])
 
 	extensionIDs = make(map[string]bool)
 	for _, appItem := range appsArray {
@@ -865,7 +901,7 @@ func TestUpdateExtensionsV4JSON(t *testing.T) {
 		extensionIDs[appMap["appid"].(string)] = true
 	}
 	assert.True(t, extensionIDs[lightThemeExtensionID], "response should include light theme extension")
-	assert.False(t, extensionIDs[darkThemeExtensionID], "response should not include dark theme extension")
+	assert.True(t, extensionIDs[darkThemeExtensionID], "response should include dark theme extension")
 
 	// Unknown extension ID goes to Google server via componentupdater proxy
 	requestBody = buildUpdateV4JSON("4.0", []AppVersionPair{
