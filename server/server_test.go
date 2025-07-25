@@ -361,6 +361,75 @@ func TestUpdateExtensionsXMLV3(t *testing.T) {
     </app>
 </response>`
 	testCall(t, server, http.MethodPost, contentTypeXML, "", requestBody, http.StatusOK, expectedResponse, "")
+
+	// Test mixed extension statuses in XML - one outdated, one current, one unknown
+	threeExtensionXMLRequest := func(lightVersion, darkVersion, unknownVersion string) string {
+		return `
+		<?xml version="1.0" encoding="UTF-8"?>
+		<request protocol="3.0" version="chrome-53.0.2785.116" prodversion="53.0.2785.116" requestid="{b4f77b70-af29-462b-a637-8a3e4be5ecd9}" lang="" updaterchannel="stable" prodchannel="stable" os="mac" arch="x64" nacl_arch="x86-64">
+		  <hw physmemory="16"/>
+		  <os platform="Mac OS X" version="10.11.6" arch="x86_64"/>
+		  <app appid="` + lightThemeExtensionID + `" version="` + lightVersion + `" installsource="ondemand">
+		    <updatecheck />
+		    <ping rd="-2" ping_freshness="" />
+		  </app>
+		  <app appid="` + darkThemeExtensionID + `" version="` + darkVersion + `" installsource="ondemand">
+		    <updatecheck />
+		    <ping rd="-2" ping_freshness="" />
+		  </app>
+		  <app appid="unknown-test-extension" version="` + unknownVersion + `" installsource="ondemand">
+		    <updatecheck />
+		    <ping rd="-2" ping_freshness="" />
+		  </app>
+		</request>`
+	}
+
+	// Mixed statuses XML: outdated (ok), current (noupdate), unknown (error-unknownApplication)
+	requestBody = threeExtensionXMLRequest("0.0.0", "70.0.0", "1.0.0")
+	expectedResponse = `<response protocol="3.1" server="prod">
+    <app appid="` + lightThemeExtensionID + `">
+        <updatecheck status="ok">
+            <urls>
+                <url codebase="https://` + extension.GetS3ExtensionBucketHost(lightThemeExtensionID) + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"></url>
+            </urls>
+            <manifest version="1.0.0">
+                <packages>
+                    <package name="extension_1_0_0.crx" hash_sha256="1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618" required="true"></package>
+                </packages>
+            </manifest>
+        </updatecheck>
+    </app>
+    <app appid="` + darkThemeExtensionID + `">
+        <updatecheck status="noupdate"></updatecheck>
+    </app>
+    <app appid="unknown-test-extension">
+        <updatecheck status="error-unknownApplication"></updatecheck>
+    </app>
+</response>`
+	testCall(t, server, http.MethodPost, contentTypeXML, "", requestBody, http.StatusOK, expectedResponse, "")
+
+	// Test with blacklisted extension XML
+	originalAllExtensionsMapXML := controller.AllExtensionsMap
+	controller.AllExtensionsMap = extension.NewExtensionMap()
+	controller.AllExtensionsMap.StoreExtensions(&extension.OfferedExtensions)
+
+	// Get and blacklist the light theme extension
+	lightExtXML, ok := controller.AllExtensionsMap.Load(lightThemeExtensionID)
+	assert.True(t, ok)
+	lightExtXML.Blacklisted = true
+	controller.AllExtensionsMap.Store(lightThemeExtensionID, lightExtXML)
+
+	// Test blacklisted extension returns restricted status in XML
+	requestBody = extensiontest.ExtensionRequestFnForXML(lightThemeExtensionID)("0.0.0")
+	expectedResponse = `<response protocol="3.1" server="prod">
+    <app appid="` + lightThemeExtensionID + `">
+        <updatecheck status="restricted"></updatecheck>
+    </app>
+</response>`
+	testCall(t, server, http.MethodPost, contentTypeXML, "", requestBody, http.StatusOK, expectedResponse, "")
+
+	// Restore original extensions map
+	controller.AllExtensionsMap = originalAllExtensionsMapXML
 }
 
 func getQueryParams(extension *extension.Extension) string {
@@ -530,6 +599,35 @@ func TestUpdateExtensionsV3JSON(t *testing.T) {
 	requestBody = extensiontest.ExtensionRequestFnForJSON("newext2eplbcioakkpcpgfkobkghlhen")("0.0.0")
 	expectedResponse = jsonPrefix + `{"response":{"protocol":"3.1","server":"prod","app":[{"appid":"newext2eplbcioakkpcpgfkobkghlhen","status":"ok","updatecheck":{"status":"ok","urls":{"url":[{"codebase":"https://` + extension.GetS3ExtensionBucketHost(newExtensionID2) + `/release/newext2eplbcioakkpcpgfkobkghlhen/extension_1_0_0.crx"}]},"manifest":{"version":"1.0.0","packages":{"package":[{"name":"extension_1_0_0.crx","fp":"3c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618","hash_sha256":"3c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618","required":true}]}}}}]}}`
 	testCall(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusOK, expectedResponse, "")
+
+	// Test mixed extension statuses in a single request - one outdated, one current, one unknown
+	threeExtensionRequest := func(lightVersion, darkVersion, unknownVersion string) string {
+		return `{"request":{"protocol":"3.1","version":"chrome-53.0.2785.116","prodversion":"53.0.2785.116","requestid":"{e821bacd-8dbf-4cc8-9e8c-bcbe8c1cfd3d}","lang":"","updaterchannel":"stable","prodchannel":"stable","os":"mac","arch":"x64","nacl_arch":"x86-64","hw":{"physmemory":16},"os":{"arch":"x86_64","platform":"Mac OS X","version":"10.14.3"},"app":[{"appid":"` + lightThemeExtensionID + `","installsource":"ondemand","ping":{"r":-2},"updatecheck":{},"version":"` + lightVersion + `"},{"appid":"` + darkThemeExtensionID + `","installsource":"ondemand","ping":{"r":-2},"updatecheck":{},"version":"` + darkVersion + `"},{"appid":"unknown-test-extension","installsource":"ondemand","ping":{"r":-2},"updatecheck":{},"version":"` + unknownVersion + `"}]}}`
+	}
+
+	// Mixed statuses: outdated (ok), current (noupdate), unknown (error-unknownApplication)
+	requestBody = threeExtensionRequest("0.0.0", "70.0.0", "1.0.0")
+	expectedResponse = jsonPrefix + `{"response":{"protocol":"3.1","server":"prod","app":[{"appid":"` + lightThemeExtensionID + `","status":"ok","updatecheck":{"status":"ok","urls":{"url":[{"codebase":"https://` + extension.GetS3ExtensionBucketHost(lightThemeExtensionID) + `/release/ldimlcelhnjgpjjemdjokpgeeikdinbm/extension_1_0_0.crx"}]},"manifest":{"version":"1.0.0","packages":{"package":[{"name":"extension_1_0_0.crx","fp":"1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618","hash_sha256":"1c714fadd4208c63f74b707e4c12b81b3ad0153c37de1348fa810dd47cfc5618","required":true}]}}}},{"appid":"` + darkThemeExtensionID + `","status":"ok","updatecheck":{"status":"noupdate"}},{"appid":"unknown-test-extension","status":"ok","updatecheck":{"status":"error-unknownApplication"}}]}}`
+	testCall(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusOK, expectedResponse, "")
+
+	// Test with blacklisted extension
+	originalAllExtensionsMap := controller.AllExtensionsMap
+	controller.AllExtensionsMap = extension.NewExtensionMap()
+	controller.AllExtensionsMap.StoreExtensions(&extension.OfferedExtensions)
+
+	// Get and blacklist the light theme extension
+	lightExt, ok := controller.AllExtensionsMap.Load(lightThemeExtensionID)
+	assert.True(t, ok)
+	lightExt.Blacklisted = true
+	controller.AllExtensionsMap.Store(lightThemeExtensionID, lightExt)
+
+	// Test blacklisted extension returns restricted status
+	requestBody = lightThemeExtension("0.0.0")
+	expectedResponse = jsonPrefix + `{"response":{"protocol":"3.1","server":"prod","app":[{"appid":"` + lightThemeExtensionID + `","status":"ok","updatecheck":{"status":"restricted"}}]}}`
+	testCall(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusOK, expectedResponse, "")
+
+	// Restore original extensions map
+	controller.AllExtensionsMap = originalAllExtensionsMap
 }
 
 func TestWebStoreUpdateExtensionV3JSON(t *testing.T) {
@@ -909,4 +1007,107 @@ func TestUpdateExtensionsV4JSON(t *testing.T) {
 	})
 	expectedResponse = ""
 	testCall(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusTemporaryRedirect, expectedResponse, "https://componentupdater.brave.com/service/update2/json")
+
+	// Multiple extensions with unknown extension should return error status (not redirect)
+	requestBody = buildUpdateV4JSON("4.0", []AppVersionPair{
+		{ID: lightThemeExtensionID, Version: "0.0.0"},
+		{ID: "unknownextensionid123", Version: "1.0.0"},
+	})
+	result = testCallAndParseJSON(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusOK, "")
+
+	respObj = result["response"].(map[string]interface{})
+	assert.Equal(t, "4.0", respObj["protocol"])
+
+	appsInterface, ok = respObj["apps"]
+	assert.True(t, ok, "apps should be present")
+	appsArray, ok = appsInterface.([]interface{})
+	assert.True(t, ok, "apps should be an array")
+	assert.Equal(t, 2, len(appsArray), "apps should contain 2 items")
+
+	// Check both extensions are returned with appropriate statuses
+	extensionStatuses := make(map[string]string)
+	for _, appItem := range appsArray {
+		appMap, isMap := appItem.(map[string]interface{})
+		assert.True(t, isMap, "app item should be a map")
+		appID := appMap["appid"].(string)
+		updateCheck := appMap["updatecheck"].(map[string]interface{})
+		status := updateCheck["status"].(string)
+		extensionStatuses[appID] = status
+	}
+
+	assert.Equal(t, "ok", extensionStatuses[lightThemeExtensionID], "Known extension should have ok status")
+	assert.Equal(t, "error-unknownApplication", extensionStatuses["unknownextensionid123"], "Unknown extension should have error status")
+
+	// Test mixed extension statuses - one needing update, one up-to-date, one unknown
+	requestBody = buildUpdateV4JSON("4.0", []AppVersionPair{
+		{ID: lightThemeExtensionID, Version: "0.0.0"},  // Needs update -> ok
+		{ID: darkThemeExtensionID, Version: "1.0.0"},   // Up-to-date -> noupdate
+		{ID: "anothernewunknownext", Version: "1.0.0"}, // Unknown -> error-unknownApplication
+	})
+	result = testCallAndParseJSON(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusOK, "")
+
+	respObj = result["response"].(map[string]interface{})
+	assert.Equal(t, "4.0", respObj["protocol"])
+
+	appsInterface, ok = respObj["apps"]
+	assert.True(t, ok, "apps should be present")
+	appsArray, ok = appsInterface.([]interface{})
+	assert.True(t, ok, "apps should be an array")
+	assert.Equal(t, 3, len(appsArray), "apps should contain 3 items")
+
+	// Verify all three extensions with different statuses
+	extensionStatuses = make(map[string]string)
+	for _, appItem := range appsArray {
+		appMap, isMap := appItem.(map[string]interface{})
+		assert.True(t, isMap, "app item should be a map")
+		appID := appMap["appid"].(string)
+		updateCheck := appMap["updatecheck"].(map[string]interface{})
+		status := updateCheck["status"].(string)
+		extensionStatuses[appID] = status
+	}
+
+	assert.Equal(t, "ok", extensionStatuses[lightThemeExtensionID], "Outdated extension should have ok status")
+	assert.Equal(t, "noupdate", extensionStatuses[darkThemeExtensionID], "Up-to-date extension should have noupdate status")
+	assert.Equal(t, "error-unknownApplication", extensionStatuses["anothernewunknownext"], "Unknown extension should have error status")
+
+	// Test restricted/blacklisted extension scenario
+	// First, set up a blacklisted extension in the extensions map
+	controller.AllExtensionsMap = extension.NewExtensionMap()
+	controller.AllExtensionsMap.StoreExtensions(&extension.OfferedExtensions)
+
+	// Get an extension and mark it as blacklisted
+	restrictedExt, ok := controller.AllExtensionsMap.Load(lightThemeExtensionID)
+	assert.True(t, ok, "Should find light theme extension")
+	restrictedExt.Blacklisted = true
+	controller.AllExtensionsMap.Store(lightThemeExtensionID, restrictedExt)
+
+	requestBody = buildUpdateV4JSON("4.0", []AppVersionPair{
+		{ID: lightThemeExtensionID, Version: "0.0.0"}, // Blacklisted extension
+	})
+	result = testCallAndParseJSON(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusOK, "")
+
+	respObj = result["response"].(map[string]interface{})
+	assert.Equal(t, "4.0", respObj["protocol"])
+
+	appsInterface, ok = respObj["apps"]
+	assert.True(t, ok, "apps should be present")
+	appsArray, ok = appsInterface.([]interface{})
+	assert.True(t, ok, "apps should be an array")
+	assert.Equal(t, 1, len(appsArray), "apps should contain 1 item")
+
+	appInterface = appsArray[0]
+	app, ok = appInterface.(map[string]interface{})
+	assert.True(t, ok, "app should be a map")
+	assert.Equal(t, lightThemeExtensionID, app["appid"])
+	assert.Equal(t, "ok", app["status"])
+
+	updatecheckInterface, ok = app["updatecheck"]
+	assert.True(t, ok, "updatecheck should be present")
+	updatecheck, ok = updatecheckInterface.(map[string]interface{})
+	assert.True(t, ok, "updatecheck should be a map")
+	assert.Equal(t, "restricted", updatecheck["status"], "Blacklisted extension should have restricted status")
+
+	// Reset extensions map back to clean state for any subsequent tests
+	controller.AllExtensionsMap = extension.NewExtensionMap()
+	controller.AllExtensionsMap.StoreExtensions(&extension.OfferedExtensions)
 }
