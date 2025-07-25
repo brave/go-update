@@ -21,9 +21,11 @@ type UpdateResponse []extension.Extension
 
 // GetUpdateStatus determines the update status based on extension data
 func GetUpdateStatus(extension extension.Extension) string {
-	if extension.Status == "noupdate" {
-		return "noupdate"
+	// Return the existing status if already set (indicates no update available or an error)
+	if extension.Status != "" {
+		return extension.Status
 	}
+	// Unassigned status implies an available update
 	return "ok"
 }
 
@@ -86,16 +88,20 @@ func (r *UpdateResponse) MarshalJSON() ([]byte, error) {
 	validate := validator.New()
 
 	for _, ext := range *r {
-		// Check if SHA256 is empty
-		if ext.SHA256 == "" {
-			return nil, fmt.Errorf("extension %s has empty SHA256", ext.ID)
+		updateStatus := GetUpdateStatus(ext)
+		app := App{
+			AppID:       ext.ID,
+			Status:      "ok",
+			UpdateCheck: UpdateCheck{Status: updateStatus},
 		}
 
-		app := App{AppID: ext.ID, Status: "ok"}
-		updateStatus := GetUpdateStatus(ext)
-		app.UpdateCheck = UpdateCheck{Status: updateStatus}
-
+		// Further processing makes sense only if there is an update available
 		if updateStatus == "ok" {
+			// Check if SHA256 is empty
+			if ext.SHA256 == "" {
+				return nil, fmt.Errorf("extension %s has empty SHA256", ext.ID)
+			}
+
 			app.UpdateCheck.NextVersion = ext.Version
 
 			// Create pipeline with operations

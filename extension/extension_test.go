@@ -25,7 +25,7 @@ func TestCompareVersions(t *testing.T) {
 	assert.Equal(t, -1, CompareVersions("zugzug.1.1", "1.1.daboo"))
 }
 
-func TestFilterForUpdates(t *testing.T) {
+func TestProcessExtensionRequests(t *testing.T) {
 	allExtensionsMap := NewExtensionMap()
 	allExtensionsMap.StoreExtensions(&OfferedExtensions)
 	lightThemeExtension, ok := allExtensionsMap.Load("ldimlcelhnjgpjjemdjokpgeeikdinbm")
@@ -39,14 +39,14 @@ func TestFilterForUpdates(t *testing.T) {
 
 	// No updates when nothing to check
 	emptyExtensions := Extensions{}
-	check := FilterForUpdates(emptyExtensions, testExtensionsMap)
+	check := ProcessExtensionRequests(emptyExtensions, testExtensionsMap)
 	assert.Equal(t, 0, len(check))
 
 	olderExtensionCheck1 := lightThemeExtension
 	olderExtensionCheck1.Version = "0.1.0"
 	outdatedExtensionCheck := Extensions{olderExtensionCheck1}
 
-	check = FilterForUpdates(outdatedExtensionCheck, testExtensionsMap)
+	check = ProcessExtensionRequests(outdatedExtensionCheck, testExtensionsMap)
 	assert.Equal(t, 1, len(check))
 
 	assert.Equal(t, lightThemeExtension.ID, check[0].ID)
@@ -57,31 +57,64 @@ func TestFilterForUpdates(t *testing.T) {
 	// Check that even if a URL is provided, we use the server's URL
 	assert.Equal(t, lightThemeExtension.URL, check[0].URL)
 
-	// Newer extensions have no items returned
+	// Newer extensions are returned with noupdate status
 	newerExtensionCheck := lightThemeExtension
 	newerExtensionCheck.Version = "2.1.0"
 	extensions := Extensions{newerExtensionCheck}
-	check = FilterForUpdates(extensions, testExtensionsMap)
-	assert.Equal(t, 0, len(check))
+	check = ProcessExtensionRequests(extensions, testExtensionsMap)
+	assert.Equal(t, 1, len(check))
+	assert.Equal(t, "noupdate", check[0].Status)
 
 	// 2 outdated extensions both get returned from 1 check
 	olderExtensionCheck2 := darkThemeExtension
 	olderExtensionCheck2.Version = "0.1.0"
 	extensions = Extensions{olderExtensionCheck1, olderExtensionCheck2}
-	check = FilterForUpdates(extensions, testExtensionsMap)
+	check = ProcessExtensionRequests(extensions, testExtensionsMap)
 	assert.Equal(t, 2, len(check))
 	assert.Equal(t, olderExtensionCheck1.ID, check[0].ID)
 	assert.Equal(t, olderExtensionCheck2.ID, check[1].ID)
 
-	// Outdated extension that's blacklisted doesn't get updates
+	// Outdated extension that's blacklisted returns error status
 	allExtensionsBlacklistedMap := allExtensionsMap
 	for k := range allExtensionsBlacklistedMap.data {
 		elem := allExtensionsBlacklistedMap.data[k]
 		elem.Blacklisted = true
 		allExtensionsBlacklistedMap.data[k] = elem
 	}
-	check = FilterForUpdates(outdatedExtensionCheck, allExtensionsBlacklistedMap)
-	assert.Equal(t, 0, len(check))
+	check = ProcessExtensionRequests(outdatedExtensionCheck, allExtensionsBlacklistedMap)
+	assert.Equal(t, 1, len(check))
+	assert.Equal(t, "restricted", check[0].Status)
+
+	// Unknown extension returns error status
+	unknownExtension := Extension{
+		ID:      "unknown-extension-id",
+		Version: "1.0.0",
+		FP:      "fingerprint123",
+	}
+	unknownExtensionCheck := Extensions{unknownExtension}
+	check = ProcessExtensionRequests(unknownExtensionCheck, testExtensionsMap)
+	assert.Equal(t, 1, len(check))
+	assert.Equal(t, "unknown-extension-id", check[0].ID)
+	assert.Equal(t, "error-unknownApplication", check[0].Status)
+	assert.Equal(t, "fingerprint123", check[0].FP)
+
+	// Restricted extension returns restricted status
+	restrictedExtensionsMap := NewExtensionMap()
+	restrictedExtension := lightThemeExtension
+	restrictedExtension.Blacklisted = true
+	restrictedExtensions := Extensions{restrictedExtension}
+	restrictedExtensionsMap.StoreExtensions(&restrictedExtensions)
+
+	restrictedExtensionCheck := lightThemeExtension
+	restrictedExtensionCheck.Version = "0.1.0"
+	restrictedExtensionCheck.FP = "restricted-fingerprint"
+	restrictedCheck := Extensions{restrictedExtensionCheck}
+
+	check = ProcessExtensionRequests(restrictedCheck, restrictedExtensionsMap)
+	assert.Equal(t, 1, len(check))
+	assert.Equal(t, lightThemeExtension.ID, check[0].ID)
+	assert.Equal(t, "restricted", check[0].Status)
+	assert.Equal(t, "restricted-fingerprint", check[0].FP)
 }
 
 func TestS3BucketForExtension(t *testing.T) {

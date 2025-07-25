@@ -68,28 +68,42 @@ func CompareVersions(version1 string, version2 string) int {
 	return 0
 }
 
-// FilterForUpdates filters extensions down to only the extensions that are being checked,
-// and only the ones that we have updates for.
-func FilterForUpdates(extensions Extensions, allExtensionsMap *ExtensionsMap) Extensions {
-	filteredExtensions := Extensions{}
+// ProcessExtensionRequests processes extension update requests and returns all requested extensions
+// with their appropriate update status (either available update, "noupdate", or error status).
+func ProcessExtensionRequests(extensions Extensions, allExtensionsMap *ExtensionsMap) Extensions {
+	processedExtensions := Extensions{}
 	allExtensionsMap.RLock()
 	defer allExtensionsMap.RUnlock()
 	for _, extensionBeingChecked := range extensions {
 		foundExtension, ok := allExtensionsMap.data[extensionBeingChecked.ID]
-		if ok {
-			status := CompareVersions(extensionBeingChecked.Version, foundExtension.Version)
-			if !foundExtension.Blacklisted && status <= 0 {
-				if status == 0 {
-					foundExtension.Status = "noupdate"
-				}
-
-				foundExtension.FP = extensionBeingChecked.FP
-
-				filteredExtensions = append(filteredExtensions, foundExtension)
+		if !ok {
+			// Extension not found
+			unknownExtension := Extension{
+				ID:     extensionBeingChecked.ID,
+				FP:     extensionBeingChecked.FP,
+				Status: "error-unknownApplication",
 			}
+			processedExtensions = append(processedExtensions, unknownExtension)
+		} else if foundExtension.Blacklisted {
+			// Blacklisted extension
+			blacklistedExtension := foundExtension
+			blacklistedExtension.Status = "restricted"
+			blacklistedExtension.FP = extensionBeingChecked.FP
+			processedExtensions = append(processedExtensions, blacklistedExtension)
+		} else {
+			// Extension found and not blacklisted
+			status := CompareVersions(extensionBeingChecked.Version, foundExtension.Version)
+			// Set status to "noupdate" if client has equal or newer version than server
+			if status >= 0 {
+				foundExtension.Status = "noupdate"
+			}
+			// Status remains empty when client version is older (status < 0), indicating an update is available
+
+			foundExtension.FP = extensionBeingChecked.FP
+			processedExtensions = append(processedExtensions, foundExtension)
 		}
 	}
-	return filteredExtensions
+	return processedExtensions
 }
 
 // Store adds or overwrites the key in the map with the Extension
