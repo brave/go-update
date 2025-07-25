@@ -15,8 +15,24 @@ func TestResponseMarshalJSON(t *testing.T) {
 	allExtensionsMap := extension.NewExtensionMap()
 	allExtensionsMap.StoreExtensions(&extension.OfferedExtensions)
 
-	// Empty extension list returns a blank JSON update
-	updateResponse := UpdateResponse{}
+	// Test extensions with different statuses
+	updateResponse := UpdateResponse{
+		{
+			ID:      "test-noupdate-ext",
+			Version: "1.0.0",
+			Status:  "noupdate",
+		},
+		{
+			ID:      "test-unknown-ext",
+			Version: "1.0.0",
+			Status:  "error-unknownApplication",
+		},
+		{
+			ID:      "test-restricted-ext",
+			Version: "1.0.0",
+			Status:  "restricted",
+		},
+	}
 	jsonData, err := updateResponse.MarshalJSON()
 	assert.Nil(t, err)
 
@@ -25,11 +41,29 @@ func TestResponseMarshalJSON(t *testing.T) {
 	err = json.Unmarshal(jsonData, &actual)
 	assert.Nil(t, err)
 
-	// Verify the empty extension case
+	// Verify the mixed status extensions case
 	resp := actual["response"].(map[string]interface{})
 	assert.Equal(t, "4.0", resp["protocol"])
 	assert.Equal(t, float64(6284), resp["daystart"].(map[string]interface{})["elapsed_days"])
-	assert.Nil(t, resp["apps"])
+
+	apps := resp["apps"].([]interface{})
+	assert.Equal(t, 3, len(apps))
+
+	// Check each extension has the correct status and no pipelines (since they're not "ok")
+	expectedStatuses := []string{"noupdate", "error-unknownApplication", "restricted"}
+	for i, expectedStatus := range expectedStatuses {
+		app := apps[i].(map[string]interface{})
+		assert.Equal(t, "ok", app["status"]) // App status is always "ok"
+
+		updateCheck := app["updatecheck"].(map[string]interface{})
+		assert.Equal(t, expectedStatus, updateCheck["status"])
+
+		// No pipelines or nextversion for non-"ok" statuses
+		_, hasPipelines := updateCheck["pipelines"]
+		_, hasNextVersion := updateCheck["nextversion"]
+		assert.False(t, hasPipelines, "Non-ok status should not have pipelines")
+		assert.False(t, hasNextVersion, "Non-ok status should not have nextversion")
+	}
 
 	darkThemeExtension, ok := allExtensionsMap.Load("bfdgpgibhagkpdlnjonhkabjoijopoge")
 	assert.True(t, ok)
@@ -47,7 +81,7 @@ func TestResponseMarshalJSON(t *testing.T) {
 	assert.Equal(t, "4.0", resp["protocol"])
 	assert.Equal(t, float64(6284), resp["daystart"].(map[string]interface{})["elapsed_days"])
 
-	apps := resp["apps"].([]interface{})
+	apps = resp["apps"].([]interface{})
 	assert.Equal(t, 1, len(apps))
 	app := apps[0].(map[string]interface{})
 	assert.Equal(t, "bfdgpgibhagkpdlnjonhkabjoijopoge", app["appid"])
