@@ -13,11 +13,22 @@ func TestResponseMarshalJSON(t *testing.T) {
 	allExtensionsMap := extension.NewExtensionMap()
 	allExtensionsMap.StoreExtensions(&extension.OfferedExtensions)
 
-	// Empty extension list returns a blank JSON update
-	updateResponse := UpdateResponse{}
+	// Test extensions with different statuses
+	updateResponse := UpdateResponse{
+		{
+			ID:      "test-noupdate-ext",
+			Version: "1.0.0",
+			Status:  "noupdate",
+		},
+		{
+			ID:      "test-unknown-ext",
+			Version: "1.0.0",
+			Status:  "error-unknownApplication",
+		},
+	}
 	jsonData, err := updateResponse.MarshalJSON()
 	assert.Nil(t, err)
-	expectedOutput := `{"response":{"protocol":"3.1","server":"prod","app":null}}`
+	expectedOutput := `{"response":{"protocol":"3.1","server":"prod","app":[{"appid":"test-noupdate-ext","status":"ok","updatecheck":{"status":"noupdate"}},{"appid":"test-unknown-ext","status":"ok","updatecheck":{"status":"error-unknownApplication"}}]}}`
 	assert.Equal(t, expectedOutput, string(jsonData))
 
 	darkThemeExtension, ok := allExtensionsMap.Load("bfdgpgibhagkpdlnjonhkabjoijopoge")
@@ -43,16 +54,21 @@ func TestResponseMarshalJSON(t *testing.T) {
 }
 
 func TestWebStoreResponseMarshalJSON(t *testing.T) {
-	// No extensions returns blank update response
-	updateResponse := WebStoreResponse{}
+	// Test WebStore response with realistic extensions
 	allExtensionsMap := extension.NewExtensionMap()
 	allExtensionsMap.StoreExtensions(&extension.OfferedExtensions)
+
+	// WebStore response with actual extension (WebStore format always shows updates)
+	darkThemeExtension, ok := allExtensionsMap.Load("bfdgpgibhagkpdlnjonhkabjoijopoge")
+	assert.True(t, ok)
+
+	updateResponse := WebStoreResponse{darkThemeExtension}
 	jsonData, err := updateResponse.MarshalJSON()
 	assert.Nil(t, err)
-	expectedOutput := `{"gupdate":{"protocol":"3.1","server":"prod","app":null}}`
+	expectedOutput := `{"gupdate":{"protocol":"3.1","server":"prod","app":[{"appid":"bfdgpgibhagkpdlnjonhkabjoijopoge","status":"ok","updatecheck":{"status":"ok","codebase":"https://` + extension.GetS3ExtensionBucketHost(darkThemeExtension.ID) + `/release/bfdgpgibhagkpdlnjonhkabjoijopoge/extension_1_0_0.crx","version":"1.0.0","hash_sha256":"ae517d6273a4fc126961cb026e02946db4f9dbb58e3d9bc29f5e1270e3ce9834"}}]}}`
 	assert.Equal(t, expectedOutput, string(jsonData))
 
-	darkThemeExtension, ok := allExtensionsMap.Load("bfdgpgibhagkpdlnjonhkabjoijopoge")
+	darkThemeExtension, ok = allExtensionsMap.Load("bfdgpgibhagkpdlnjonhkabjoijopoge")
 	assert.True(t, ok)
 
 	// Single extension list returns a single JSON update
