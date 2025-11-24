@@ -26,25 +26,25 @@ func TestRequestUnmarshalJSONV40(t *testing.T) {
 		}
 	  }`
 
-	var request UpdateRequest
-	if err := request.UnmarshalJSON([]byte(jsonStr)); err != nil {
-		t.Fatalf("Failed to unmarshal JSON: %v", err)
+	var req Request
+	if err := json.Unmarshal([]byte(jsonStr), &req); err != nil {
+		t.Fatalf("Failed to parse JSON: %v", err)
 	}
 
-	if len(request) != 1 {
-		t.Errorf("Expected 1 extension, got %d", len(request))
+	if len(req.UpdateRequest.Extensions) != 1 {
+		t.Errorf("Expected 1 extension, got %d", len(req.UpdateRequest.Extensions))
 	}
 
-	if request[0].ID != "test-app-id" {
-		t.Errorf("Expected app ID 'test-app-id', got '%s'", request[0].ID)
+	if req.UpdateRequest.Extensions[0].ID != "test-app-id" {
+		t.Errorf("Expected app ID 'test-app-id', got '%s'", req.UpdateRequest.Extensions[0].ID)
 	}
 
-	if request[0].Version != "1.0.0" {
-		t.Errorf("Expected version '1.0.0', got '%s'", request[0].Version)
+	if req.UpdateRequest.Extensions[0].Version != "1.0.0" {
+		t.Errorf("Expected version '1.0.0', got '%s'", req.UpdateRequest.Extensions[0].Version)
 	}
 
-	if request[0].FP != "test-sha256-hash" {
-		t.Errorf("Expected fingerprint 'test-sha256-hash', got '%s'", request[0].FP)
+	if req.UpdateRequest.Extensions[0].FP != "test-sha256-hash" {
+		t.Errorf("Expected fingerprint 'test-sha256-hash', got '%s'", req.UpdateRequest.Extensions[0].FP)
 	}
 }
 
@@ -288,21 +288,21 @@ func TestProtocolHandler(t *testing.T) {
 		}
 	}`)
 
-	extensions, err := handler.ParseRequest(jsonData, "application/json")
+	updateRequest, err := handler.ParseRequest(jsonData, "application/json")
 	if err != nil {
 		t.Fatalf("Failed to parse JSON request: %v", err)
 	}
 
-	if len(extensions) != 1 {
-		t.Errorf("Expected 1 extension, got %d", len(extensions))
+	if len(updateRequest.Extensions) != 1 {
+		t.Errorf("Expected 1 extension, got %d", len(updateRequest.Extensions))
 	}
 
-	if extensions[0].ID != "test-app-id" {
-		t.Errorf("Expected app ID 'test-app-id', got '%s'", extensions[0].ID)
+	if updateRequest.Extensions[0].ID != "test-app-id" {
+		t.Errorf("Expected app ID 'test-app-id', got '%s'", updateRequest.Extensions[0].ID)
 	}
 
 	// Test JSON response formatting
-	extensions = extension.Extensions{
+	extensions := extension.Extensions{
 		{
 			ID:      "test-app-id",
 			Version: "1.0.0",

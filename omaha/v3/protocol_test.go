@@ -29,25 +29,26 @@ func TestRequestUnmarshalJSONV30(t *testing.T) {
 		}
 	  }`
 
-	var request UpdateRequest
-	if err := request.UnmarshalJSON([]byte(jsonStr)); err != nil {
-		t.Fatalf("Failed to unmarshal JSON: %v", err)
+	var req Request
+	err := json.Unmarshal([]byte(jsonStr), &req)
+	if err != nil {
+		t.Fatalf("Failed to parse JSON: %v", err)
 	}
 
-	if len(request) != 1 {
-		t.Errorf("Expected 1 extension, got %d", len(request))
+	if len(req.UpdateRequest.Extensions) != 1 {
+		t.Errorf("Expected 1 extension, got %d", len(req.UpdateRequest.Extensions))
 	}
 
-	if request[0].ID != "test-app-id" {
-		t.Errorf("Expected app ID 'test-app-id', got '%s'", request[0].ID)
+	if req.UpdateRequest.Extensions[0].ID != "test-app-id" {
+		t.Errorf("Expected app ID 'test-app-id', got '%s'", req.UpdateRequest.Extensions[0].ID)
 	}
 
-	if request[0].Version != "1.0.0" {
-		t.Errorf("Expected version '1.0.0', got '%s'", request[0].Version)
+	if req.UpdateRequest.Extensions[0].Version != "1.0.0" {
+		t.Errorf("Expected version '1.0.0', got '%s'", req.UpdateRequest.Extensions[0].Version)
 	}
 
-	if request[0].FP != "test-fingerprint" {
-		t.Errorf("Expected fingerprint 'test-fingerprint', got '%s'", request[0].FP)
+	if req.UpdateRequest.Extensions[0].FP != "test-fingerprint" {
+		t.Errorf("Expected fingerprint 'test-fingerprint', got '%s'", req.UpdateRequest.Extensions[0].FP)
 	}
 }
 
@@ -65,25 +66,26 @@ func TestRequestUnmarshalJSONV31(t *testing.T) {
 		}
 	  }`
 
-	var request UpdateRequest
-	if err := request.UnmarshalJSON([]byte(jsonStr)); err != nil {
-		t.Fatalf("Failed to unmarshal JSON: %v", err)
+	var req Request
+	err := json.Unmarshal([]byte(jsonStr), &req)
+	if err != nil {
+		t.Fatalf("Failed to parse JSON: %v", err)
 	}
 
-	if len(request) != 1 {
-		t.Errorf("Expected 1 extension, got %d", len(request))
+	if len(req.UpdateRequest.Extensions) != 1 {
+		t.Errorf("Expected 1 extension, got %d", len(req.UpdateRequest.Extensions))
 	}
 
-	if request[0].ID != "test-app-id" {
-		t.Errorf("Expected app ID 'test-app-id', got '%s'", request[0].ID)
+	if req.UpdateRequest.Extensions[0].ID != "test-app-id" {
+		t.Errorf("Expected app ID 'test-app-id', got '%s'", req.UpdateRequest.Extensions[0].ID)
 	}
 
-	if request[0].Version != "1.0.0" {
-		t.Errorf("Expected version '1.0.0', got '%s'", request[0].Version)
+	if req.UpdateRequest.Extensions[0].Version != "1.0.0" {
+		t.Errorf("Expected version '1.0.0', got '%s'", req.UpdateRequest.Extensions[0].Version)
 	}
 
-	if request[0].FP != "test-fingerprint" {
-		t.Errorf("Expected fingerprint 'test-fingerprint', got '%s'", request[0].FP)
+	if req.UpdateRequest.Extensions[0].FP != "test-fingerprint" {
+		t.Errorf("Expected fingerprint 'test-fingerprint', got '%s'", req.UpdateRequest.Extensions[0].FP)
 	}
 }
 
@@ -111,25 +113,26 @@ func TestRequestUnmarshalXMLV30(t *testing.T) {
 		}
 	}
 
-	var request UpdateRequest
-	if err := request.UnmarshalXML(decoder, start); err != nil {
-		t.Fatalf("Failed to unmarshal XML: %v", err)
+	var req Request
+	err := req.UnmarshalXML(decoder, start)
+	if err != nil {
+		t.Fatalf("Failed to parse XML: %v", err)
 	}
 
-	if len(request) != 1 {
-		t.Errorf("Expected 1 extension, got %d", len(request))
+	if len(req.UpdateRequest.Extensions) != 1 {
+		t.Errorf("Expected 1 extension, got %d", len(req.UpdateRequest.Extensions))
 	}
 
-	if request[0].ID != "test-app-id" {
-		t.Errorf("Expected app ID 'test-app-id', got '%s'", request[0].ID)
+	if req.UpdateRequest.Extensions[0].ID != "test-app-id" {
+		t.Errorf("Expected app ID 'test-app-id', got '%s'", req.UpdateRequest.Extensions[0].ID)
 	}
 
-	if request[0].Version != "1.0.0" {
-		t.Errorf("Expected version '1.0.0', got '%s'", request[0].Version)
+	if req.UpdateRequest.Extensions[0].Version != "1.0.0" {
+		t.Errorf("Expected version '1.0.0', got '%s'", req.UpdateRequest.Extensions[0].Version)
 	}
 
-	if request[0].FP != "test-fingerprint" {
-		t.Errorf("Expected fingerprint 'test-fingerprint', got '%s'", request[0].FP)
+	if req.UpdateRequest.Extensions[0].FP != "test-fingerprint" {
+		t.Errorf("Expected fingerprint 'test-fingerprint', got '%s'", req.UpdateRequest.Extensions[0].FP)
 	}
 }
 
@@ -154,25 +157,26 @@ func TestRequestUnmarshalXMLV31(t *testing.T) {
 		}
 	}
 
-	var request UpdateRequest
-	if err := request.UnmarshalXML(decoder, start); err != nil {
-		t.Fatalf("Failed to unmarshal XML: %v", err)
+	var req Request
+	err := req.UnmarshalXML(decoder, start)
+	if err != nil {
+		t.Fatalf("Failed to parse XML: %v", err)
 	}
 
-	if len(request) != 1 {
-		t.Errorf("Expected 1 extension, got %d", len(request))
+	if len(req.UpdateRequest.Extensions) != 1 {
+		t.Errorf("Expected 1 extension, got %d", len(req.UpdateRequest.Extensions))
 	}
 
-	if request[0].ID != "test-app-id" {
-		t.Errorf("Expected app ID 'test-app-id', got '%s'", request[0].ID)
+	if req.UpdateRequest.Extensions[0].ID != "test-app-id" {
+		t.Errorf("Expected app ID 'test-app-id', got '%s'", req.UpdateRequest.Extensions[0].ID)
 	}
 
-	if request[0].Version != "1.0.0" {
-		t.Errorf("Expected version '1.0.0', got '%s'", request[0].Version)
+	if req.UpdateRequest.Extensions[0].Version != "1.0.0" {
+		t.Errorf("Expected version '1.0.0', got '%s'", req.UpdateRequest.Extensions[0].Version)
 	}
 
-	if request[0].FP != "test-fingerprint" {
-		t.Errorf("Expected fingerprint 'test-fingerprint', got '%s'", request[0].FP)
+	if req.UpdateRequest.Extensions[0].FP != "test-fingerprint" {
+		t.Errorf("Expected fingerprint 'test-fingerprint', got '%s'", req.UpdateRequest.Extensions[0].FP)
 	}
 }
 
@@ -464,8 +468,8 @@ func TestProtocolHandler(t *testing.T) {
 		t.Fatalf("Failed to parse v3.0 request: %v", err)
 	}
 
-	if len(request30) != 1 {
-		t.Errorf("Expected 1 extension in request, got %d", len(request30))
+	if len(request30.Extensions) != 1 {
+		t.Errorf("Expected 1 extension in request, got %d", len(request30.Extensions))
 	}
 
 	// Test v3.1 JSON request parsing
@@ -487,8 +491,8 @@ func TestProtocolHandler(t *testing.T) {
 		t.Fatalf("Failed to parse v3.1 request: %v", err)
 	}
 
-	if len(request31) != 1 {
-		t.Errorf("Expected 1 extension in request, got %d", len(request31))
+	if len(request31.Extensions) != 1 {
+		t.Errorf("Expected 1 extension in request, got %d", len(request31.Extensions))
 	}
 
 	// Test v3.0 response formatting
