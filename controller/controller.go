@@ -213,7 +213,13 @@ func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
 
 		foundExtension, ok := AllExtensionsMap.Load(id)
 		if !ok && len(xValues) == 1 {
-			http.Redirect(w, r, "https://"+extension.GetExtensionUpdaterHost()+"/service/update2/crx?"+r.URL.RawQuery, http.StatusTemporaryRedirect)
+			redirectURL := &url.URL{
+				Scheme:   "https",
+				Host:     extension.GetExtensionUpdaterHost(),
+				Path:     "/service/update2/crx",
+				RawQuery: r.URL.RawQuery,
+			}
+			http.Redirect(w, r, redirectURL.String(), http.StatusTemporaryRedirect)
 			return
 		}
 
@@ -320,19 +326,22 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 	if len(updateRequest.Extensions) == 1 {
 		_, ok := AllExtensionsMap.Load(updateRequest.Extensions[0].ID)
 		if !ok {
-			queryString := ""
-			if len(r.URL.RawQuery) != 0 {
-				queryString = "?" + r.URL.RawQuery
-			}
 			host := extension.GetUpdaterHostByType(updateRequest.UpdaterType)
 			if updateRequest.Extensions[0].ID == WidivineExtensionID {
 				host = "update.googleapis.com"
 			}
+
+			path := "/service/update2"
 			if protocol.IsJSONRequest(contentType) {
-				http.Redirect(w, r, "https://"+host+"/service/update2/json"+queryString, http.StatusTemporaryRedirect)
-			} else {
-				http.Redirect(w, r, "https://"+host+"/service/update2"+queryString, http.StatusTemporaryRedirect)
+				path = "/service/update2/json"
 			}
+			redirectURL := &url.URL{
+				Scheme:   "https",
+				Host:     host,
+				Path:     path,
+				RawQuery: r.URL.RawQuery,
+			}
+			http.Redirect(w, r, redirectURL.String(), http.StatusTemporaryRedirect)
 			return
 		}
 	}
