@@ -61,7 +61,25 @@ func GetUpdateStatus(extension Extension) string {
 	return extension.Status
 }
 
-// GetComponentUpdaterHost returns the url to use for extension updates
+// GetComponentUpdaterHost returns the url to use for component updates (@updater=BraveComponentUpdater)
 func GetComponentUpdaterHost() string {
 	return lookupEnvFallback("COMPONENT_UPDATER_HOST", "componentupdater.brave.com")
+}
+
+// GetExtensionUpdaterHost returns the url to use for extension updates (@updater=chromiumcrx)
+func GetExtensionUpdaterHost() string {
+	return lookupEnvFallback("EXTENSION_UPDATER_HOST", "extensionupdater.brave.com")
+}
+
+// GetUpdaterHostByType returns the appropriate updater host based on the updater type
+func GetUpdaterHostByType(updaterType string) string {
+	switch updaterType {
+	case "chromiumcrx":
+		return GetExtensionUpdaterHost()
+	case "BraveComponentUpdater":
+		return GetComponentUpdaterHost()
+	default:
+		// Backwards compatibility
+		return GetComponentUpdaterHost()
+	}
 }
