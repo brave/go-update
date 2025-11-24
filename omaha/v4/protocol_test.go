@@ -301,6 +301,10 @@ func TestProtocolHandler(t *testing.T) {
 		t.Errorf("Expected app ID 'test-app-id', got '%s'", updateRequest.Extensions[0].ID)
 	}
 
+	if updateRequest.UpdaterType != "" {
+		t.Errorf("Expected empty updater type for request without @updater, got '%s'", updateRequest.UpdaterType)
+	}
+
 	// Test JSON response formatting
 	extensions := extension.Extensions{
 		{

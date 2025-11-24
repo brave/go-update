@@ -472,6 +472,10 @@ func TestProtocolHandler(t *testing.T) {
 		t.Errorf("Expected 1 extension in request, got %d", len(request30.Extensions))
 	}
 
+	if request30.UpdaterType != "" {
+		t.Errorf("Expected empty updater type for request without @updater, got '%s'", request30.UpdaterType)
+	}
+
 	// Test v3.1 JSON request parsing
 	jsonStr31 := `{
 		"request": {
@@ -493,6 +497,10 @@ func TestProtocolHandler(t *testing.T) {
 
 	if len(request31.Extensions) != 1 {
 		t.Errorf("Expected 1 extension in request, got %d", len(request31.Extensions))
+	}
+
+	if request31.UpdaterType != "" {
+		t.Errorf("Expected empty updater type for request without @updater, got '%s'", request31.UpdaterType)
 	}
 
 	// Test v3.0 response formatting
