@@ -213,7 +213,7 @@ func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
 
 		foundExtension, ok := AllExtensionsMap.Load(id)
 		if !ok && len(xValues) == 1 {
-			http.Redirect(w, r, "https://extensionupdater.brave.com/service/update2/crx?"+r.URL.RawQuery, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, "https://"+extension.GetExtensionUpdaterHost()+"/service/update2/crx?"+r.URL.RawQuery, http.StatusTemporaryRedirect)
 			return
 		}
 
