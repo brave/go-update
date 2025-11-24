@@ -316,16 +316,16 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Special case, if there's only 1 extension in the request and it is not something
-	// we know about, redirect the client to google component update server.
-	if len(updateRequest) == 1 {
-		_, ok := AllExtensionsMap.Load(updateRequest[0].ID)
+	// we know about, redirect the client to the appropriate update server.
+	if len(updateRequest.Extensions) == 1 {
+		_, ok := AllExtensionsMap.Load(updateRequest.Extensions[0].ID)
 		if !ok {
 			queryString := ""
 			if len(r.URL.RawQuery) != 0 {
 				queryString = "?" + r.URL.RawQuery
 			}
-			host := extension.GetComponentUpdaterHost()
-			if updateRequest[0].ID == WidivineExtensionID {
+			host := extension.GetUpdaterHostByType(updateRequest.UpdaterType)
+			if updateRequest.Extensions[0].ID == WidivineExtensionID {
 				host = "update.googleapis.com"
 			}
 			if protocol.IsJSONRequest(contentType) {
@@ -346,7 +346,7 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 
-	updateResponse := extension.ProcessExtensionRequests(updateRequest, AllExtensionsMap)
+	updateResponse := extension.ProcessExtensionRequests(updateRequest.Extensions, AllExtensionsMap)
 
 	// Use the same protocol version for response as the request for v4
 	// Otherwise default to 3.1 for backward compatibility
