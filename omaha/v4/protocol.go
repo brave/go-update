@@ -1,6 +1,7 @@
 package v4
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/brave/go-update/extension"
@@ -32,21 +33,17 @@ func (h *VersionedHandler) GetVersion() string {
 }
 
 // ParseRequest parses a request in the appropriate format (JSON or XML)
-func (h *VersionedHandler) ParseRequest(data []byte, contentType string) (extension.Extensions, error) {
-	var request UpdateRequest
-	var err error
-
-	// Only support JSON format for v4
+func (h *VersionedHandler) ParseRequest(data []byte, contentType string) (*extension.UpdateRequest, error) {
 	if contentType != "application/json" {
 		return nil, fmt.Errorf("protocol v4 only supports JSON format")
 	}
 
-	err = request.UnmarshalJSON(data)
-	if err != nil {
+	var req Request
+	if err := json.Unmarshal(data, &req); err != nil {
 		return nil, err
 	}
 
-	return extension.Extensions(request), nil
+	return req.UpdateRequest, nil
 }
 
 // FormatUpdateResponse formats a standard update response in the appropriate format based on content type

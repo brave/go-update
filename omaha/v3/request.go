@@ -9,11 +9,13 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-// UpdateRequest represents an Omaha v3 update request
-type UpdateRequest []extension.Extension
+// Request wraps the version-agnostic UpdateRequest and implements json.Unmarshaler and xml.Unmarshaler for v3
+type Request struct {
+	*extension.UpdateRequest
+}
 
-// UnmarshalJSON decodes the update server request JSON data
-func (r *UpdateRequest) UnmarshalJSON(b []byte) error {
+// UnmarshalJSON implements the json.Unmarshaler interface for v3 protocol
+func (r *Request) UnmarshalJSON(b []byte) error {
 	type Package struct {
 		FP string `json:"fp"`
 	}
@@ -47,7 +49,11 @@ func (r *UpdateRequest) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("request validation failed: %v", validationErrors)
 	}
 
-	*r = UpdateRequest{}
+	r.UpdateRequest = &extension.UpdateRequest{
+		UpdaterType: request.Request.Updater,
+		Extensions:  extension.Extensions{},
+	}
+
 	for _, app := range request.Request.App {
 		fp := app.FP
 		// spec discrepancy: FP might be set within a "package" object (v3) instead of the "app" object (v3.1)
@@ -56,7 +62,7 @@ func (r *UpdateRequest) UnmarshalJSON(b []byte) error {
 		if fp == "" && len(app.Packages.Package) > 0 {
 			fp = app.Packages.Package[0].FP
 		}
-		*r = append(*r, extension.Extension{
+		r.UpdateRequest.Extensions = append(r.UpdateRequest.Extensions, extension.Extension{
 			ID:      app.AppID,
 			FP:      fp,
 			Version: app.Version,
@@ -66,19 +72,21 @@ func (r *UpdateRequest) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// UnmarshalXML decodes the update server request XML data
-func (r *UpdateRequest) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+// UnmarshalXML implements the xml.Unmarshaler interface for v3 protocol
+func (r *Request) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	// Common XML elements
 	type UpdateCheck struct {
 		XMLName xml.Name `xml:"updatecheck"`
 	}
 
-	// Check request for protocol version
+	// Check request for protocol version and updater type
 	var protocol string
+	var updaterType string
 	for _, attr := range start.Attr {
 		if attr.Name.Local == "protocol" {
 			protocol = attr.Value
-			break
+		} else if attr.Name.Local == "updater" {
+			updaterType = attr.Value
 		}
 	}
 
@@ -181,6 +189,10 @@ func (r *UpdateRequest) UnmarshalXML(d *xml.Decoder, start xml.StartElement) err
 		}
 	}
 
-	*r = apps
+	r.UpdateRequest = &extension.UpdateRequest{
+		UpdaterType: updaterType,
+		Extensions:  apps,
+	}
+
 	return nil
 }

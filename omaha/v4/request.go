@@ -8,11 +8,13 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-// UpdateRequest represents an Omaha v4 update request
-type UpdateRequest []extension.Extension
+// Request wraps the version-agnostic UpdateRequest and implements json.Unmarshaler for v4
+type Request struct {
+	*extension.UpdateRequest
+}
 
-// UnmarshalJSON decodes the update server request JSON data
-func (r *UpdateRequest) UnmarshalJSON(b []byte) error {
+// UnmarshalJSON implements the json.Unmarshaler interface for v4 protocol
+func (r *Request) UnmarshalJSON(b []byte) error {
 	type CachedItem struct {
 		SHA256 string `json:"sha256"`
 	}
@@ -43,13 +45,17 @@ func (r *UpdateRequest) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("request validation failed: %v", validationErrors)
 	}
 
-	*r = UpdateRequest{}
+	r.UpdateRequest = &extension.UpdateRequest{
+		UpdaterType: request.Request.Updater,
+		Extensions:  extension.Extensions{},
+	}
+
 	for _, app := range request.Request.Apps {
 		fp := ""
 		if len(app.CachedItems) > 0 {
 			fp = app.CachedItems[0].SHA256
 		}
-		*r = append(*r, extension.Extension{
+		r.UpdateRequest.Extensions = append(r.UpdateRequest.Extensions, extension.Extension{
 			ID:      app.AppID,
 			FP:      fp,
 			Version: app.Version,
