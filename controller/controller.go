@@ -217,7 +217,7 @@ func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
 				Scheme:   "https",
 				Host:     extension.GetExtensionUpdaterHost(),
 				Path:     "/service/update2/crx",
-				RawQuery: r.URL.RawQuery,
+				RawQuery: r.URL.RawQuery, // nosemgrep: go.lang.security.injection.open-redirect.open-redirect
 			}
 			http.Redirect(w, r, redirectURL.String(), http.StatusTemporaryRedirect)
 			return
@@ -339,7 +339,7 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 				Scheme:   "https",
 				Host:     host,
 				Path:     path,
-				RawQuery: r.URL.RawQuery,
+				RawQuery: r.URL.RawQuery, // nosemgrep: go.lang.security.injection.open-redirect.open-redirect
 			}
 			http.Redirect(w, r, redirectURL.String(), http.StatusTemporaryRedirect)
 			return
