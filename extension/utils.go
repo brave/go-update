@@ -4,19 +4,25 @@ import (
 	"os"
 )
 
-var torClientMacExtensionID = "cldoidikboihgcjfkhdeidbpclkineef"
-var torClientWindowsExtensionID = "cpoalefficncklhjfpglfiplenlpccdb"
-var torClientLinuxExtensionID = "biahpgbdmdkfgndcmfiipgcebobojjkp"
-var torClientLinuxArm64ExtensionID = "monolafkoghdlanndjfeebmdfkbklejg"
+var (
+	torClientMacExtensionID        = "cldoidikboihgcjfkhdeidbpclkineef"
+	torClientWindowsExtensionID    = "cpoalefficncklhjfpglfiplenlpccdb"
+	torClientLinuxExtensionID      = "biahpgbdmdkfgndcmfiipgcebobojjkp"
+	torClientLinuxArm64ExtensionID = "monolafkoghdlanndjfeebmdfkbklejg"
+)
 
-var torPluggableTransportsMacExtensionID = "einfndjnccmoohcngmlldpmellegjjnk"
-var torPluggableTransportsWindowsExtensionID = "dnkcahhmfcanmkjhnjejoomdihffoefm"
-var torPluggableTransportsLinuxExtensionID = "apfggiafobakjahnkchiecbomjgigkkn"
+var (
+	torPluggableTransportsMacExtensionID     = "einfndjnccmoohcngmlldpmellegjjnk"
+	torPluggableTransportsWindowsExtensionID = "dnkcahhmfcanmkjhnjejoomdihffoefm"
+	torPluggableTransportsLinuxExtensionID   = "apfggiafobakjahnkchiecbomjgigkkn"
+)
 
 // TorClientExtensionIDs is used to add an exception to return the dedicated
 // proxy url for downloading the tor client crx
-var TorClientExtensionIDs = []string{torClientMacExtensionID, torClientWindowsExtensionID, torClientLinuxExtensionID, torClientLinuxArm64ExtensionID}
-var TorPluggableTransportsExtensionIDs = []string{torPluggableTransportsMacExtensionID, torPluggableTransportsWindowsExtensionID, torPluggableTransportsLinuxExtensionID}
+var (
+	TorClientExtensionIDs              = []string{torClientMacExtensionID, torClientWindowsExtensionID, torClientLinuxExtensionID, torClientLinuxArm64ExtensionID}
+	TorPluggableTransportsExtensionIDs = []string{torPluggableTransportsMacExtensionID, torPluggableTransportsWindowsExtensionID, torPluggableTransportsLinuxExtensionID}
+)
 
 func isTorExtension(id string) bool {
 	for _, torID := range TorClientExtensionIDs {
