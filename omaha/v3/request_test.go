@@ -1,6 +1,7 @@
 package v3
 
 import (
+	"encoding/json"
 	"encoding/xml"
 	"strings"
 	"testing"
@@ -11,60 +12,68 @@ import (
 
 func TestRequestUnmarshalJSON(t *testing.T) {
 	// Empty data returns an error
-	request := UpdateRequest{}
-	err := request.UnmarshalJSON([]byte(""))
+	var req Request
+	err := json.Unmarshal([]byte(""), &req)
 	assert.NotNil(t, err, "UnmarshalJSON should return an error for empty content")
 
 	// Malformed JSON returns an error
-	err = request.UnmarshalJSON([]byte("{"))
+	req = Request{}
+	err = json.Unmarshal([]byte("{"), &req)
 	assert.NotNil(t, err, "UnmarshalJSON should return an error for malformed JSON")
 
 	// Wrong schema returns an error
-	err = request.UnmarshalJSON([]byte(`{"foo":"hello world!"}`))
+	req = Request{}
+	err = json.Unmarshal([]byte(`{"foo":"hello world!"}`), &req)
 	assert.NotNil(t, err, "UnmarshalJSON should return an error for wrong JSON Schema")
 
 	// No extensions JSON with proper schema, no error with 0 extensions returned
 	data := []byte(`{"request":{"protocol":"3.1","version":"chrome-53.0.2785.116","prodversion":"53.0.2785.116","requestid":"{e821bacd-8dbf-4cc8-9e8c-bcbe8c1cfd3d}","lang":"","updaterchannel":"stable","prodchannel":"stable","os":"mac","arch":"x64","nacl_arch":"x86-64","hw":{"physmemory":16},"os":{"arch":"x86_64","platform":"Mac OS X","version":"10.14.3"}}}`)
-	err = request.UnmarshalJSON(data)
+	req = Request{}
+	err = json.Unmarshal(data, &req)
 	assert.Nil(t, err)
-	assert.Equal(t, 0, len(request))
+	assert.Equal(t, 0, len(req.UpdateRequest.Extensions))
 
 	onePasswordID := "aomjjhallfgjeglblehebfpbcfeobpgk" // #nosec
 	onePasswordVersion := "4.7.0.90"
 	onePasswordRequest := extensiontest.ExtensionRequestFnForJSON(onePasswordID)
 	data = []byte(onePasswordRequest(onePasswordVersion))
-	err = request.UnmarshalJSON(data)
+	req = Request{}
+	err = json.Unmarshal(data, &req)
 	assert.Nil(t, err)
-	assert.Equal(t, 1, len(request))
-	assert.Equal(t, onePasswordID, request[0].ID)
-	assert.Equal(t, onePasswordVersion, request[0].Version)
+	assert.Equal(t, 1, len(req.UpdateRequest.Extensions))
+	assert.Equal(t, onePasswordID, req.UpdateRequest.Extensions[0].ID)
+	assert.Equal(t, onePasswordVersion, req.UpdateRequest.Extensions[0].Version)
 
 	pdfJSID := "jdbefljfgobbmcidnmpjamcbhnbphjnb"
 	pdfJSVersion := "1.0.0"
 	twoExtensionRequest := extensiontest.ExtensionRequestFnForTwoJSON(onePasswordID, pdfJSID)
 	data = []byte(twoExtensionRequest(onePasswordVersion, pdfJSVersion))
-	err = request.UnmarshalJSON(data)
+	req = Request{}
+	err = json.Unmarshal(data, &req)
 	assert.Nil(t, err)
-	assert.Equal(t, 2, len(request))
-	assert.Equal(t, onePasswordID, request[0].ID)
-	assert.Equal(t, onePasswordVersion, request[0].Version)
-	assert.Equal(t, pdfJSID, request[1].ID)
-	assert.Equal(t, pdfJSVersion, request[1].Version)
+	assert.Equal(t, 2, len(req.UpdateRequest.Extensions))
+	assert.Equal(t, onePasswordID, req.UpdateRequest.Extensions[0].ID)
+	assert.Equal(t, onePasswordVersion, req.UpdateRequest.Extensions[0].Version)
+	assert.Equal(t, pdfJSID, req.UpdateRequest.Extensions[1].ID)
+	assert.Equal(t, pdfJSVersion, req.UpdateRequest.Extensions[1].Version)
 }
 
 func TestRequestUnmarshalXML(t *testing.T) {
 	// Empty data returns an error
-	request := UpdateRequest{}
-	err := xml.Unmarshal([]byte(""), &request)
+	decoder := xml.NewDecoder(strings.NewReader(""))
+	var req Request
+	err := req.UnmarshalXML(decoder, xml.StartElement{})
 	assert.NotNil(t, err, "UnmarshalXML should return an error for empty content")
 
 	// Malformed XML returns an error
-	err = xml.Unmarshal([]byte("<"), &request)
+	decoder = xml.NewDecoder(strings.NewReader("<"))
+	req = Request{}
+	err = req.UnmarshalXML(decoder, xml.StartElement{Name: xml.Name{Local: "request"}})
 	assert.NotNil(t, err, "UnmarshalXML should return an error for malformed XML")
 
 	// Test v3.0 request
 	data := []byte(`<?xml version="1.0" encoding="UTF-8"?>
-		<request protocol="3.0" version="chrome-53.0.2785.116" prodversion="53.0.2785.116" requestid="{b4f77b70-af29-462b-a637-8a3e4be5ecd9}" lang="" updaterchannel="stable" prodchannel="stable" os="mac" arch="x64" nacl_arch="x86-64">
+		<request protocol="3.0" updater="chromiumcrx" version="chrome-53.0.2785.116" prodversion="53.0.2785.116" requestid="{b4f77b70-af29-462b-a637-8a3e4be5ecd9}" lang="" updaterchannel="stable" prodchannel="stable" os="mac" arch="x64" nacl_arch="x86-64">
 		<app appid="test-app-id" version="1.0.0">
 			<updatecheck />
 			<packages>
@@ -73,7 +82,7 @@ func TestRequestUnmarshalXML(t *testing.T) {
 		</app>
 		</request>`)
 
-	decoder := xml.NewDecoder(strings.NewReader(string(data)))
+	decoder = xml.NewDecoder(strings.NewReader(string(data)))
 	var start xml.StartElement
 	for {
 		token, err := decoder.Token()
@@ -86,16 +95,18 @@ func TestRequestUnmarshalXML(t *testing.T) {
 		}
 	}
 
-	err = request.UnmarshalXML(decoder, start)
+	req = Request{}
+	err = req.UnmarshalXML(decoder, start)
 	assert.Nil(t, err)
-	assert.Equal(t, 1, len(request))
-	assert.Equal(t, "test-app-id", request[0].ID)
-	assert.Equal(t, "1.0.0", request[0].Version)
-	assert.Equal(t, "test-fingerprint", request[0].FP)
+	assert.Equal(t, 1, len(req.UpdateRequest.Extensions))
+	assert.Equal(t, "test-app-id", req.UpdateRequest.Extensions[0].ID)
+	assert.Equal(t, "1.0.0", req.UpdateRequest.Extensions[0].Version)
+	assert.Equal(t, "test-fingerprint", req.UpdateRequest.Extensions[0].FP)
+	assert.Equal(t, "chromiumcrx", req.UpdateRequest.UpdaterType)
 
 	// Test v3.1 request
 	data = []byte(`<?xml version="1.0" encoding="UTF-8"?>
-		<request protocol="3.1" version="chrome-53.0.2785.116" prodversion="53.0.2785.116" requestid="{b4f77b70-af29-462b-a637-8a3e4be5ecd9}" lang="" updaterchannel="stable" prodchannel="stable" os="mac" arch="x64" nacl_arch="x86-64">
+		<request protocol="3.1" updater="BraveComponentUpdater" version="chrome-53.0.2785.116" prodversion="53.0.2785.116" requestid="{b4f77b70-af29-462b-a637-8a3e4be5ecd9}" lang="" updaterchannel="stable" prodchannel="stable" os="mac" arch="x64" nacl_arch="x86-64">
 		<app appid="test-app-id" version="1.0.0" fp="test-fingerprint">
 			<updatecheck />
 		</app>
@@ -113,11 +124,12 @@ func TestRequestUnmarshalXML(t *testing.T) {
 		}
 	}
 
-	request = UpdateRequest{}
-	err = request.UnmarshalXML(decoder, start)
+	req = Request{}
+	err = req.UnmarshalXML(decoder, start)
 	assert.Nil(t, err)
-	assert.Equal(t, 1, len(request))
-	assert.Equal(t, "test-app-id", request[0].ID)
-	assert.Equal(t, "1.0.0", request[0].Version)
-	assert.Equal(t, "test-fingerprint", request[0].FP)
+	assert.Equal(t, 1, len(req.UpdateRequest.Extensions))
+	assert.Equal(t, "test-app-id", req.UpdateRequest.Extensions[0].ID)
+	assert.Equal(t, "1.0.0", req.UpdateRequest.Extensions[0].Version)
+	assert.Equal(t, "test-fingerprint", req.UpdateRequest.Extensions[0].FP)
+	assert.Equal(t, "BraveComponentUpdater", req.UpdateRequest.UpdaterType)
 }
