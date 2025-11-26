@@ -9,12 +9,12 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-// Request wraps the version-agnostic UpdateRequest and implements json.Unmarshaler and xml.Unmarshaler for v3
+// Request wraps the version-agnostic UpdateRequest
 type Request struct {
 	*extension.UpdateRequest
 }
 
-// UnmarshalJSON implements the json.Unmarshaler interface for v3 protocol
+// UnmarshalJSON implements the json.Unmarshaler interface
 func (r *Request) UnmarshalJSON(b []byte) error {
 	type Package struct {
 		FP string `json:"fp"`
@@ -72,7 +72,7 @@ func (r *Request) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// UnmarshalXML implements the xml.Unmarshaler interface for v3 protocol
+// UnmarshalXML implements the xml.Unmarshaler interface
 func (r *Request) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	// Common XML elements
 	type UpdateCheck struct {

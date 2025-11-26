@@ -8,12 +8,12 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-// Request wraps the version-agnostic UpdateRequest and implements json.Unmarshaler for v4
+// Request wraps the version-agnostic UpdateRequest
 type Request struct {
 	*extension.UpdateRequest
 }
 
-// UnmarshalJSON implements the json.Unmarshaler interface for v4 protocol
+// UnmarshalJSON implements the json.Unmarshaler interface
 func (r *Request) UnmarshalJSON(b []byte) error {
 	type CachedItem struct {
 		SHA256 string `json:"sha256"`
