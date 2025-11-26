@@ -55,7 +55,7 @@ func (r *Request) UnmarshalJSON(b []byte) error {
 		if len(app.CachedItems) > 0 {
 			fp = app.CachedItems[0].SHA256
 		}
-		r.UpdateRequest.Extensions = append(r.UpdateRequest.Extensions, extension.Extension{
+		r.Extensions = append(r.Extensions, extension.Extension{
 			ID:      app.AppID,
 			FP:      fp,
 			Version: app.Version,

@@ -62,7 +62,7 @@ func (r *Request) UnmarshalJSON(b []byte) error {
 		if fp == "" && len(app.Packages.Package) > 0 {
 			fp = app.Packages.Package[0].FP
 		}
-		r.UpdateRequest.Extensions = append(r.UpdateRequest.Extensions, extension.Extension{
+		r.Extensions = append(r.Extensions, extension.Extension{
 			ID:      app.AppID,
 			FP:      fp,
 			Version: app.Version,
