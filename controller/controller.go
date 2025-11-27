@@ -23,9 +23,9 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-// WidivineExtensionID is used to add an exception to pass the request for widivine
+// WidevineExtensionID is used to add an exception to pass the request for Widevine
 // directly to google servers
-var WidivineExtensionID = "oimompecagnajdejgnnjijobebaeigek"
+var WidevineExtensionID = "oimompecagnajdejgnnjijobebaeigek"
 
 // AllExtensionsMap holds a mapping of extension ID to extension object.
 // This list for tests is populated by extensions.OfferedExtensions.
@@ -327,7 +327,7 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 		_, ok := AllExtensionsMap.Load(updateRequest.Extensions[0].ID)
 		if !ok {
 			host := extension.GetUpdaterHostByType(updateRequest.UpdaterType)
-			if updateRequest.Extensions[0].ID == WidivineExtensionID {
+			if updateRequest.Extensions[0].ID == WidevineExtensionID {
 				host = "update.googleapis.com"
 			}
 
