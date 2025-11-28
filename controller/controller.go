@@ -227,8 +227,6 @@ func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	w.WriteHeader(http.StatusOK)
-
 	// It is impossible to determine the response protocol version for WebStoreUpdateExtension calls.
 	// The incoming request is GET and does not include any information about the protocol version,
 	// therefore 3.1 is always used for WebStoreUpdateExtension responses.
@@ -244,12 +242,14 @@ func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Set content type
+	// Set content type before WriteHeader
 	if protocol.IsJSONRequest(contentType) {
 		w.Header().Set("content-type", "application/json")
 	} else {
 		w.Header().Set("content-type", "application/xml")
 	}
+
+	w.WriteHeader(http.StatusOK)
 
 	// nosemgrep: go.lang.security.audit.xss.no-direct-write-to-responsewriter.no-direct-write-to-responsewriter
 	_, err = w.Write(data)
