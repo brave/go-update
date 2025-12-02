@@ -1,6 +1,7 @@
 package v3
 
 import (
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"strings"
@@ -37,35 +38,35 @@ func (h *VersionedHandler) GetVersion() string {
 }
 
 // ParseRequest parses a request in the appropriate format (JSON or XML)
-func (h *VersionedHandler) ParseRequest(data []byte, contentType string) (extension.Extensions, error) {
-	var request UpdateRequest
-	var err error
+func (h *VersionedHandler) ParseRequest(data []byte, contentType string) (*extension.UpdateRequest, error) {
+	var req Request
 
 	if contentType == "application/json" {
-		err = request.UnmarshalJSON(data)
-	} else {
-		// Set up XML decoder
-		decoder := xml.NewDecoder(strings.NewReader(string(data)))
-		var start xml.StartElement
-		for {
-			token, err := decoder.Token()
-			if err != nil {
-				return nil, err
-			}
-			if se, ok := token.(xml.StartElement); ok {
-				start = se
-				break
-			}
+		if err := json.Unmarshal(data, &req); err != nil {
+			return nil, err
 		}
-
-		err = request.UnmarshalXML(decoder, start)
+		return req.UpdateRequest, nil
 	}
 
-	if err != nil {
+	// Set up XML decoder
+	decoder := xml.NewDecoder(strings.NewReader(string(data)))
+	var start xml.StartElement
+	for {
+		token, err := decoder.Token()
+		if err != nil {
+			return nil, err
+		}
+		if se, ok := token.(xml.StartElement); ok {
+			start = se
+			break
+		}
+	}
+
+	if err := req.UnmarshalXML(decoder, start); err != nil {
 		return nil, err
 	}
 
-	return extension.Extensions(request), nil
+	return req.UpdateRequest, nil
 }
 
 // FormatUpdateResponse formats a standard update response in the appropriate format based on content type

@@ -133,3 +133,17 @@ func TestS3BucketForExtension(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, GetS3ExtensionBucketHost(lightThemeExtension.ID), "brave-core-ext.s3.brave.com")
 }
+
+func TestGetUpdaterHostByType(t *testing.T) {
+	host := GetUpdaterHostByType("chromiumcrx")
+	assert.Equal(t, "extensionupdater.brave.com", host)
+
+	host = GetUpdaterHostByType("BraveComponentUpdater")
+	assert.Equal(t, "componentupdater.brave.com", host)
+
+	host = GetUpdaterHostByType("unknown-type")
+	assert.Equal(t, "componentupdater.brave.com", host)
+
+	host = GetUpdaterHostByType("")
+	assert.Equal(t, "componentupdater.brave.com", host)
+}

@@ -4,19 +4,25 @@ import (
 	"os"
 )
 
-var torClientMacExtensionID = "cldoidikboihgcjfkhdeidbpclkineef"
-var torClientWindowsExtensionID = "cpoalefficncklhjfpglfiplenlpccdb"
-var torClientLinuxExtensionID = "biahpgbdmdkfgndcmfiipgcebobojjkp"
-var torClientLinuxArm64ExtensionID = "monolafkoghdlanndjfeebmdfkbklejg"
+var (
+	torClientMacExtensionID        = "cldoidikboihgcjfkhdeidbpclkineef"
+	torClientWindowsExtensionID    = "cpoalefficncklhjfpglfiplenlpccdb"
+	torClientLinuxExtensionID      = "biahpgbdmdkfgndcmfiipgcebobojjkp"
+	torClientLinuxArm64ExtensionID = "monolafkoghdlanndjfeebmdfkbklejg"
+)
 
-var torPluggableTransportsMacExtensionID = "einfndjnccmoohcngmlldpmellegjjnk"
-var torPluggableTransportsWindowsExtensionID = "dnkcahhmfcanmkjhnjejoomdihffoefm"
-var torPluggableTransportsLinuxExtensionID = "apfggiafobakjahnkchiecbomjgigkkn"
+var (
+	torPluggableTransportsMacExtensionID     = "einfndjnccmoohcngmlldpmellegjjnk"
+	torPluggableTransportsWindowsExtensionID = "dnkcahhmfcanmkjhnjejoomdihffoefm"
+	torPluggableTransportsLinuxExtensionID   = "apfggiafobakjahnkchiecbomjgigkkn"
+)
 
 // TorClientExtensionIDs is used to add an exception to return the dedicated
 // proxy url for downloading the tor client crx
-var TorClientExtensionIDs = []string{torClientMacExtensionID, torClientWindowsExtensionID, torClientLinuxExtensionID, torClientLinuxArm64ExtensionID}
-var TorPluggableTransportsExtensionIDs = []string{torPluggableTransportsMacExtensionID, torPluggableTransportsWindowsExtensionID, torPluggableTransportsLinuxExtensionID}
+var (
+	TorClientExtensionIDs              = []string{torClientMacExtensionID, torClientWindowsExtensionID, torClientLinuxExtensionID, torClientLinuxArm64ExtensionID}
+	TorPluggableTransportsExtensionIDs = []string{torPluggableTransportsMacExtensionID, torPluggableTransportsWindowsExtensionID, torPluggableTransportsLinuxExtensionID}
+)
 
 func isTorExtension(id string) bool {
 	for _, torID := range TorClientExtensionIDs {
@@ -61,7 +67,25 @@ func GetUpdateStatus(extension Extension) string {
 	return extension.Status
 }
 
-// GetComponentUpdaterHost returns the url to use for extension updates
+// GetComponentUpdaterHost returns the url to use for component updates (@updater=BraveComponentUpdater)
 func GetComponentUpdaterHost() string {
 	return lookupEnvFallback("COMPONENT_UPDATER_HOST", "componentupdater.brave.com")
+}
+
+// GetExtensionUpdaterHost returns the url to use for extension updates (@updater=chromiumcrx)
+func GetExtensionUpdaterHost() string {
+	return lookupEnvFallback("EXTENSION_UPDATER_HOST", "extensionupdater.brave.com")
+}
+
+// GetUpdaterHostByType returns the appropriate updater host based on the updater type
+func GetUpdaterHostByType(updaterType string) string {
+	switch updaterType {
+	case "chromiumcrx":
+		return GetExtensionUpdaterHost()
+	case "BraveComponentUpdater":
+		return GetComponentUpdaterHost()
+	default:
+		// Backwards compatibility
+		return GetComponentUpdaterHost()
+	}
 }

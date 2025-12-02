@@ -314,7 +314,7 @@ func TestUpdateExtensionsXMLV3(t *testing.T) {
 	testCall(t, server, http.MethodPost, contentTypeXML, "?test=hi", requestBody, http.StatusTemporaryRedirect, expectedResponse, "https://componentupdater.brave.com/service/update2?test=hi")
 
 	// Requests for widevine should use update.googleapis.com directly without any proxy
-	requestBody = extensiontest.ExtensionRequestFnForXML(controller.WidivineExtensionID)("0.0.0")
+	requestBody = extensiontest.ExtensionRequestFnForXML(controller.WidevineExtensionID)("0.0.0")
 	expectedResponse = ""
 	testCall(t, server, http.MethodPost, contentTypeXML, "", requestBody, http.StatusTemporaryRedirect, expectedResponse, "https://update.googleapis.com/service/update2")
 

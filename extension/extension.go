@@ -31,6 +31,12 @@ type Extension struct {
 // Extensions is type for a slice of Extension.
 type Extensions []Extension
 
+// UpdateRequest represents a version-agnostic update request with metadata
+type UpdateRequest struct {
+	Extensions  Extensions
+	UpdaterType string // "chromiumcrx" for extensions, "BraveComponentUpdater" for components
+}
+
 // ExtensionsMap is safe for use across goroutines.
 type ExtensionsMap struct {
 	sync.RWMutex

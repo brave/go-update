@@ -14,8 +14,8 @@ type Protocol interface {
 	GetVersion() string
 
 	// ParseRequest parses an update request according to this protocol version
-	// It returns a slice of Extension objects and any error encountered
-	ParseRequest([]byte, string) (extension.Extensions, error)
+	// It returns an UpdateRequest with extensions and metadata
+	ParseRequest([]byte, string) (*extension.UpdateRequest, error)
 
 	// FormatUpdateResponse formats a standard update response based on content type
 	FormatUpdateResponse(extension.Extensions, string) ([]byte, error)

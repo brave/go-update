@@ -23,9 +23,9 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-// WidivineExtensionID is used to add an exception to pass the request for widivine
+// WidevineExtensionID is used to add an exception to pass the request for Widevine
 // directly to google servers
-var WidivineExtensionID = "oimompecagnajdejgnnjijobebaeigek"
+var WidevineExtensionID = "oimompecagnajdejgnnjijobebaeigek"
 
 // AllExtensionsMap holds a mapping of extension ID to extension object.
 // This list for tests is populated by extensions.OfferedExtensions.
@@ -213,7 +213,13 @@ func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
 
 		foundExtension, ok := AllExtensionsMap.Load(id)
 		if !ok && len(xValues) == 1 {
-			http.Redirect(w, r, "https://extensionupdater.brave.com/service/update2/crx?"+r.URL.RawQuery, http.StatusTemporaryRedirect)
+			redirectURL := &url.URL{
+				Scheme:   "https",
+				Host:     extension.GetExtensionUpdaterHost(),
+				Path:     "/service/update2/crx",
+				RawQuery: r.URL.RawQuery, // nosemgrep: go.lang.security.injection.open-redirect.open-redirect
+			}
+			http.Redirect(w, r, redirectURL.String(), http.StatusTemporaryRedirect)
 			return
 		}
 
@@ -316,23 +322,26 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Special case, if there's only 1 extension in the request and it is not something
-	// we know about, redirect the client to google component update server.
-	if len(updateRequest) == 1 {
-		_, ok := AllExtensionsMap.Load(updateRequest[0].ID)
+	// we know about, redirect the client to the appropriate update server.
+	if len(updateRequest.Extensions) == 1 {
+		_, ok := AllExtensionsMap.Load(updateRequest.Extensions[0].ID)
 		if !ok {
-			queryString := ""
-			if len(r.URL.RawQuery) != 0 {
-				queryString = "?" + r.URL.RawQuery
-			}
-			host := extension.GetComponentUpdaterHost()
-			if updateRequest[0].ID == WidivineExtensionID {
+			host := extension.GetUpdaterHostByType(updateRequest.UpdaterType)
+			if updateRequest.Extensions[0].ID == WidevineExtensionID {
 				host = "update.googleapis.com"
 			}
+
+			path := "/service/update2"
 			if protocol.IsJSONRequest(contentType) {
-				http.Redirect(w, r, "https://"+host+"/service/update2/json"+queryString, http.StatusTemporaryRedirect)
-			} else {
-				http.Redirect(w, r, "https://"+host+"/service/update2"+queryString, http.StatusTemporaryRedirect)
+				path = "/service/update2/json"
 			}
+			redirectURL := &url.URL{
+				Scheme:   "https",
+				Host:     host,
+				Path:     path,
+				RawQuery: r.URL.RawQuery, // nosemgrep: go.lang.security.injection.open-redirect.open-redirect
+			}
+			http.Redirect(w, r, redirectURL.String(), http.StatusTemporaryRedirect)
 			return
 		}
 	}
@@ -346,7 +355,7 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 
-	updateResponse := extension.ProcessExtensionRequests(updateRequest, AllExtensionsMap)
+	updateResponse := extension.ProcessExtensionRequests(updateRequest.Extensions, AllExtensionsMap)
 
 	// Use the same protocol version for response as the request for v4
 	// Otherwise default to 3.1 for backward compatibility
