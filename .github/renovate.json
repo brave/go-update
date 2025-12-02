@@ -4,15 +4,17 @@
   ],
   "packageRules": [
     {
-      "matchPackageNames": [
-        "github.com/aws/aws-sdk-go"
+      "matchPackagePatterns": [
+        "^github\\.com/aws/aws-sdk-go-v2",
+        "^github\\.com/getsentry/sentry-go$"
       ],
       "matchUpdateTypes": [
         "patch",
         "minor"
       ],
-      "autoApprove": true,
-      "automerge": true
+      "schedule": [
+        "before 9am on tuesday"
+      ]
     }
   ]
 }
