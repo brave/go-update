@@ -4,15 +4,27 @@
   ],
   "packageRules": [
     {
-      "matchPackageNames": [
-        "github.com/aws/aws-sdk-go"
+      "description": "AWS SDK v2 updates",
+      "matchPackagePatterns": [
+        "^github\\.com/aws/aws-sdk-go-v2"
       ],
       "matchUpdateTypes": [
         "patch",
         "minor"
       ],
-      "autoApprove": true,
-      "automerge": true
+      "groupName": "AWS SDK v2",
+      "prCreation": "not-pending"
+    },
+    {
+      "description": "Sentry SDK updates",
+      "matchPackageNames": [
+        "github.com/getsentry/sentry-go"
+      ],
+      "matchUpdateTypes": [
+        "patch",
+        "minor"
+      ],
+      "prCreation": "not-pending"
     }
   ]
 }
