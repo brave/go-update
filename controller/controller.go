@@ -171,12 +171,35 @@ func PrintExtensions(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// WebStoreUpdateExtension is the handler for updating extensions made via the GET HTTP method.
-// Get requests look like this:
-// /extensions?os=mac&arch=x64&os_arch=x86_64&nacl_arch=x86-64&prod=chromiumcrx&prodchannel=&prodversion=69.0.54.0&lang=en-US&acceptformat=crx2,crx3&x=id%3Doemmndcbldboiebfnladdacbdfmadadm%26v%3D0.0.0.0%26installedby%3Dpolicy%26uc%26ping%3Dr%253D-1%2526e%253D1"
-// The query parameter x contains the encoded extension information, there can be more than one x parameter.
+// WebStoreUpdateExtension is the handler for installing extensions via the GET HTTP method.
+// Supports both Web Store and Brave-hosted MV2 extensions.
+//
+// Example request:
+//
+//	/extensions?os=mac
+//	  &arch=x64
+//	  &os_arch=x86_64
+//	  &nacl_arch=x86-64
+//	  &prod=chromiumcrx
+//	  &prodchannel=
+//	  &prodversion=69.0.54.0
+//	  &lang=en-US
+//	  &acceptformat=crx2,crx3
+//	  &x=id%3Doemmndcbldboiebfnladdacbdfmadadm%26v%3D0.0.0.0%26installedby%3Dpolicy%26uc%26ping%3Dr%253D-1%2526e%253D1
+//
+// The query parameter x contains the encoded extension information. More than one x parameter can be present.
 func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
-	contentType := r.Header.Get("content-type")
+	// Use the Accept header to determine the response format.
+	//
+	// Noteworthy information:
+	// - Content-Type header is still checked for backward compatibility, though this is semantically incorrect for GET requests
+	// - */* (used by default by some clients) is treated as "no preference" and XML is returned by default
+	//
+	// TODO: Remove the Content-Type fallback in the future (based on metrics)
+	responseFormat := "application/xml"
+	if protocol.AcceptsJSON(r.Header.Get("accept")) || protocol.IsJSONContentType(r.Header.Get("content-type")) {
+		responseFormat = "application/json"
+	}
 
 	logger := logger.FromContext(r.Context())
 	defer func() {
@@ -242,18 +265,13 @@ func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := protocolHandler.FormatWebStoreResponse(webStoreResponse, contentType)
+	data, err := protocolHandler.FormatWebStoreResponse(webStoreResponse, responseFormat)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error formatting response: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	// Set content type before WriteHeader
-	if protocol.IsJSONRequest(contentType) {
-		w.Header().Set("content-type", "application/json")
-	} else {
-		w.Header().Set("content-type", "application/xml")
-	}
+	w.Header().Set("content-type", responseFormat)
 
 	w.WriteHeader(http.StatusOK)
 
@@ -267,6 +285,7 @@ func WebStoreUpdateExtension(w http.ResponseWriter, r *http.Request) {
 // UpdateExtensions is the handler for updating extensions
 func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 	contentType := r.Header.Get("content-type")
+	isJSON := protocol.IsJSONContentType(contentType)
 	jsonPrefix := []byte(")]}'\n")
 
 	logger := logger.FromContext(r.Context())
@@ -288,7 +307,7 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if the request is a pingback and ignore it if so.
+	// Check if the request is a pingback and ignore it if so
 	if protocol.IsPingbackRequest(body, contentType) {
 		w.WriteHeader(http.StatusNoContent)
 		return
@@ -300,7 +319,7 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Use protocol handler to format response
+	// Detect protocol version from the request
 	protocolVersion, err := protocol.DetectProtocolVersion(body, contentType)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error parsing request: %v", err), http.StatusBadRequest)
@@ -332,7 +351,7 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 			}
 
 			path := "/service/update2"
-			if protocol.IsJSONRequest(contentType) {
+			if isJSON {
 				path = "/service/update2/json"
 			}
 			redirectURL := &url.URL{
@@ -345,15 +364,6 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-
-	// Set content type header
-	if protocol.IsJSONRequest(contentType) {
-		w.Header().Set("content-type", "application/json")
-	} else {
-		w.Header().Set("content-type", "application/xml")
-	}
-
-	w.WriteHeader(http.StatusOK)
 
 	updateResponse := extension.ProcessExtensionRequests(updateRequest.Extensions, AllExtensionsMap)
 
@@ -370,15 +380,28 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := responseProtocolHandler.FormatUpdateResponse(updateResponse, contentType)
+	// Determine response content type
+	responseContentType := "application/xml"
+	if isJSON {
+		responseContentType = "application/json"
+	}
+
+	data, err := responseProtocolHandler.FormatUpdateResponse(updateResponse, responseContentType)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error formatting response: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	if protocol.IsJSONRequest(contentType) {
+	// Add JSON prefix to the response body (required by the Omaha protocol)
+	//
+	// See: https://chromium.googlesource.com/chromium/src/+/refs/heads/main/docs/updater/protocol_4.md#safe-json-prefixes
+	if isJSON {
 		data = append(jsonPrefix, data...)
 	}
+
+	// Write response only after all processing succeeds
+	w.Header().Set("content-type", responseContentType)
+	w.WriteHeader(http.StatusOK)
 
 	// nosemgrep: go.lang.security.audit.xss.no-direct-write-to-responsewriter.no-direct-write-to-responsewriter
 	_, err = w.Write(data)

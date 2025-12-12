@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestIsJSONRequest(t *testing.T) {
+func TestIsJSONContentType(t *testing.T) {
 	tests := []struct {
 		name        string
 		contentType string
@@ -13,6 +13,11 @@ func TestIsJSONRequest(t *testing.T) {
 		{
 			name:        "JSON content type",
 			contentType: "application/json",
+			want:        true,
+		},
+		{
+			name:        "JSON with charset",
+			contentType: "application/json; charset=utf-8",
 			want:        true,
 		},
 		{
@@ -25,12 +30,74 @@ func TestIsJSONRequest(t *testing.T) {
 			contentType: "",
 			want:        false,
 		},
+		{
+			name:        "Text plain",
+			contentType: "text/plain",
+			want:        false,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := IsJSONRequest(tt.contentType); got != tt.want {
-				t.Errorf("IsJSONRequest() = %v, want %v", got, tt.want)
+			if got := IsJSONContentType(tt.contentType); got != tt.want {
+				t.Errorf("IsJSONContentType() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestAcceptsJSON(t *testing.T) {
+	tests := []struct {
+		name   string
+		accept string
+		want   bool
+	}{
+		{
+			name:   "JSON only",
+			accept: "application/json",
+			want:   true,
+		},
+		{
+			name:   "JSON with quality value",
+			accept: "application/json;q=0.9",
+			want:   true,
+		},
+		{
+			name:   "Accept header with JSON first",
+			accept: "application/json, application/xml",
+			want:   true,
+		},
+		{
+			name:   "Accept header with JSON second",
+			accept: "application/xml, application/json",
+			want:   true,
+		},
+		{
+			name:   "Accept header with quality values",
+			accept: "text/html, application/json;q=0.9, */*;q=0.8",
+			want:   true,
+		},
+		{
+			name:   "Accept header without JSON",
+			accept: "text/html, application/xml;q=0.9, */*;q=0.8",
+			want:   false,
+		},
+		{
+			name:   "Wildcard only",
+			accept: "*/*",
+			want:   false,
+		},
+		{
+			name:   "Empty accept",
+			accept: "",
+			want:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := AcceptsJSON(tt.accept); got != tt.want {
+				t.Errorf("AcceptsJSON() = %v, want %v", got, tt.want)
 			}
 		})
 	}
