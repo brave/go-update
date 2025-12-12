@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"strings"
 
 	"github.com/brave/go-update/extension"
 )
@@ -32,7 +33,7 @@ func DetectProtocolVersion(data []byte, contentType string) (string, error) {
 		return "3.1", nil
 	}
 
-	if IsJSONRequest(contentType) {
+	if IsJSONContentType(contentType) {
 		var req struct {
 			Request struct {
 				Protocol string `json:"protocol"`
@@ -68,15 +69,41 @@ func DetectProtocolVersion(data []byte, contentType string) (string, error) {
 	return req.Protocol, nil
 }
 
-// IsJSONRequest determines if the request is in JSON format based on content type
-func IsJSONRequest(contentType string) bool {
-	return contentType == "application/json"
+// Example: "application/json; charset=utf-8"
+//
+// See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Type
+func IsJSONContentType(contentType string) bool {
+	mediaType := strings.TrimSpace(contentType)
+	if idx := strings.Index(mediaType, ";"); idx != -1 {
+		mediaType = strings.TrimSpace(mediaType[:idx])
+	}
+	return mediaType == "application/json"
+}
+
+// Example: "text/html, application/json;q=0.9, */*;q=0.8"
+//
+// Noteworthy information:
+// - quality values are ignored (simply checks for "application/json" presence)
+// - wildcards (*/*) are not treated as JSON (intentionally defaults to XML for backward compatibility)
+//
+// See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Accept
+func AcceptsJSON(accept string) bool {
+	for _, part := range strings.Split(accept, ",") {
+		mediaType := strings.TrimSpace(part)
+		if idx := strings.Index(mediaType, ";"); idx != -1 {
+			mediaType = strings.TrimSpace(mediaType[:idx])
+		}
+		if mediaType == "application/json" {
+			return true
+		}
+	}
+	return false
 }
 
 // IsPingbackRequest checks if the request body is a pingback.
 // For now, it only checks JSON requests for an "events" field.
 func IsPingbackRequest(body []byte, contentType string) bool {
-	if !IsJSONRequest(contentType) {
+	if !IsJSONContentType(contentType) {
 		return false
 	}
 

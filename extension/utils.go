@@ -85,7 +85,7 @@ func GetUpdaterHostByType(updaterType string) string {
 	case "BraveComponentUpdater":
 		return GetComponentUpdaterHost()
 	default:
-		// Backwards compatibility
+		// Backward compatibility
 		return GetComponentUpdaterHost()
 	}
 }
