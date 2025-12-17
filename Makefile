@@ -9,10 +9,10 @@ all: lint test build
 # To ensure a pure Go implementation, assembly and unsafe code have been
 # explicitly disabled using the 'noasm' and 'nounsafe' build tags.
 build:
-	env AWS_REGION=us-west-2 CGO_ENABLED=0 GOOS=linux go build -tags=noasm,nounsafe -a -o main .
+	env AWS_REGION=us-west-2 CGO_ENABLED=0 GOOS=linux GOEXPERIMENT=jsonv2 go build -tags=noasm,nounsafe -a -o main .
 
 test:
-	go test -v ./...
+	GOEXPERIMENT=jsonv2 go test -v ./...
 
 lint:
 	golangci-lint run
