@@ -5,15 +5,15 @@
   "packageRules": [
     {
       "description": "AWS SDK v2 updates",
-      "matchPackagePatterns": [
-        "^github\\.com/aws/aws-sdk-go-v2"
-      ],
       "matchUpdateTypes": [
         "patch",
         "minor"
       ],
       "groupName": "AWS SDK v2",
-      "prCreation": "not-pending"
+      "prCreation": "not-pending",
+      "matchPackageNames": [
+        "/^github\\.com/aws/aws-sdk-go-v2/"
+      ]
     },
     {
       "description": "Sentry SDK updates",
