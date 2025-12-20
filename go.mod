@@ -11,7 +11,7 @@ require (
 	github.com/getsentry/sentry-go v0.40.0
 	github.com/go-chi/chi/v5 v5.2.3
 	github.com/go-chi/httplog/v2 v2.1.1
-	github.com/go-playground/validator/v10 v10.28.0
+	github.com/go-playground/validator/v10 v10.29.0
 	github.com/klauspost/compress v1.18.1
 	github.com/stretchr/testify v1.11.1
 )
@@ -35,7 +35,7 @@ require (
 	github.com/certifi/gocertifi v0.0.0-20210507211836-431795d63e8d // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/gabriel-vasile/mimetype v1.4.10 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.11 // indirect
 	github.com/getsentry/raven-go v0.2.1-0.20190619092523-5c24d5110e0e // indirect
 	github.com/go-chi/chi v1.5.5 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
