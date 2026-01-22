@@ -1,7 +1,7 @@
 package v4
 
 import (
-	"encoding/json"
+	"encoding/json/v2"
 	"testing"
 
 	"github.com/brave/go-update/extension"

@@ -1,7 +1,7 @@
 package v4
 
 import (
-	"encoding/json"
+	"encoding/json/v2"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -24,7 +24,7 @@ func TestRequestUnmarshalJSON(t *testing.T) {
 	assert.NotNil(t, err, "UnmarshalJSON should return an error for wrong JSON Schema")
 
 	// No extensions JSON with proper schema, no error with 0 extensions returned
-	data := []byte(`{"request":{"protocol":"4.0","version":"chrome-53.0.2785.116","prodversion":"53.0.2785.116","requestid":"{e821bacd-8dbf-4cc8-9e8c-bcbe8c1cfd3d}","lang":"","updaterchannel":"stable","prodchannel":"stable","os":"mac","arch":"x64","nacl_arch":"x86-64","hw":{"physmemory":16},"os":{"arch":"x86_64","platform":"Mac OS X","version":"10.14.3"}}}`)
+	data := []byte(`{"request":{"protocol":"4.0","version":"chrome-53.0.2785.116","prodversion":"53.0.2785.116","requestid":"{e821bacd-8dbf-4cc8-9e8c-bcbe8c1cfd3d}","lang":"","updaterchannel":"stable","prodchannel":"stable","@os":"mac","arch":"x64","nacl_arch":"x86-64","hw":{"physmemory":16},"os":{"arch":"x86_64","platform":"Mac OS X","version":"10.14.3"}}}`)
 	req = Request{}
 	err = json.Unmarshal(data, &req)
 	assert.Nil(t, err)

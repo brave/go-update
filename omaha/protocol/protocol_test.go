@@ -103,6 +103,111 @@ func TestAcceptsJSON(t *testing.T) {
 	}
 }
 
+func TestIsPingbackRequest(t *testing.T) {
+	tests := []struct {
+		name        string
+		body        []byte
+		contentType string
+		want        bool
+	}{
+		{
+			name: "Valid pingback with events",
+			body: []byte(`{
+				"request": {
+					"@os": "mac",
+					"protocol": "3.1",
+					"apps": [
+						{
+							"appid": "test-app-id",
+							"events": [
+								{
+									"eventresult": 1,
+									"eventtype": 2,
+									"nextversion": "1.0.1",
+									"previousversion": "1.0.0"
+								}
+							],
+							"version": "1.0.1"
+						}
+					]
+				}
+			}`),
+			contentType: "application/json",
+			want:        true,
+		},
+		{
+			name: "Empty events array",
+			body: []byte(`{
+				"request": {
+					"protocol": "3.1",
+					"apps": [
+						{
+							"appid": "test-app-id",
+							"events": [],
+							"version": "1.0.0"
+						}
+					]
+				}
+			}`),
+			contentType: "application/json",
+			want:        false,
+		},
+		{
+			name: "No events field",
+			body: []byte(`{
+				"request": {
+					"protocol": "3.1",
+					"apps": [
+						{
+							"appid": "test-app-id",
+							"version": "1.0.0"
+						}
+					]
+				}
+			}`),
+			contentType: "application/json",
+			want:        false,
+		},
+		{
+			name:        "Invalid JSON",
+			body:        []byte(`{"request":{"events":[{`),
+			contentType: "application/json",
+			want:        false,
+		},
+		{
+			name:        "Empty body",
+			body:        []byte{},
+			contentType: "application/json",
+			want:        false,
+		},
+		{
+			name: "JSON with charset content type",
+			body: []byte(`{
+				"request": {
+					"protocol": "3.1",
+					"apps": [
+						{
+							"appid": "test-app-id",
+							"events": [{"eventtype": 2}],
+							"version": "1.0.0"
+						}
+					]
+				}
+			}`),
+			contentType: "application/json; charset=utf-8",
+			want:        true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsPingbackRequest(tt.body, tt.contentType); got != tt.want {
+				t.Errorf("IsPingbackRequest() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestDetectProtocolVersion(t *testing.T) {
 	// Test with empty data
 	t.Run("Empty data", func(t *testing.T) {
