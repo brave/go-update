@@ -1,7 +1,7 @@
 package v3
 
 import (
-	"encoding/json"
+	"encoding/json/v2"
 	"encoding/xml"
 	"strings"
 
@@ -33,7 +33,7 @@ func (r *UpdateResponse) MarshalJSON() ([]byte, error) {
 	type Package struct {
 		Name       string `json:"name"`
 		NameDiff   string `json:"namediff,omitempty"`
-		SizeDiff   int    `json:"sizediff,omitempty"`
+		SizeDiff   int    `json:"sizediff,omitzero"`
 		FP         string `json:"fp"`
 		SHA256     string `json:"hash_sha256"`
 		DiffSHA256 string `json:"hashdiff_sha256,omitempty"`

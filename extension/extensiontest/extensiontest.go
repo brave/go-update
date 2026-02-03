@@ -25,7 +25,7 @@ func ExtensionRequestFnForXML(appID string) func(string) string {
 // which takes in a version and returns an XML request.
 func ExtensionRequestFnForJSON(appID string) func(string) string {
 	return func(version string) string {
-		return fmt.Sprintf(`{"request":{"protocol":"3.1","version":"chrome-53.0.2785.116","prodversion":"53.0.2785.116","requestid":"{e821bacd-8dbf-4cc8-9e8c-bcbe8c1cfd3d}","lang":"","updaterchannel":"stable","prodchannel":"stable","os":"mac","arch":"x64","nacl_arch":"x86-64","hw":{"physmemory":16},"os":{"arch":"x86_64","platform":"Mac OS X","version":"10.14.3"},"app":[{"appid":"%s","installsource":"ondemand","ping":{"r":-2},"updatecheck":{},"version":"%s"}]}}
+		return fmt.Sprintf(`{"request":{"protocol":"3.1","version":"chrome-53.0.2785.116","prodversion":"53.0.2785.116","requestid":"{e821bacd-8dbf-4cc8-9e8c-bcbe8c1cfd3d}","lang":"","updaterchannel":"stable","prodchannel":"stable","@os":"mac","arch":"x64","nacl_arch":"x86-64","hw":{"physmemory":16},"os":{"arch":"x86_64","platform":"Mac OS X","version":"10.14.3"},"app":[{"appid":"%s","installsource":"ondemand","ping":{"r":-2},"updatecheck":{},"version":"%s"}]}}
 `, appID, version)
 	}
 }
@@ -56,6 +56,6 @@ func ExtensionRequestFnForTwoXML(appID1 string, appID2 string) func(string, stri
 func ExtensionRequestFnForTwoJSON(appID1 string, appID2 string) func(string, string) string {
 	return func(version1 string, version2 string) string {
 		return fmt.Sprintf(`
-		{"request":{"protocol":"3.1","version":"chrome-53.0.2785.116","prodversion":"53.0.2785.116","requestid":"{e821bacd-8dbf-4cc8-9e8c-bcbe8c1cfd3d}","lang":"","updaterchannel":"stable","prodchannel":"stable","os":"mac","arch":"x64","nacl_arch":"x86-64","hw":{"physmemory":16},"os":{"arch":"x86_64","platform":"Mac OS X","version":"10.14.3"},"app":[{"appid":"%s","installsource":"ondemand","ping":{"r":-2},"updatecheck":{},"version":"%s"},{"appid":"%s","installsource":"ondemand","ping":{"r":-2},"updatecheck":{},"version":"%s"}]}}`, appID1, version1, appID2, version2)
+		{"request":{"protocol":"3.1","version":"chrome-53.0.2785.116","prodversion":"53.0.2785.116","requestid":"{e821bacd-8dbf-4cc8-9e8c-bcbe8c1cfd3d}","lang":"","updaterchannel":"stable","prodchannel":"stable","@os":"mac","arch":"x64","nacl_arch":"x86-64","hw":{"physmemory":16},"os":{"arch":"x86_64","platform":"Mac OS X","version":"10.14.3"},"app":[{"appid":"%s","installsource":"ondemand","ping":{"r":-2},"updatecheck":{},"version":"%s"},{"appid":"%s","installsource":"ondemand","ping":{"r":-2},"updatecheck":{},"version":"%s"}]}}`, appID1, version1, appID2, version2)
 	}
 }
