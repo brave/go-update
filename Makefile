@@ -15,7 +15,7 @@ test:
 	GOEXPERIMENT=jsonv2 go test -v ./...
 
 lint:
-	golangci-lint run
+	GOEXPERIMENT=jsonv2 golangci-lint run
 
 clean:
 	rm -f go-update
