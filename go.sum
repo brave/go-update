@@ -58,6 +58,7 @@ github.com/go-chi/chi/v5 v5.3.0 h1:halUjDxhshgXHMrao5bB8eNBXo/rnzwr8m5m36glehM=
 github.com/go-chi/chi/v5 v5.3.0/go.mod h1:R+tYY2hNuVUUjxoPtqUdgBqevM9s9njzkTLutVsOCto=
 github.com/go-chi/httplog/v2 v2.1.1 h1:ojojiu4PIaoeJ/qAO4GWUxJqvYUTobeo7zmuHQJAxRk=
 github.com/go-chi/httplog/v2 v2.1.1/go.mod h1:/XXdxicJsp4BA5fapgIC3VuTD+z0Z/VzukoB3VDc1YE=
+github.com/go-chi/httplog/v3 v3.4.0/go.mod h1:tDhJo9G+F4mioDgX4pKbyA0uVZwCtHejoSsDkvJkFkU=
 github.com/go-errors/errors v1.4.2 h1:J6MZopCL4uSllY1OfXM374weqZFFItUbrImctkmUxIA=
 github.com/go-errors/errors v1.4.2/go.mod h1:sIVyrIiJhuEF+Pj9Ebtd6P/rEYROXFi3BopGUQ5a5Og=
 github.com/go-playground/assert/v2 v2.2.0 h1:JvknZsQTYeFEAhQwI4qEt9cyV5ONwRHC+lYKSsYSR8s=
