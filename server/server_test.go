@@ -7,7 +7,6 @@ import (
 	"encoding/json/v2"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -127,7 +126,7 @@ func testCall(t *testing.T, server *httptest.Server, method string, contentType 
 		assert.Equal(t, redirectLocation, location)
 	}
 
-	actual, err := ioutil.ReadAll(resp.Body)
+	actual, err := io.ReadAll(resp.Body)
 	assert.Nil(t, err)
 
 	assert.Equal(t, expectedResponse, strings.TrimSpace(string(actual)))
@@ -704,7 +703,7 @@ func TestPrintExtensions(t *testing.T) {
 	resp, err := client.Do(req)
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	actual, err := ioutil.ReadAll(resp.Body)
+	actual, err := io.ReadAll(resp.Body)
 	assert.Nil(t, err)
 	assert.True(t, strings.Contains(string(actual), "ldimlcelhnjgpjjemdjokpgeeikdinbm"))
 
@@ -714,7 +713,7 @@ func TestPrintExtensions(t *testing.T) {
 	resp, err = client.Do(req)
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	actual, err = ioutil.ReadAll(resp.Body)
+	actual, err = io.ReadAll(resp.Body)
 	assert.Nil(t, err)
 	assert.Equal(t, string(actual), "{}")
 }
@@ -745,7 +744,7 @@ func testCallAndParseJSON(t *testing.T, server *httptest.Server, method string, 
 		return nil
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	assert.Nil(t, err)
 
 	// For JSON responses with our prefix, parse and return the object
