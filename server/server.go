@@ -43,7 +43,7 @@ func setupRouter(ctx context.Context, testRouter bool) (context.Context, *chi.Mu
 // StartServer starts the component updater server on port 8192
 func StartServer() {
 	serverCtx, log := logger.Setup(context.Background())
-	log.Info("Starting server", "prefix", "main")
+	log.Info("Starting server")
 
 	go func() {
 		// setup metrics on another non-public port 9090

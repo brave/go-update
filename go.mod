@@ -10,7 +10,6 @@ require (
 	github.com/brave-intl/bat-go v0.1.0
 	github.com/getsentry/sentry-go v0.46.2
 	github.com/go-chi/chi/v5 v5.3.0
-	github.com/go-chi/httplog/v2 v2.1.1
 	github.com/go-chi/httplog/v3 v3.4.0
 	github.com/go-playground/validator/v10 v10.30.3
 	github.com/klauspost/compress v1.18.6
