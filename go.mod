@@ -12,7 +12,7 @@ require (
 	github.com/go-chi/chi/v5 v5.3.1
 	github.com/go-chi/httplog/v3 v3.4.0
 	github.com/go-playground/validator/v10 v10.30.3
-	github.com/klauspost/compress v1.18.6
+	github.com/klauspost/compress v1.19.0
 	github.com/stretchr/testify v1.11.1
 )
 
