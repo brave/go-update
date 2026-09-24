@@ -340,29 +340,43 @@ func UpdateExtensions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Special case, if there's only 1 extension in the request and it is not something
-	// we know about, redirect the client to the appropriate update server.
-	if len(updateRequest.Extensions) == 1 {
-		_, ok := AllExtensionsMap.Load(updateRequest.Extensions[0].ID)
-		if !ok {
-			host := extension.GetUpdaterHostByType(updateRequest.UpdaterType)
-			if updateRequest.Extensions[0].ID == WidevineExtensionID {
-				host = "update.googleapis.com"
-			}
-
-			path := "/service/update2"
-			if isJSON {
-				path = "/service/update2/json"
-			}
-			redirectURL := &url.URL{
-				Scheme:   "https",
-				Host:     host,
-				Path:     path,
-				RawQuery: r.URL.RawQuery, // nosemgrep: go.lang.security.injection.open-redirect.open-redirect
-			}
-			http.Redirect(w, r, redirectURL.String(), http.StatusTemporaryRedirect)
-			return
+	// brave-core sends update checks in a split manner:
+	// - Extensions: sequential, one extension per request.
+	// - Brave-owned components: batched into a single request, or
+	//   requested individually.
+	// - Other components: sequential, one per request.
+	// Requests are handled accordingly:
+	// 1. All requested items known: answered locally.
+	// 2. None known: redirected to the appropriate update server.
+	// 3. Mixed: not expected to happen; each item is answered separately
+	//    (unknown ones get error-unknownApplication).
+	//
+	// Ref: https://github.com/brave/brave-core/blob/master/chromium_src/components/update_client/update_checker.cc
+	allUnknown := len(updateRequest.Extensions) > 0
+	for _, e := range updateRequest.Extensions {
+		if _, ok := AllExtensionsMap.Load(e.ID); ok {
+			allUnknown = false
+			break
 		}
+	}
+	if allUnknown {
+		host := extension.GetUpdaterHostByType(updateRequest.UpdaterType)
+		if len(updateRequest.Extensions) == 1 && updateRequest.Extensions[0].ID == WidevineExtensionID {
+			host = "update.googleapis.com"
+		}
+
+		path := "/service/update2"
+		if isJSON {
+			path = "/service/update2/json"
+		}
+		redirectURL := &url.URL{
+			Scheme:   "https",
+			Host:     host,
+			Path:     path,
+			RawQuery: r.URL.RawQuery, // nosemgrep: go.lang.security.injection.open-redirect.open-redirect
+		}
+		http.Redirect(w, r, redirectURL.String(), http.StatusTemporaryRedirect)
+		return
 	}
 
 	updateResponse := extension.ProcessExtensionRequests(updateRequest.Extensions, AllExtensionsMap)

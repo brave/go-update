@@ -311,6 +311,11 @@ func TestUpdateExtensionsXMLV3(t *testing.T) {
 	expectedResponse = ""
 	testCall(t, server, http.MethodPost, contentTypeXML, "", requestBody, http.StatusTemporaryRedirect, expectedResponse, "https://update.googleapis.com/service/update2")
 
+	// Multiple unknown extensions are all redirected, not answered with error statuses
+	requestBody = extensiontest.ExtensionRequestFnForTwoXML("aaaaaaaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbbbbbbb")("0.0.0", "1.0.0")
+	expectedResponse = ""
+	testCall(t, server, http.MethodPost, contentTypeXML, "", requestBody, http.StatusTemporaryRedirect, expectedResponse, "https://componentupdater.brave.com/service/update2")
+
 	// Make sure a huge request body does not crash the server
 	data := make([]byte, 1024*1024*11) // 11 MiB
 	_, err := rand.Read(data)
@@ -761,11 +766,11 @@ type AppVersionPair struct {
 }
 
 // buildUpdateV4JSON creates a JSON request body for extension update protocol
-func buildUpdateV4JSON(protocol string, apps []AppVersionPair) string {
+func buildUpdateV4JSON(protocol string, updater string, apps []AppVersionPair) string {
 	baseRequest := map[string]interface{}{
 		"request": map[string]interface{}{
 			"@os":            "mac",
-			"@updater":       "chromecrx",
+			"@updater":       updater,
 			"acceptformat":   "crx3,download,puff,run,xz,zucc",
 			"protocol":       protocol,
 			"version":        "chrome-53.0.2785.116",
@@ -834,7 +839,7 @@ func TestUpdateExtensionsV4JSON(t *testing.T) {
 	controller.AllExtensionsMap.StoreExtensions(&extension.OfferedExtensions)
 
 	// No extensions
-	requestBody := buildUpdateV4JSON("4.0", []AppVersionPair{})
+	requestBody := buildUpdateV4JSON("4.0", "BraveComponentUpdater", []AppVersionPair{})
 	result := testCallAndParseJSON(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusOK, "")
 
 	respObj := result["response"].(map[string]interface{})
@@ -847,13 +852,13 @@ func TestUpdateExtensionsV4JSON(t *testing.T) {
 	assert.Empty(t, apps, "apps should be empty for no extensions")
 
 	// Unsupported protocol version
-	requestBody = buildUpdateV4JSON("4.77", []AppVersionPair{})
+	requestBody = buildUpdateV4JSON("4.77", "BraveComponentUpdater", []AppVersionPair{})
 	expectedResponse := "Error parsing request: unsupported protocol version: 4.77"
 	testCall(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusBadRequest, expectedResponse, "")
 
 	// Single extension out of date
 	lightThemeExtensionID := "ldimlcelhnjgpjjemdjokpgeeikdinbm"
-	requestBody = buildUpdateV4JSON("4.0", []AppVersionPair{
+	requestBody = buildUpdateV4JSON("4.0", "BraveComponentUpdater", []AppVersionPair{
 		{ID: lightThemeExtensionID, Version: "0.0.0"},
 	})
 	result = testCallAndParseJSON(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusOK, "")
@@ -880,7 +885,7 @@ func TestUpdateExtensionsV4JSON(t *testing.T) {
 	assert.Equal(t, "ok", updatecheck["status"])
 
 	// Single extension same version
-	requestBody = buildUpdateV4JSON("4.0", []AppVersionPair{
+	requestBody = buildUpdateV4JSON("4.0", "BraveComponentUpdater", []AppVersionPair{
 		{ID: lightThemeExtensionID, Version: "1.0.0"},
 	})
 	result = testCallAndParseJSON(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusOK, "")
@@ -907,7 +912,7 @@ func TestUpdateExtensionsV4JSON(t *testing.T) {
 	assert.Equal(t, "noupdate", updatecheck["status"])
 
 	// Single extension greater version
-	requestBody = buildUpdateV4JSON("4.0", []AppVersionPair{
+	requestBody = buildUpdateV4JSON("4.0", "BraveComponentUpdater", []AppVersionPair{
 		{ID: lightThemeExtensionID, Version: "2.0.0"},
 	})
 	result = testCallAndParseJSON(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusOK, "")
@@ -935,7 +940,7 @@ func TestUpdateExtensionsV4JSON(t *testing.T) {
 
 	// Multiple extensions test - create a request with light and dark theme extensions
 	darkThemeExtensionID := "bfdgpgibhagkpdlnjonhkabjoijopoge"
-	requestBody = buildUpdateV4JSON("4.0", []AppVersionPair{
+	requestBody = buildUpdateV4JSON("4.0", "BraveComponentUpdater", []AppVersionPair{
 		{ID: lightThemeExtensionID, Version: "0.0.0"},
 		{ID: darkThemeExtensionID, Version: "0.0.0"},
 	})
@@ -960,7 +965,7 @@ func TestUpdateExtensionsV4JSON(t *testing.T) {
 	assert.True(t, extensionIDs[darkThemeExtensionID], "response should include dark theme extension")
 
 	// Only one extension out of date
-	requestBody = buildUpdateV4JSON("4.0", []AppVersionPair{
+	requestBody = buildUpdateV4JSON("4.0", "BraveComponentUpdater", []AppVersionPair{
 		{ID: lightThemeExtensionID, Version: "0.0.0"},
 		{ID: darkThemeExtensionID, Version: "70.0.0"},
 	})
@@ -995,14 +1000,30 @@ func TestUpdateExtensionsV4JSON(t *testing.T) {
 	assert.True(t, extensionIDs[darkThemeExtensionID], "response should include dark theme extension")
 
 	// Unknown extension ID goes to Google server via componentupdater proxy
-	requestBody = buildUpdateV4JSON("4.0", []AppVersionPair{
+	requestBody = buildUpdateV4JSON("4.0", "BraveComponentUpdater", []AppVersionPair{
 		{ID: "aaaaaaaaaaaaaaaaaaaa", Version: "0.0.0"},
 	})
 	expectedResponse = ""
 	testCall(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusTemporaryRedirect, expectedResponse, "https://componentupdater.brave.com/service/update2/json")
 
+	// Multiple unknown extensions are all redirected, not answered with error statuses.
+	// Extension update checks are bundled since 1.96.x (brave-core#39382).
+	requestBody = buildUpdateV4JSON("4.0", "chromiumcrx", []AppVersionPair{
+		{ID: "unknownoneaaaaaaaaaaaaaa", Version: "0.0.0"},
+		{ID: "unknowntwoaaaaaaaaaaaaaa", Version: "1.0.0"},
+	})
+	expectedResponse = ""
+	testCall(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusTemporaryRedirect, expectedResponse, "https://extensionupdater.brave.com/service/update2/json")
+
+	// Multiple unknown extensions without @updater=chromiumcrx use the component updater host
+	requestBody = buildUpdateV4JSON("4.0", "BraveComponentUpdater", []AppVersionPair{
+		{ID: "unknownoneaaaaaaaaaaaaaa", Version: "0.0.0"},
+		{ID: "unknowntwoaaaaaaaaaaaaaa", Version: "1.0.0"},
+	})
+	testCall(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusTemporaryRedirect, expectedResponse, "https://componentupdater.brave.com/service/update2/json")
+
 	// Multiple extensions with unknown extension should return error status (not redirect)
-	requestBody = buildUpdateV4JSON("4.0", []AppVersionPair{
+	requestBody = buildUpdateV4JSON("4.0", "BraveComponentUpdater", []AppVersionPair{
 		{ID: lightThemeExtensionID, Version: "0.0.0"},
 		{ID: "unknownextensionid123", Version: "1.0.0"},
 	})
@@ -1032,7 +1053,7 @@ func TestUpdateExtensionsV4JSON(t *testing.T) {
 	assert.Equal(t, "error-unknownApplication", extensionStatuses["unknownextensionid123"], "Unknown extension should have error status")
 
 	// Test mixed extension statuses - one needing update, one up-to-date, one unknown
-	requestBody = buildUpdateV4JSON("4.0", []AppVersionPair{
+	requestBody = buildUpdateV4JSON("4.0", "BraveComponentUpdater", []AppVersionPair{
 		{ID: lightThemeExtensionID, Version: "0.0.0"},  // Needs update -> ok
 		{ID: darkThemeExtensionID, Version: "1.0.0"},   // Up-to-date -> noupdate
 		{ID: "anothernewunknownext", Version: "1.0.0"}, // Unknown -> error-unknownApplication
@@ -1074,7 +1095,7 @@ func TestUpdateExtensionsV4JSON(t *testing.T) {
 	restrictedExt.Blacklisted = true
 	controller.AllExtensionsMap.Store(lightThemeExtensionID, restrictedExt)
 
-	requestBody = buildUpdateV4JSON("4.0", []AppVersionPair{
+	requestBody = buildUpdateV4JSON("4.0", "BraveComponentUpdater", []AppVersionPair{
 		{ID: lightThemeExtensionID, Version: "0.0.0"}, // Blacklisted extension
 	})
 	result = testCallAndParseJSON(t, server, http.MethodPost, contentTypeJSON, "", requestBody, http.StatusOK, "")
